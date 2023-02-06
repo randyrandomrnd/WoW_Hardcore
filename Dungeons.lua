@@ -257,8 +257,12 @@ local function DungeonTrackerPopulateFromQuests()
 	end
 end
 
-
 local function DungeonTrackerIsRepeatedRun( run1, run2 )
+
+	-- If one of the runs is for an unknown SM wing, we don't count this as repeated
+	if run1.name == "Scarlet Monastery" or run2.name == "Scarlet Monastery" then
+		return false
+	end
 
 	-- Most common case is where everything is in English; then the names should be the same
 	if run1.name == run2.name then
@@ -520,7 +524,7 @@ local function DungeonTrackerCheckChanged( name )
 					["Comandante Escarlata Mograine"] = "Cath",		["Alta Inquisidora Melenablanca"] = "Cath"
 				}
 			else
-				-- Unsupported language -- wing will not be recognised, leading to a non-logged SM run (things could be worse)
+				-- Unsupported language -- wing cannot be recognised, so we stay with the name that is never counted as repeated
 			end
 						
 			local npc, wing
