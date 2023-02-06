@@ -328,6 +328,12 @@ local function DungeonTrackerWarnInfraction()
 		return
 	end
 	
+	-- Don't warn in the first few seconds of an unidentified SM wing. The time_left will be shorter after 
+	-- a reconnect to an existing wing run, so then that first warning of 60s would be confusing
+	if (Hardcore_Character.dt.current.name == "Scarlet Monastery") and (time_left > 51) then
+		return
+	end
+	
 	-- Don't warn at max level (they can do whatever dungeon then) or when the user turned warnings off
 	-- /run Hardcore_Character.dt.warn_infractions=false
 	if Hardcore_Character.dt.warn_infractions == false then
@@ -436,33 +442,87 @@ local function DungeonTrackerCheckChanged( name )
 		
 		-- If we don't know which wing we are in, try to identify any of the dungeon wing's mobs
 		if Hardcore_Character.dt.current.name == SM then
-			-- List of door spawns; first try a couple of ones close to the door, then add a few from deeper
-			-- to make sure we're not missing anything; finally, add the bosses
-			-- Thanks to @Oats for compiling the list.
-			local door_spawns = {
-					["Scarlet Scryer"] = "GY",
-					["Scarlet Torturer"] = "GY",
-					["Scarlet Gallant"] = "Lib",
-					["Scarlet Adept"] = "Lib",
-					["Scarlet Soldier"] = "Arm",
-					["Scarlet Conjuror"] = "Arm",
+			
+			-- Override the door spawn list for other often-used locales
+			local door_spawns = {}
+			local lang = GetLocale()
+			if lang == "enGB" or lang == "enUS" then
+				-- List of door spawns; first try a couple of ones close to the door, then add a few from deeper
+				-- to make sure we're not missing anything; finally, add the bosses
+				-- Thanks to @Oats for compiling the list.
+				-- English or bust, too bad for the ones we didn't implement -- those will not have ther wing recognised,
+				-- but that will luckily actually lead to a non-logged SM run.
+				door_spawns = {
+					["Scarlet Scryer"] = "GY",						["Scarlet Torturer"] = "GY",
+					["Scarlet Gallant"] = "Lib",					["Scarlet Adept"] = "Lib",
+					["Scarlet Soldier"] = "Arm",					["Scarlet Conjuror"] = "Arm",
 					["Scarlet Defender"] = "Cath",
-					--["Scarlet Myrmidon"] = "Cath",		-- Disabled pending @Oats double-check
 					-- One more round of deeper-in mobs
 					["Haunting Phantasm"] = "GY",
-					["Scarlet Beastmaster"] = "Lib",
-					["Scarlet Diviner"] = "Lib",
+					["Scarlet Beastmaster"] = "Lib",				["Scarlet Diviner"] = "Lib",
 					["Scarlet Evoker"] = "Arm",
 					["Scarlet Sorceror"] = "Cath",	
 					-- Bosses as a last resort
 					["Interrogator Vishas"] = "GY",
-					["Houndmaster Loksey"] = "Lib",
-					["Arcanist Doan"] = "Lib",
+					["Houndmaster Loksey"] = "Lib",					["Arcanist Doan"] = "Lib",
 					["Herod"] = "Arm",
-					["Scarlet Commander Mograine"] = "Cath",
-					["High Inquisitor Whitemane"] = "Cath"					
-			}
-			
+					["Scarlet Commander Mograine"] = "Cath",		["High Inquisitor Whitemane"] = "Cath"
+				}
+			elseif lang == "frFR" then
+				door_spawns = {
+					["Clairvoyant écarlate"] = "GY",				["Tortionnaire écarlate"] = "GY",
+					["Vaillant écarlate"] = "Lib",					["Adepte écarlate"] = "Lib",
+					["Soldat écarlate"] = "Arm",					["Conjurateur écarlate"] = "Arm",
+					["Défenseur écarlate"] = "Cath",
+					-- One more round of deeper-in mobs
+					["Illusion spectrale"] = "GY",
+					["Belluaire écarlate"] = "Lib",					["Devin écarlate"] = "Lib",
+					["Evocateur écarlate"] = "Arm",
+					["Ensorceleur écarlate"] = "Cath",	
+					-- Bosses as a last resort
+					["Interrogateur Vishas"] = "GY",
+					["Maître-chien Loksey"] = "Lib",				["Arcaniste Doan"] = "Lib",
+					["Herod"] = "Arm",
+					["Commandant écarlate Mograine"] = "Cath",		["Grand Inquisiteur Whitemane"] = "Cath"
+				}				
+			elseif lang == "deDE" then
+				door_spawns = {
+					["Scharlachroter Wahrsager"] = "GY", 				["Scharlachroter Folterknecht"] = "GY",
+					["Scharlachroter Kavalier"] = "Lib",				["Scharlachroter Adept"] = "Lib",
+					["Scharlachroter Soldat"] = "Arm",					["Scharlachroter Herbeizauberer"] = "Arm",
+					["Scharlachroter Verteidiger"] = "Cath",
+					-- One more round of deeper-in mobs
+					["Spuktrugbild"] = "GY",
+					["Scharlachroter Bestienmeister"] = "Lib",			["Scharlachroter Rutengänger"] = "Lib",
+					["Scharlachroter Rufer"] = "Arm",
+					["Scharlachroter Zauberhexer"] = "Cath",	
+					-- Bosses as a last resort
+					["Befrager Vishas"] = "GY",
+					["Hundemeister Loksey"] = "Lib",					["Arkanist Doan"] = "Lib",
+					["Herod"] = "Arm",
+					["Scharlachroter Kommandant Mograine"] = "Cath",	["Hochinquisitor Whitemane"] = "Cath"
+				}
+			elseif lang == "esES" or lang == "esMX" then
+				door_spawns = {
+					["Arúspice Escarlata"] = "GY",					["Torturador Escarlata"] = "GY",
+					["Gallardo Escarlata"] = "Lib",					["Adepto Escarlata"] = "Lib",
+					["Soldado Escarlata"] = "Arm",					["Conjurador Escarlata"] = "Arm",
+					["Defensor Escarlata"] = "Cath",
+					-- One more round of deeper-in mobs
+					["Fantasma encantado"] = "GY",
+					["Maestro de bestias Escarlata"] = "Lib",		["Adivinador Escarlata"] = "Lib",
+					["Evocador Escarlata"] = "Arm",
+					["Hechicero Escarlata"] = "Cath",	
+					-- Bosses as a last resort
+					["Interrogador Vishas"] = "GY",
+					["Domador de jaurías Loksey"] = "Lib",			["Arcanista Doan"] = "Lib",
+					["Herod"] = "Arm",
+					["Comandante Escarlata Mograine"] = "Cath",		["Alta Inquisidora Melenablanca"] = "Cath"
+				}
+			else
+				-- Unsupported language -- wing will not be recognised, leading to a non-logged SM run (things could be worse)
+			end
+						
 			local npc, wing
 			local reaction = 0
 			for npc, wing in pairs(door_spawns) do
