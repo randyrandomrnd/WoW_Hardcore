@@ -305,7 +305,6 @@ local function DungeonTrackerUpdateInfractions()
 		end
 		-- Check if the run is repeated further down in the array (this prevents counting runs twice when i ends up at j)
 		for j = i + 1, #Hardcore_Character.dt.runs do
-
 			if DungeonTrackerIsRepeatedRun( Hardcore_Character.dt.runs[ i ], Hardcore_Character.dt.runs[ j ] ) then
 				repeated = repeated + 1
 			end
@@ -385,12 +384,6 @@ local function DungeonTrackerLogRun( run )
 	-- We don't log this run if the inside time is too small
 	if run.time_inside < DT_INSIDE_MAX_TIME then
 		Hardcore:Debug( "Not logging short run in " .. run.name )
-		return
-	end
-	
-	-- Don't store an SM run without a wing -- if we didn't even run into any recognised mob, what's the point?
-	if run.name == "Scarlet Monastery" then
-		Hardcore:Debug( "Not logging run in unidentified SM wing" )
 		return
 	end
 
