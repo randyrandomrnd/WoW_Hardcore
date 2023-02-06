@@ -1262,9 +1262,23 @@ local function GiveVidereWarning()
 	)
 end
 
+local function GiveQuestPvpWarning(text_to_display)
+	Hardcore:Print("|cFFFF0000WARNING:|r PVP Flag Warning!")
+	Hardcore:ShowAlertFrame(
+		ALERT_STYLES.videre_warning,
+		"WARNING: You will be PVP flagged when "  .. text_to_display
+	)
+end
+
 function Hardcore:QUEST_ACCEPTED(_, questID)
 	if questID == 3912 then
 		GiveVidereWarning()
+	end
+	if questID == 7843 then --The Final Message to the Wildhammer
+		GiveQuestPvpWarning("the spear is placed. PvP deaths are not appealable.")
+	end
+	if questID == 1266 then --The Missing Diplomat (quest before flag quest 1324)
+		GiveQuestPvpWarning("the next quest in the chain is accepted from Private Hendel. PvP deaths are not appealable.")
 	end
 end
 
@@ -1314,10 +1328,8 @@ function Hardcore:UNIT_SPELLCAST_START(...)
 				STARTED_BUBBLE_HEARTH_INFO = {}
 				STARTED_BUBBLE_HEARTH_INFO.start_cast = date("%m/%d/%y %H:%M:%S")
 				STARTED_BUBBLE_HEARTH_INFO.aura_type = name
-				Hardcore:Print("WARNING: Bubble-hearth Detected\nCancel or risk invalidation")
-
-				Hardcore:ShowAlertFrame(ALERT_STYLES.hc_red, "Bubble-hearth Detected\nCancel or risk invalidation")
-
+				Hardcore:Print("WARNING: Bubble-hearth Detected\nCancel Hearthing Immediately otherwise verification impossible")
+				Hardcore:ShowAlertFrame(ALERT_STYLES.hc_red, "Bubble-hearth Detected\nCancel Hearthing Immediately otherwise verification impossible")
 				return
 			end
 		end
