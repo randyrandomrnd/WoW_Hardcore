@@ -223,7 +223,9 @@ local GRIEFING_MOBS = {
 	["Twilight Fire Guard"] = 1,
 	["Hakkari Oracle"] = 1,
 	["Searing Ghoul"] = 1,
+	["Dessecus"] = 1,
 }
+
 
 -- frame display
 local display = "Rules"
