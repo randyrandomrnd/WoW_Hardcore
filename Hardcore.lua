@@ -222,6 +222,7 @@ local GRIEFING_MOBS = {
 	["Volchan"] = 1,
 	["Twilight Fire Guard"] = 1,
 	["Hakkari Oracle"] = 1,
+	["Searing Ghoul"] = 1,
 }
 
 -- frame display
