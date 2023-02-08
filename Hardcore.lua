@@ -454,6 +454,7 @@ local function SlashHandler(msg, editbox)
 			["Hakkari Oracle"] = 1,
 			["Forest Spider"] = 1,
 			["Mangy Wolf"] = 1,
+			["Searing Ghoul"] = 1,
 		}
 	elseif cmd == "alerts" then
 		Hardcore_Toggle_Alerts()
