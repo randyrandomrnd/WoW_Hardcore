@@ -43,7 +43,7 @@ local dt_db = {
 	{ 18902, 79602, "Scarlet Monastery (Lib)", "D", 5, 1, {45, 44}, {1050, 1053, 1049, 1048, 1160, 1951} },	-- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
 	{ 18903, 79603, "Scarlet Monastery (Cath)", "D", 5, 1, {45, 44}, {1053, 1048} },
 	{ 18904, 79604, "Scarlet Monastery (Arm)", "D", 5, 1, {45, 44}, {1053, 1048} },
-	{  70, 1137, "Uldaman", "D", 5, 1, {51, 44}, {1360, 2240, 17, 1139, 2204, 2278} },
+	{  70, 1137, "Uldaman", "D", 5, 1, {51, 44}, {1360, 2240, 1139, 2204, 2278} },
 	{ 209, 1176, "Zul'Farrak", "D", 5, 1, {54, 50}, {3042, 2865, 2846, 2768, 2770, 3527, 2991, 2936} },
 	{ 349, 2100, "Maraudon", "D", 5, 1, {55, 52}, {7041, 7029, 7065, 7064, 7067, 7044, 7046} },
 	{ 109, 1477, "The Temple of Atal'Hakkar", "D", 5, 1, {60, 54}, {3528, 3446, 3447, 3373} },			-- 1475, 4143, 4146, removed: tablets and haze drop outside
@@ -257,8 +257,12 @@ local function DungeonTrackerPopulateFromQuests()
 	end
 end
 
-
 local function DungeonTrackerIsRepeatedRun( run1, run2 )
+
+	-- If one of the runs is for an unknown SM wing, we don't count this as repeated
+	if run1.name == "Scarlet Monastery" or run2.name == "Scarlet Monastery" then
+		return false
+	end
 
 	-- Most common case is where everything is in English; then the names should be the same
 	if run1.name == run2.name then
@@ -301,7 +305,6 @@ local function DungeonTrackerUpdateInfractions()
 		end
 		-- Check if the run is repeated further down in the array (this prevents counting runs twice when i ends up at j)
 		for j = i + 1, #Hardcore_Character.dt.runs do
-
 			if DungeonTrackerIsRepeatedRun( Hardcore_Character.dt.runs[ i ], Hardcore_Character.dt.runs[ j ] ) then
 				repeated = repeated + 1
 			end
@@ -325,6 +328,12 @@ local function DungeonTrackerWarnInfraction()
 	-- Don't warn too frequently
 	if (Hardcore_Character.dt.current.last_warn ~= nil) and
 	   (Hardcore_Character.dt.current.time_inside - Hardcore_Character.dt.current.last_warn < DT_WARN_INTERVAL) then
+		return
+	end
+	
+	-- Don't warn in the first few seconds of an unidentified SM wing. The time_left will be shorter after 
+	-- a reconnect to an existing wing run, so then that first warning of 60s would be confusing
+	if (Hardcore_Character.dt.current.name == "Scarlet Monastery") and (time_left > 51) then
 		return
 	end
 	
@@ -375,12 +384,6 @@ local function DungeonTrackerLogRun( run )
 	-- We don't log this run if the inside time is too small
 	if run.time_inside < DT_INSIDE_MAX_TIME then
 		Hardcore:Debug( "Not logging short run in " .. run.name )
-		return
-	end
-	
-	-- Don't store an SM run without a wing -- if we didn't even run into any recognised mob, what's the point?
-	if run.name == "Scarlet Monastery" then
-		Hardcore:Debug( "Not logging run in unidentified SM wing" )
 		return
 	end
 
@@ -436,33 +439,87 @@ local function DungeonTrackerCheckChanged( name )
 		
 		-- If we don't know which wing we are in, try to identify any of the dungeon wing's mobs
 		if Hardcore_Character.dt.current.name == SM then
-			-- List of door spawns; first try a couple of ones close to the door, then add a few from deeper
-			-- to make sure we're not missing anything; finally, add the bosses
-			-- Thanks to @Oats for compiling the list.
-			local door_spawns = {
-					["Scarlet Scryer"] = "GY",
-					["Scarlet Torturer"] = "GY",
-					["Scarlet Gallant"] = "Lib",
-					["Scarlet Adept"] = "Lib",
-					["Scarlet Soldier"] = "Arm",
-					["Scarlet Conjuror"] = "Arm",
+			
+			-- Override the door spawn list for other often-used locales
+			local door_spawns = {}
+			local lang = GetLocale()
+			if lang == "enGB" or lang == "enUS" then
+				-- List of door spawns; first try a couple of ones close to the door, then add a few from deeper
+				-- to make sure we're not missing anything; finally, add the bosses
+				-- Thanks to @Oats for compiling the list.
+				-- English or bust, too bad for the ones we didn't implement -- those will not have ther wing recognised,
+				-- but that will luckily actually lead to a non-logged SM run.
+				door_spawns = {
+					["Scarlet Scryer"] = "GY",						["Scarlet Torturer"] = "GY",
+					["Scarlet Gallant"] = "Lib",					["Scarlet Adept"] = "Lib",
+					["Scarlet Soldier"] = "Arm",					["Scarlet Conjuror"] = "Arm",
 					["Scarlet Defender"] = "Cath",
-					--["Scarlet Myrmidon"] = "Cath",		-- Disabled pending @Oats double-check
 					-- One more round of deeper-in mobs
 					["Haunting Phantasm"] = "GY",
-					["Scarlet Beastmaster"] = "Lib",
-					["Scarlet Diviner"] = "Lib",
+					["Scarlet Beastmaster"] = "Lib",				["Scarlet Diviner"] = "Lib",
 					["Scarlet Evoker"] = "Arm",
 					["Scarlet Sorceror"] = "Cath",	
 					-- Bosses as a last resort
 					["Interrogator Vishas"] = "GY",
-					["Houndmaster Loksey"] = "Lib",
-					["Arcanist Doan"] = "Lib",
+					["Houndmaster Loksey"] = "Lib",					["Arcanist Doan"] = "Lib",
 					["Herod"] = "Arm",
-					["Scarlet Commander Mograine"] = "Cath",
-					["High Inquisitor Whitemane"] = "Cath"					
-			}
-			
+					["Scarlet Commander Mograine"] = "Cath",		["High Inquisitor Whitemane"] = "Cath"
+				}
+			elseif lang == "frFR" then
+				door_spawns = {
+					["Clairvoyant écarlate"] = "GY",				["Tortionnaire écarlate"] = "GY",
+					["Vaillant écarlate"] = "Lib",					["Adepte écarlate"] = "Lib",
+					["Soldat écarlate"] = "Arm",					["Conjurateur écarlate"] = "Arm",
+					["Défenseur écarlate"] = "Cath",
+					-- One more round of deeper-in mobs
+					["Illusion spectrale"] = "GY",
+					["Belluaire écarlate"] = "Lib",					["Devin écarlate"] = "Lib",
+					["Evocateur écarlate"] = "Arm",
+					["Ensorceleur écarlate"] = "Cath",	
+					-- Bosses as a last resort
+					["Interrogateur Vishas"] = "GY",
+					["Maître-chien Loksey"] = "Lib",				["Arcaniste Doan"] = "Lib",
+					["Herod"] = "Arm",
+					["Commandant écarlate Mograine"] = "Cath",		["Grand Inquisiteur Whitemane"] = "Cath"
+				}				
+			elseif lang == "deDE" then
+				door_spawns = {
+					["Scharlachroter Wahrsager"] = "GY", 				["Scharlachroter Folterknecht"] = "GY",
+					["Scharlachroter Kavalier"] = "Lib",				["Scharlachroter Adept"] = "Lib",
+					["Scharlachroter Soldat"] = "Arm",					["Scharlachroter Herbeizauberer"] = "Arm",
+					["Scharlachroter Verteidiger"] = "Cath",
+					-- One more round of deeper-in mobs
+					["Spuktrugbild"] = "GY",
+					["Scharlachroter Bestienmeister"] = "Lib",			["Scharlachroter Rutengänger"] = "Lib",
+					["Scharlachroter Rufer"] = "Arm",
+					["Scharlachroter Zauberhexer"] = "Cath",	
+					-- Bosses as a last resort
+					["Befrager Vishas"] = "GY",
+					["Hundemeister Loksey"] = "Lib",					["Arkanist Doan"] = "Lib",
+					["Herod"] = "Arm",
+					["Scharlachroter Kommandant Mograine"] = "Cath",	["Hochinquisitor Whitemane"] = "Cath"
+				}
+			elseif lang == "esES" or lang == "esMX" then
+				door_spawns = {
+					["Arúspice Escarlata"] = "GY",					["Torturador Escarlata"] = "GY",
+					["Gallardo Escarlata"] = "Lib",					["Adepto Escarlata"] = "Lib",
+					["Soldado Escarlata"] = "Arm",					["Conjurador Escarlata"] = "Arm",
+					["Defensor Escarlata"] = "Cath",
+					-- One more round of deeper-in mobs
+					["Fantasma encantado"] = "GY",
+					["Maestro de bestias Escarlata"] = "Lib",		["Adivinador Escarlata"] = "Lib",
+					["Evocador Escarlata"] = "Arm",
+					["Hechicero Escarlata"] = "Cath",	
+					-- Bosses as a last resort
+					["Interrogador Vishas"] = "GY",
+					["Domador de jaurías Loksey"] = "Lib",			["Arcanista Doan"] = "Lib",
+					["Herod"] = "Arm",
+					["Comandante Escarlata Mograine"] = "Cath",		["Alta Inquisidora Melenablanca"] = "Cath"
+				}
+			else
+				-- Unsupported language -- wing cannot be recognised, so we stay with the name that is never counted as repeated
+			end
+						
 			local npc, wing
 			local reaction = 0
 			for npc, wing in pairs(door_spawns) do
