@@ -222,7 +222,25 @@ local GRIEFING_MOBS = {
 	["Volchan"] = 1,
 	["Twilight Fire Guard"] = 1,
 	["Hakkari Oracle"] = 1,
+	["Searing Ghoul"] = 1,
+	["Dessecus"] = 1,
 }
+local KNOWN_GRIEFERS = {
+	["Spinnaz"] = 1,
+	["Yaymyself"] = 1,
+	["Badbrother"] = 1,
+	["Kargoztwitch"] = 1,
+	["Littleponny"] = 1,
+	["Kärgøz"] = 1,
+	["Ikillhc"] = 1,
+	["Ïíïìïìîììíìï"] = 1,
+	["Hcìïìíïììí"] = 1,
+	["Sharpishxdd"] = 1,
+	["Kargozhc"] = 1,
+	["Kargozttvhc"] = 1,
+	["Kârgðzhc"] = 1,
+	}
+
 
 -- frame display
 local display = "Rules"
@@ -453,6 +471,7 @@ local function SlashHandler(msg, editbox)
 			["Hakkari Oracle"] = 1,
 			["Forest Spider"] = 1,
 			["Mangy Wolf"] = 1,
+			["Searing Ghoul"] = 1,
 		}
 	elseif cmd == "alerts" then
 		Hardcore_Toggle_Alerts()
@@ -1531,7 +1550,7 @@ function Hardcore:PLAYER_DEAD()
 
 	
 	-- Exemptions for deaths below level 40 to the mobs named in GRIEFING_MOBS in Era only
-	if Hardcore_Character.game_version == "Era" and GRIEFING_MOBS[Last_Attack_Source] and level <= 40 then
+	if Hardcore_Character.game_version == "Era" and (GRIEFING_MOBS[Last_Attack_Source] or KNOWN_GRIEFERS[Last_Attack_Source]) and level <= 40 then
 
 		local messageTemplate = "%s has died to malicious activity in %s. %s impending resurrection is authorized. Players in %s be on alert."
 		local playerPronoun = Hardcore_Character.custom_pronoun or Hardcore_Settings.global_custom_pronoun or GENDER_POSSESSIVE_PRONOUN[UnitSex("player")]
