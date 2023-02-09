@@ -45,6 +45,7 @@ function GwConfig:new()
 end
 
 gw_banned_tags = {}
+hc_self_block_flag = false -- Used to denote that this guild should not send death notifications
 
 
 --- Initialize a GwConfig object with the default parameters.
@@ -195,7 +196,6 @@ function GwConfig:load()
                 for i, v in ipairs({ strsplit(':', buffer) }) do
                     field[i] = strtrim(v)
                 end
-		-- gw_banned_tags["Militia"] = 1
 
                 if field[1] == 'c' then
                     -- Guild channel configuration
@@ -218,6 +218,8 @@ function GwConfig:load()
                     end
                 elseif field[1] == 'b' then
 		    gw_banned_tags[field[1]] = 1
+                elseif field[1] == 'd' then -- defense
+		    hc_self_block_flag = true
                 elseif field[1] == 's' then
                     local key = field[3]
                     local val = field[2]
