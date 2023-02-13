@@ -46,6 +46,7 @@ end
 
 gw_banned_tags = {}
 
+hc_mute_inguild = 0
 
 --- Initialize a GwConfig object with the default parameters.
 -- @return The initialized GwConfig instance.
@@ -218,6 +219,10 @@ function GwConfig:load()
                     end
                 elseif field[1] == 'b' then
 		    gw_banned_tags[field[1]] = 1
+                elseif field[1] == 'i' then
+		    if field[2] then
+		      hc_mute_inguild = tonumber(field[2])
+		    end
                 elseif field[1] == 's' then
                     local key = field[3]
                     local val = field[2]
