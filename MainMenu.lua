@@ -298,6 +298,27 @@ local function DrawGeneralTab(container)
 
 	local changelog_title = AceGUI:Create("Label")
 	changelog_title:SetWidth(500)
+	changelog_title:SetText("11.12")
+	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	scroll_frame:AddChild(changelog_title)
+
+	local changelog_description = AceGUI:Create("Label")
+	changelog_description:SetWidth(_menu_width)
+	changelog_description:SetText(
+		"- Improved anti-grief security\n" ..
+		"- Updated Hardcore Contract\n" ..
+		"- Dungeon Tracker localization\n" ..
+		"- Fixed 'out of date' problem\n" ..
+		"- Improved in-guild muting\n" ..
+		"- Option to block death messages from levels/guilds\n" ..
+		"- Fix Thunderstruck achievement\n" ..
+		"- Fix Against Lord Shalzaru achievement\n"
+	)
+	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	scroll_frame:AddChild(changelog_description)
+
+	local changelog_title = AceGUI:Create("Label")
+	changelog_title:SetWidth(500)
 	changelog_title:SetText("11.10")
 	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
 	scroll_frame:AddChild(changelog_title)

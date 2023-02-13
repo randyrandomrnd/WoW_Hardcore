@@ -16,23 +16,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
---]]-----------------------------------------------------------------------
-
+--]] -----------------------------------------------------------------------
 --[[-----------------------------------------------------------------------
 Imported Libraries
---]]-----------------------------------------------------------------------
-
+--]] -----------------------------------------------------------------------
 local crc = LibStub:GetLibrary("Hash:CRC:16ccitt-1.0")
 local semver = LibStub:GetLibrary("SemanticVersion-1.0")
 
-
 --[[-----------------------------------------------------------------------
 Class Variables
---]]-----------------------------------------------------------------------
+--]] -----------------------------------------------------------------------
 
 GwConfig = {}
 GwConfig.__index = GwConfig
-
 
 --- GwConfig constructor function.
 -- @return An initialized GwConfig instance.
@@ -45,7 +41,9 @@ function GwConfig:new()
 end
 
 gw_banned_tags = {}
+hc_self_block_flag = false -- Used to denote that this guild should not send death notifications
 
+hc_mute_inguild = 0
 
 --- Initialize a GwConfig object with the default parameters.
 -- @return The initialized GwConfig instance.
@@ -58,25 +56,23 @@ function GwConfig:initialize_param()
     return self
 end
 
-
 --- Initialize a GwConfig object with the default state.
 -- @return The initialized GwConfig instance.
 function GwConfig:initialize_state()
     self.channel = {
-        guild   = GwChannel:new(),
-        officer = GwChannel:new(),
+        guild = GwChannel:new(),
+        officer = GwChannel:new()
     }
     self.timer = {
         channel = GwHoldDown:new(gw.settings:get('joindelay')),
-        config  = GwHoldDown:new(GW_TIMEOUT_CONFIG_HOLD),
-        reload  = GwHoldDown:new(GW_TIMEOUT_RELOAD_HOLD),
+        config = GwHoldDown:new(GW_TIMEOUT_CONFIG_HOLD),
+        reload = GwHoldDown:new(GW_TIMEOUT_RELOAD_HOLD)
     }
-    self.comember_cache = GwHoldDownCache:new(GW_CACHE_COMEMBER_HOLD,
-            GW_CACHE_COMEMBER_SOFT_MAX, GW_CACHE_COMEMBER_HARD_MAX)
+    self.comember_cache = GwHoldDownCache:new(GW_CACHE_COMEMBER_HOLD, GW_CACHE_COMEMBER_SOFT_MAX,
+        GW_CACHE_COMEMBER_HARD_MAX)
 
     return self
 end
-
 
 --- Dump configuration attributes.
 function GwConfig:dump(keep)
@@ -121,19 +117,20 @@ function GwConfig:dump_status()
     end
 end
 
-
 --- Parse the guild information page to gather configuration information.
 -- @return True if successful, false otherwise.
 function GwConfig:load()
     local function substitute(cstr, xlat)
-        local estr, count = string.gsub(cstr, '%$(%a)', function(s) return xlat[s] end)
+        local estr, count = string.gsub(cstr, '%$(%a)', function(s)
+            return xlat[s]
+        end)
         if count > 0 then
             gw.Debug(GW_LOG_DEBUG, "expanded '%s' to '%s'", cstr, estr)
         end
         return estr
     end
 
-    local xlat = {}                     -- Translation table for string substitution.
+    local xlat = {} -- Translation table for string substitution.
 
     -- Abort if current configuration is valid
     if self.valid then
@@ -151,15 +148,13 @@ function GwConfig:load()
     end
 
     -- Abort if configuration is not yet available
-    local info = GetGuildInfoText()     -- Guild information text.
+    local info = GetGuildInfoText() -- Guild information text.
     if info == '' then
         gw.Debug(GW_LOG_WARNING, 'guild configuration not available.')
         return false
     end
 
     gw.Debug(GW_LOG_INFO, 'parsing guild configuration.')
-
-
 
     -- Soft reset of configuration
     self:initialize_param()
@@ -192,10 +187,9 @@ function GwConfig:load()
 
                 -- Groom configuration entries.
                 local field = {}
-                for i, v in ipairs({ strsplit(':', buffer) }) do
+                for i, v in ipairs({strsplit(':', buffer)}) do
                     field[i] = strtrim(v)
                 end
-		-- gw_banned_tags["Militia"] = 1
 
                 if field[1] == 'c' then
                     -- Guild channel configuration
@@ -217,7 +211,13 @@ function GwConfig:load()
                         gw.Debug(GW_LOG_DEBUG, 'peer=%s (%s)', peer_name, peer_id);
                     end
                 elseif field[1] == 'b' then
-		    gw_banned_tags[field[1]] = 1
+                    gw_banned_tags[field[1]] = 1
+                elseif field[1] == 'd' then -- defense
+                    hc_self_block_flag = true
+                elseif field[1] == 'i' then
+                    if field[2] then
+                        hc_mute_inguild = tonumber(field[2])
+                    end
                 elseif field[1] == 's' then
                     local key = field[3]
                     local val = field[2]
@@ -235,7 +235,7 @@ function GwConfig:load()
                     end
                 elseif field[1] == 'o' then
                     -- Deprecated option list
-                    local optlist = { strsplit(',', gsub(field[2], '%s+', '')) }
+                    local optlist = {strsplit(',', gsub(field[2], '%s+', ''))}
                     for i, opt in ipairs(optlist) do
                         local key, val = strsplit('=', opt)
                         key = strlower(key)
@@ -278,7 +278,8 @@ function GwConfig:load()
     local cur = semver(gw.version)
     if min and cur then
         if cur < min then
-            gw.Error('Guild configuration specifies a minimum version of %s (%s currently installed).', tostring(min), tostring(cur))
+            gw.Error('Guild configuration specifies a minimum version of %s (%s currently installed).', tostring(min),
+                tostring(cur))
         end
     end
 
@@ -298,7 +299,6 @@ function GwConfig:load()
 
 end
 
-
 --- Initiate a reload of the configuration.
 -- @return True is refresh submitted, false otherwise.
 function GwConfig:reload()
@@ -307,7 +307,6 @@ function GwConfig:reload()
     gw.Debug(GW_LOG_INFO, 'roster update requested.')
     return true
 end
-
 
 --- Initiate a refresh of the configuration.
 -- This is a reload protected by a hold-down timer.
@@ -321,7 +320,6 @@ function GwConfig:refresh()
     end
 end
 
-
 --- Initiate a reset and reload of the configuration.
 -- This is a disruptive reset of the configuration and state.
 -- @return True is refresh submitted, false otherwise.
@@ -332,7 +330,6 @@ function GwConfig:reset()
     end
     return self:reload()
 end
-
 
 --- Check a guild for peer status.
 -- @param guild The name of the guild to check.
@@ -345,7 +342,6 @@ function GwConfig:is_peer(guild)
     end
     return false
 end
-
 
 --- Refresh the channel state.
 function GwConfig:refresh_channels()
@@ -361,7 +357,6 @@ function GwConfig:refresh_channels()
         end
     end
 end
-
 
 --- Check a guild for membership within the confederation.
 -- @param guild The name of the guild to check.

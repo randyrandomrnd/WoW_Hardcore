@@ -2,6 +2,13 @@ local _G = _G
 local thunderstruck_achievement = CreateFrame("Frame")
 _G.achievements.Thunderstruck = thunderstruck_achievement
 
+local whitelist = {
+  [18205] = 1, -- Black Malice
+  [16375] = 1, -- Faintly glowing skull
+}
+
+local temporary_disable = false
+
 -- General info
 thunderstruck_achievement.name = "Thunderstruck"
 thunderstruck_achievement.title = "Thunderstruck"
@@ -14,11 +21,13 @@ thunderstruck_achievement.description =
 -- Registers
 function thunderstruck_achievement:Register(fail_function_executor)
 	thunderstruck_achievement:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	thunderstruck_achievement:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 	thunderstruck_achievement.fail_function_executor = fail_function_executor
 end
 
 function thunderstruck_achievement:Unregister()
 	thunderstruck_achievement:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	thunderstruck_achievement:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end
 
 -- Register Definitions
@@ -37,5 +46,12 @@ thunderstruck_achievement:SetScript("OnEvent", function(self, event, ...)
 				end
 			end
 		end
+	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+	  if whitelist[arg[3]] then
+	    temporary_disable = true
+	    C_Timer.After(10.0, function()
+	      temporary_disable = false 
+	    end)
+	  end
 	end
 end)
