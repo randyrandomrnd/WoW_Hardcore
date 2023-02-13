@@ -1599,6 +1599,8 @@ function Hardcore:PLAYER_DEAD()
 		})
 	end
 
+	if hc_self_block_flag then return end
+
 	-- Send broadcast alert messages to guild and greenwall
 	local messageString = messageFormat:format(playerGreet, name, class, level, zone)
 	if not (Last_Attack_Source == nil) then
