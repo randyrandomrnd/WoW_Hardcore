@@ -611,14 +611,45 @@ local function SlashHandler(msg, editbox)
 		end
 
 		if tostring(GetCode(ach_num)):sub(1,10) == tostring(tonumber(code)):sub(1,10) then
-		  for i,v in ipairs(Hardcore_Character.achievements) do
-		    if v == _G.id_a[ach_num] then
-		      return
-		    end
-		  end
-		  table.insert(Hardcore_Character.achievements, _G.achievements[_G.id_a[ach_num]].name)
-		  _G.achievements[_G.id_a[ach_num]]:Register(failure_function_executor, Hardcore_Character)
-		  Hardcore:Print("Appealed " .. _G.achievements[_G.id_a[ach_num]].name .. " challenge!")
+			for i,v in ipairs(Hardcore_Character.achievements) do
+				if v == _G.id_a[ach_num] then
+					return
+				end
+			end
+
+			local function OnOkayClick()				
+				table.insert(Hardcore_Character.achievements, _G.achievements[_G.id_a[ach_num]].name)
+				_G.achievements[_G.id_a[ach_num]]:Register(failure_function_executor, Hardcore_Character)
+				Hardcore:Print("Appealed " .. _G.achievements[_G.id_a[ach_num]].name .. " challenge!")
+				StaticPopup_Hide("ConfirmAchievementAppeal")
+			end
+		
+			local function OnCancelClick()
+				Hardcore:Print("Opting out of Appeal for Achievement: " .. _G.achievements[_G.id_a[ach_num]].name)
+				StaticPopup_Hide("ConfirmAchievementAppeal")
+			end
+
+			local text = "You have requested to appeal the achievement '".._G.achievements[_G.id_a[ach_num]].name.."'."
+
+			if ach_num == "47" then -- Insane in the Membrane
+				text = text .. "  This achievement will flag you for PvP, and you may be killed."
+			end
+
+			text = text .. "  Do you want to proceed?"
+		
+			StaticPopupDialogs["ConfirmAchievementAppeal"] = {
+				text = text,
+				button1 = OKAY,
+				button2 = CANCEL,
+				OnAccept = OnOkayClick,
+				OnCancel = OnCancelClick,
+				timeout = 0,
+				whileDead = true,
+				hideOnEscape = true,
+			}
+			
+			local dialog = StaticPopup_Show("ConfirmAchievementAppeal")
+
 		else
 		  Hardcore:Print("Incorrect code. Double check with a moderator." .. GetCode(ach_num) .. " " .. code)
 		end
