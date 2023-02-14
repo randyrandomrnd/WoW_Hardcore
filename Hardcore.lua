@@ -3231,7 +3231,7 @@ function Hardcore:ApplyAlertFrameSettings()
 end
 
 ChatFrame_AddMessageEventFilter("CHAT_MSG_GUILD", function(frame, event, message, sender, ...)
-	if hc_mute_inguild and guild_online[name] and tonumber(hc_mute_inguild) >= guild_online[send]["level"] then return end
+	if hc_mute_inguild and guild_online[sender] and guild_online[sender]["level"] and tonumber(hc_mute_inguild) >= guild_online[sender]["level"] then return end
 
 	if Hardcore_Settings.filter_f_in_chat then
 		if message == "f" or message == "F" then
