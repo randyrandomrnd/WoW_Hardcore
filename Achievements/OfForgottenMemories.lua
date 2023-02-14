@@ -32,5 +32,5 @@ end
 -- Register Definitions
 of_forgotten_memories:SetScript("OnEvent", function(self, event, ...)
 	local arg = { ... }
-	HCCommonPassiveAchievementKillCheck(of_forgotten_memories, event, arg)
+	HCCommonPassiveAchievementBasicQuestCheck(_achievement, event, arg)
 end)
