@@ -228,7 +228,6 @@ local GRIEFING_MOBS = {
 local KNOWN_GRIEFERS = {
 	["Spinnaz"] = 1,
 	["Yaymyself"] = 1,
-	["Badbrother"] = 1,
 	["Kargoztwitch"] = 1,
 	["Littleponny"] = 1,
 	["Kärgøz"] = 1,
