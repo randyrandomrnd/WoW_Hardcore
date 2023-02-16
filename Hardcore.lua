@@ -634,7 +634,7 @@ local function SlashHandler(msg, editbox)
 			end
 
 			local text = "You have requested to appeal the achievement '"
-				.. _G.achievements[_G.id_a[ach_num]].name
+				.. _G.achievements[_G.id_a[ach_num]].title
 				.. "'."
 
 			if ach_num == "47" then -- Insane in the Membrane
