@@ -9,7 +9,7 @@ _achievement.class = "All"
 _achievement.icon_path = "Interface\\Addons\\Hardcore\\Media\\icon_speedrunner.blp"
 _achievement.category = "Miscellaneous"
 _achievement.level_cap = 2
-_achievement.played_time_threshold = 10*60*60
+_achievement.played_time_threshold = 10 * 60 * 60
 _achievement.bl_text = "Miscellaneous"
 _achievement.description = "Reach level 15 by " .. _achievement.played_time_threshold .. " seconds of play time."
 _achievement.restricted_game_versions = {
@@ -18,7 +18,7 @@ _achievement.restricted_game_versions = {
 
 -- Registers
 function _achievement:Register(succeed_function_executor)
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 	_achievement:RegisterEvent("PLAYER_LEVEL_UP")
 	_achievement:RegisterEvent("TIME_PLAYED_MSG")
 end
@@ -41,11 +41,12 @@ _achievement:SetScript("OnEvent", function(self, event, ...)
 		end
 	elseif event == "TIME_PLAYED_MSG" then
 		local seconds_played = arg[1]
-		if recently_leveled == false then return end
+		if recently_leveled == false then
+			return
+		end
 		recently_leveled = false
 		if seconds_played <= _achievement.played_time_threshold then
 			_achievement.succeed_function_executor.Succeed(_achievement.name)
 		end
 	end
 end)
-

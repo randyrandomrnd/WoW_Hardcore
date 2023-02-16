@@ -9,13 +9,14 @@ _achievement.class = "All"
 _achievement.icon_path = "Interface\\Addons\\Hardcore\\Media\\icon_master_blacksmithing.blp"
 _achievement.level_cap = 59
 _achievement.craft_set = {
-  ["Truesilver Champion"] = 1,
+	["Truesilver Champion"] = 1,
 }
 _achievement.category = "Profession"
 _achievement.craft_name = "|cff0070dd[Truesilver Champion]|r"
 _achievement.bl_text = "Profession"
 _achievement.pts = 10
-_achievement.description = HCGeneratePassiveAchievementCraftedDescription(_achievement.craft_name, _achievement.level_cap)
+_achievement.description =
+	HCGeneratePassiveAchievementCraftedDescription(_achievement.craft_name, _achievement.level_cap)
 _achievement.restricted_game_versions = {
 	["WotLK"] = 1,
 }
@@ -23,7 +24,7 @@ _achievement.restricted_game_versions = {
 -- Registers
 function _achievement:Register(succeed_function_executor)
 	_achievement:RegisterEvent("CHAT_MSG_LOOT")
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
 function _achievement:Unregister()

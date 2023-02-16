@@ -305,14 +305,14 @@ local function DrawGeneralTab(container)
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
 	changelog_description:SetText(
-		"- Improved anti-grief security\n" ..
-		"- Updated Hardcore Contract\n" ..
-		"- Dungeon Tracker localization\n" ..
-		"- Fixed 'out of date' problem\n" ..
-		"- Improved in-guild muting\n" ..
-		"- Option to block death messages from levels/guilds\n" ..
-		"- Fix Thunderstruck achievement\n" ..
-		"- Fix Against Lord Shalzaru achievement\n"
+		"- Improved anti-grief security\n"
+			.. "- Updated Hardcore Contract\n"
+			.. "- Dungeon Tracker localization\n"
+			.. "- Fixed 'out of date' problem\n"
+			.. "- Improved in-guild muting\n"
+			.. "- Option to block death messages from levels/guilds\n"
+			.. "- Fix Thunderstruck achievement\n"
+			.. "- Fix Against Lord Shalzaru achievement\n"
 	)
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
@@ -341,9 +341,7 @@ local function DrawGeneralTab(container)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added `Hardcore contract` to intro splash"
-	)
+	changelog_description:SetText("- Added `Hardcore contract` to intro splash")
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
 
@@ -389,9 +387,7 @@ local function DrawGeneralTab(container)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Better WoTLK patch compatibility (Overhauled AceGUI)"
-	)
+	changelog_description:SetText("- Better WoTLK patch compatibility (Overhauled AceGUI)")
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
 
@@ -405,9 +401,7 @@ local function DrawGeneralTab(container)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"-WoTLK patch compatibility"
-	)
+	changelog_description:SetText("-WoTLK patch compatibility")
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
 
@@ -475,7 +469,6 @@ local function DrawGeneralTab(container)
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
 
-
 	---
 
 	local changelog_title = AceGUI:Create("Label")
@@ -492,8 +485,6 @@ local function DrawGeneralTab(container)
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
 
-
-
 	---
 
 	local changelog_title = AceGUI:Create("Label")
@@ -509,7 +500,6 @@ local function DrawGeneralTab(container)
 	)
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
-
 
 	---
 
@@ -731,9 +721,9 @@ local function DrawRulesTab(container)
 		played_time_label:SetText("|c00FFFF00Max Lvl (WotlK)|r")
 		played_time_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 		row_header:AddChild(played_time_label)
-		
+
 		local max_level_table = DungeonTrackerGetAllDungeonMaxLevels()
-		for i,v in pairs( max_level_table ) do
+		for i, v in pairs(max_level_table) do
 			addEntry(scroll_frame, v[1], v[2], v[3])
 		end
 
@@ -1183,22 +1173,20 @@ local function DrawLevelsTab(container, _hardcore_settings)
 end
 
 local function DrawDungeonsTab(container, _hardcore_character)
-
 	local name_data
 	local level_data
 	local played_data
 	local date_data
 	local boss_data
-	local show_boss_column = false		-- For Zdeyn's boss kill time statistic, just set to true
-	
-	local function UpdateDungeonsData(_dt_runs, _dt_pending, _dt_current)
+	local show_boss_column = false -- For Zdeyn's boss kill time statistic, just set to true
 
+	local function UpdateDungeonsData(_dt_runs, _dt_pending, _dt_current)
 		-- Initialise data
 		local name_str = ""
 		local date_str = ""
 		local level_str = ""
 		local played_str = ""
-		local boss_str = ""		
+		local boss_str = ""
 
 		-- Put some example boss data; this should come from some function call in the speedcore code
 		local boss_kill_data = {
@@ -1208,24 +1196,24 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			["Blackfathom Deeps"] = { 4500, { "Ghamoo-Ra", 1100 }, { "Aku'mai", 4500 } },
 			["Scarlet Monastery (Lib)"] = { 2300, { "Houndmaster Loksey", 900 }, { "Arcanist Doan", 2300 } },
 		}
-		
-		local function GetBossTimeString( the_boss_data, the_name )
-			if the_boss_data ~= nil and the_name ~= nil and the_boss_data[ the_name ] ~= nil then
-				if the_boss_data[ the_name ][1] > 0 then 
-					return SecondsToTime(the_boss_data[ the_name ][1]) .. "\n"
+
+		local function GetBossTimeString(the_boss_data, the_name)
+			if the_boss_data ~= nil and the_name ~= nil and the_boss_data[the_name] ~= nil then
+				if the_boss_data[the_name][1] > 0 then
+					return SecondsToTime(the_boss_data[the_name][1]) .. "\n"
 				else
-					return "X\n"		-- Dungeon done, but end boss not killed
+					return "X\n" -- Dungeon done, but end boss not killed
 				end
 			else
-				return "?\n"			-- No info
+				return "?\n" -- No info
 			end
 		end
 
 		local now = GetServerTime()
-		
+
 		-- Go through the complete, idle and active runs
 		local num_lines = 0
-		for i, v in pairs( _dt_runs ) do
+		for i, v in pairs(_dt_runs) do
 			name_str = name_str .. v.name .. "\n"
 			if v.level > 0 then
 				level_str = level_str .. v.level .. "\n"
@@ -1238,27 +1226,27 @@ local function DrawDungeonsTab(container, _hardcore_character)
 				played_str = played_str .. "?\n"
 			end
 			date_str = date_str .. v.date .. "\n"
-			boss_str = boss_str .. GetBossTimeString( boss_kill_data, v.name )
+			boss_str = boss_str .. GetBossTimeString(boss_kill_data, v.name)
 			num_lines = num_lines + 1
 		end
-		for i, v in pairs( _dt_pending ) do
+		for i, v in pairs(_dt_pending) do
 			name_str = name_str .. "|c00FFFF00" .. v.name .. " (idle, " .. SecondsToTime(v.idle_left) .. ")\n"
 			--name_str = name_str .. "|c00FFFF00" .. v.name .. " (re-entry until " .. date("%H:%M:%S", now +  v.idle_left - 30) .. ")\n"
 			level_str = level_str .. v.level .. "\n"
 			played_str = played_str .. SecondsToTime(v.time_inside) .. "\n"
 			date_str = date_str .. v.date .. "\n"
-			boss_str = boss_str .. GetBossTimeString( boss_kill_data, v.name )
+			boss_str = boss_str .. GetBossTimeString(boss_kill_data, v.name)
 			num_lines = num_lines + 1
 		end
-		if next( _dt_current ) then
+		if next(_dt_current) then
 			name_str = name_str .. "|c0000FF00" .. _dt_current.name .. " (active)\n"
 			level_str = level_str .. _dt_current.level .. "\n"
 			played_str = played_str .. SecondsToTime(_dt_current.time_inside) .. "\n"
 			date_str = date_str .. _dt_current.date .. "\n"
-			boss_str = boss_str .. GetBossTimeString( boss_kill_data, _dt_current.name )
+			boss_str = boss_str .. GetBossTimeString(boss_kill_data, _dt_current.name)
 			num_lines = num_lines + 1
 		end
-		
+
 		-- Make sure we have at least 10 lines, or Ace moves our dungeons down a line
 		num_lines = 10 - num_lines
 		for i = 1, num_lines do
@@ -1289,13 +1277,13 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	local first_menu_description_title = AceGUI:Create("Label")
 	first_menu_description_title:SetFullWidth(500)
 	first_menu_description_title:SetText(
-				"Dungeons marked with (legacy) are old dungeon runs derived " ..
-				"from completed quests.\nA run marked in white is finalised and the dungeon may not be entered again. " ..
-				"A run marked in|c00FFFF00 yellow|c00FFFFFF is pending, and will be finalised after the timer expires. " ..
-				"A run marked in |c0000FF00 green|c00FFFFFF is the one you are currently on.\n\n")
+		"Dungeons marked with (legacy) are old dungeon runs derived "
+			.. "from completed quests.\nA run marked in white is finalised and the dungeon may not be entered again. "
+			.. "A run marked in|c00FFFF00 yellow|c00FFFFFF is pending, and will be finalised after the timer expires. "
+			.. "A run marked in |c0000FF00 green|c00FFFFFF is the one you are currently on.\n\n"
+	)
 	first_menu_description_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	tabcontainer:AddChild(first_menu_description_title)
-
 
 	-- Start making the interface, start with a big frame to hold them all
 	local scroll_container = AceGUI:Create("SimpleGroup")
@@ -1306,7 +1294,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 	-- Add the scrolling part of the frame
 	local scroll_frame = AceGUI:Create("ScrollFrame")
-	scroll_frame:SetLayout("Flow")			-- We want the headers and columns side by side
+	scroll_frame:SetLayout("Flow") -- We want the headers and columns side by side
 	scroll_frame:SetFullWidth(true)
 	scroll_frame:SetFullHeight(true)
 	scroll_container:AddChild(scroll_frame)
@@ -1346,7 +1334,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	if show_boss_column then
 		boss_time_label:SetText("|c00FFFF00Boss Time|r")
 	else
-		boss_time_label:SetText("")			--- Don't write it
+		boss_time_label:SetText("") --- Don't write it
 	end
 	boss_time_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	row_header:AddChild(boss_time_label)
@@ -1359,7 +1347,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	scroll_frame:AddChild(data_rows)
 
 	-- Name column
-	local entry 		-- Some container that we don't care about
+	local entry -- Some container that we don't care about
 	name_data = AceGUI:Create("Label")
 	name_data:SetWidth(405)
 	name_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
@@ -1382,7 +1370,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	played_data:SetWidth(125)
 	played_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(played_data)
-	
+
 	-- Boss column
 	boss_data = AceGUI:Create("Label")
 	boss_data:SetWidth(125)
@@ -1390,8 +1378,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	data_rows:AddChild(boss_data)
 
 	-- Fill in the data into the data fields
-	UpdateDungeonsData( _hardcore_character.dt.runs, _hardcore_character.dt.pending, _hardcore_character.dt.current )
-	
+	UpdateDungeonsData(_hardcore_character.dt.runs, _hardcore_character.dt.pending, _hardcore_character.dt.current)
+
 	-- Some weird stuff needed to prevent the scrollframe from malfunctioning
 	local entry = AceGUI:Create("SimpleGroup")
 	entry:SetLayout("Flow")
@@ -1402,7 +1390,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	local footer_container = AceGUI:Create("Label")
 	footer_container:SetFullWidth(true)
 	footer_container:SetHeight(10)
-	footer_container:SetText( "\n" )
+	footer_container:SetText("\n")
 	tabcontainer:AddChild(footer_container)
 
 	-- Status label at the bottom
@@ -1414,10 +1402,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 	-- Start the ticker that updates the data in the dungeons tab (it gets cancelled in SelectGroup() when you change tabs)
 	hardcore_modern_menu_state.ticker_handler = C_Timer.NewTicker(1, function()
-		UpdateDungeonsData( _hardcore_character.dt.runs, _hardcore_character.dt.pending, _hardcore_character.dt.current )
+		UpdateDungeonsData(_hardcore_character.dt.runs, _hardcore_character.dt.pending, _hardcore_character.dt.current)
 	end)
-
-
 end
 
 local function GetSpacelessRealmName()
@@ -1446,7 +1432,9 @@ local function DrawAccountabilityTab(container)
 							.. ":16:16:0:0:64:64:4:60:4:60|t"
 					end
 				end
-				for i, achievement_name in ipairs(other_hardcore_character_cache[player_name_short].passive_achievements) do
+				for i, achievement_name in
+					ipairs(other_hardcore_character_cache[player_name_short].passive_achievements)
+				do
 					if _G.passive_achievements[achievement_name] then
 						inline_text = inline_text
 							.. "|T"
@@ -1463,7 +1451,9 @@ local function DrawAccountabilityTab(container)
 							GameTooltip:AddLine(_G.achievements[achievement_name].title)
 						end
 					end
-					for i, achievement_name in ipairs(other_hardcore_character_cache[player_name_short].passive_achievements) do
+					for i, achievement_name in
+						ipairs(other_hardcore_character_cache[player_name_short].passive_achievements)
+					do
 						if _G.passive_achievements[achievement_name] then
 							GameTooltip:AddLine(_G.passive_achievements[achievement_name].title)
 						end

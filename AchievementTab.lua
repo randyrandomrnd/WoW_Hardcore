@@ -44,7 +44,6 @@ local function DrawPassiveAchievementRow(achievement, _scroll_frame)
 	--   ChatEdit_InsertLink(link)
 	-- end)
 
-
 	local buffer_frame = AceGUI:Create("SimpleGroup")
 	buffer_frame:SetWidth(30)
 	buffer_frame:SetHeight(30)
@@ -104,10 +103,14 @@ end
 local function DrawPassiveAchievementsTab3(container, _scroll_frame, class, exclude_alliance, exclude_horde)
 	for idx, id in pairs(_G.passive_achievements_order) do
 		local v = _G.passive_achievements[id]
-		if v.faction == nil or (v.faction == "Horde" and exclude_horde == false) or (v.faction == "Alliance" and exclude_alliance == false) then
-		  if v.category == class then
-			  DrawPassiveAchievementRow(v, _scroll_frame)
-		  end
+		if
+			v.faction == nil
+			or (v.faction == "Horde" and exclude_horde == false)
+			or (v.faction == "Alliance" and exclude_alliance == false)
+		then
+			if v.category == class then
+				DrawPassiveAchievementRow(v, _scroll_frame)
+			end
 		end
 	end
 	local bottom_buffer = AceGUI:Create("SimpleGroup")
@@ -180,11 +183,19 @@ local function DrawClassTitleRow(_scroll_frame, _title)
 end
 
 local function DrawPassiveAchievementsPageIconForm(container, scroll_container, _category)
-
 	local function DrawClassContainer(class_container, low, top, size, category)
 		for idx, id in pairs(_G.passive_achievements_order) do
 			local v = _G.passive_achievements[id]
-			if v.level_cap >= low and v.level_cap <= top and category == v.category and (v.faction == nil or (v.faction == "Horde" and exclude_horde == false) or (v.faction == "Alliance" and exclude_alliance == false)) then
+			if
+				v.level_cap >= low
+				and v.level_cap <= top
+				and category == v.category
+				and (
+					v.faction == nil
+					or (v.faction == "Horde" and exclude_horde == false)
+					or (v.faction == "Alliance" and exclude_alliance == false)
+				)
+			then
 				local achievement_icon = AceGUI:Create("Icon")
 				achievement_icon:SetWidth(size)
 				achievement_icon:SetHeight(size)
@@ -224,7 +235,6 @@ local function DrawPassiveAchievementsPageIconForm(container, scroll_container, 
 	scroll_container:AddChild(achievements_container)
 end
 
-
 local function DrawAchievementRow(achievement, _scroll_frame, _hardcore_character, _mutable, _failure_function_executor)
 	local btn_container = AceGUI:Create("SimpleGroup")
 	btn_container:SetWidth(800)
@@ -243,71 +253,71 @@ local function DrawAchievementRow(achievement, _scroll_frame, _hardcore_characte
 	achievement_icon:SetImage(achievement.icon_path)
 	achievement_icon:SetImageSize(60, 60)
 	if _mutable then
-	  achievement_icon.image:SetVertexColor(0.2, 0.2, 0.2)
-	  if _hardcore_character.achievements == nil then
-		  _hardcore_character.achievements = {}
-	  end
-	  for i, v in ipairs(_hardcore_character.achievements) do
-		  if v == achievement.name then
-			  achievement_icon.image:SetVertexColor(1, 1, 1)
-		  end
-	  end
+		achievement_icon.image:SetVertexColor(0.2, 0.2, 0.2)
+		if _hardcore_character.achievements == nil then
+			_hardcore_character.achievements = {}
+		end
+		for i, v in ipairs(_hardcore_character.achievements) do
+			if v == achievement.name then
+				achievement_icon.image:SetVertexColor(1, 1, 1)
+			end
+		end
 	else
-	  achievement_icon.image:SetVertexColor(1,1,1)
+		achievement_icon.image:SetVertexColor(1, 1, 1)
 	end
 	if _mutable then
-	  achievement_icon:SetCallback("OnClick", function()
-		  local activate = true
-		  for i, v in ipairs(_hardcore_character.achievements) do
-			  if v == achievement.name then
-				  activate = false
-				  table.remove(_hardcore_character.achievements, i)
-				  achievement_icon.image:SetVertexColor(0.1, 0.1, 0.1)
-				  achievement:Unregister()
-				  Hardcore:Print("Removed " .. achievement.name .. " challenge!")
-			  end
-		  end
+		achievement_icon:SetCallback("OnClick", function()
+			local activate = true
+			for i, v in ipairs(_hardcore_character.achievements) do
+				if v == achievement.name then
+					activate = false
+					table.remove(_hardcore_character.achievements, i)
+					achievement_icon.image:SetVertexColor(0.1, 0.1, 0.1)
+					achievement:Unregister()
+					Hardcore:Print("Removed " .. achievement.name .. " challenge!")
+				end
+			end
 
-		  if activate then
-			  local _, _, _class_id = UnitClass("player")
-			  if CLASSES[_class_id] ~= achievement.class and achievement.class ~= "All" then
-				  Hardcore:Print(
-					  "Cannot start achievement " .. achievement.title .. " as class " .. CLASSES[_class_id]
-				  )
-			  elseif
-				  achievement.restricted_game_versions ~= nil
-				  and achievement.restricted_game_versions[_G["HardcoreBuildLabel"]] ~= nil
-			  then
-				  Hardcore:Print(
-					  "Achievement " .. achievement.title .. " is not supported in " .. _G["HardcoreBuildLabel"]
-				  )
-			  else
-				  table.insert(_hardcore_character.achievements, achievement.name)
-				  achievement_icon.image:SetVertexColor(1, 1, 1)
-				  achievement:Register(_failure_function_executor, _hardcore_character)
-				  Hardcore:Print("Added " .. achievement.name .. " challenge!")
+			if activate then
+				local _, _, _class_id = UnitClass("player")
+				if CLASSES[_class_id] ~= achievement.class and achievement.class ~= "All" then
+					Hardcore:Print(
+						"Cannot start achievement " .. achievement.title .. " as class " .. CLASSES[_class_id]
+					)
+				elseif
+					achievement.restricted_game_versions ~= nil
+					and achievement.restricted_game_versions[_G["HardcoreBuildLabel"]] ~= nil
+				then
+					Hardcore:Print(
+						"Achievement " .. achievement.title .. " is not supported in " .. _G["HardcoreBuildLabel"]
+					)
+				else
+					table.insert(_hardcore_character.achievements, achievement.name)
+					achievement_icon.image:SetVertexColor(1, 1, 1)
+					achievement:Register(_failure_function_executor, _hardcore_character)
+					Hardcore:Print("Added " .. achievement.name .. " challenge!")
 
-				  if achievement.forces ~= nil then
-					  for i, other_a in ipairs(achievement.forces) do
-						  if _G.achievements[other_a] ~= nil then
-							  local already_active = false
-							  for _i, _a in ipairs(_hardcore_character.achievements) do
-								  if _a == other_a then
-									  already_active = true
-								  end
-							  end
-							  if already_active == false then
-								  table.insert(_hardcore_character.achievements, _G.achievements[other_a].name)
-								  achievement_icons[other_a].image:SetVertexColor(1, 1, 1)
-								  _G.achievements[other_a]:Register(_failure_function_executor, _hardcore_character)
-								  Hardcore:Print("Added " .. _G.achievements[other_a].name .. " challenge!")
-							  end
-						  end
-					  end
-				  end
-			  end
-		  end
-	  end)
+					if achievement.forces ~= nil then
+						for i, other_a in ipairs(achievement.forces) do
+							if _G.achievements[other_a] ~= nil then
+								local already_active = false
+								for _i, _a in ipairs(_hardcore_character.achievements) do
+									if _a == other_a then
+										already_active = true
+									end
+								end
+								if already_active == false then
+									table.insert(_hardcore_character.achievements, _G.achievements[other_a].name)
+									achievement_icons[other_a].image:SetVertexColor(1, 1, 1)
+									_G.achievements[other_a]:Register(_failure_function_executor, _hardcore_character)
+									Hardcore:Print("Added " .. _G.achievements[other_a].name .. " challenge!")
+								end
+							end
+						end
+					end
+				end
+			end
+		end)
 	end
 	btn_container:AddChild(achievement_icon)
 
@@ -367,8 +377,6 @@ local function DrawAchievementRow(achievement, _scroll_frame, _hardcore_characte
 	btn_container_frame:AddChild(description)
 end
 
-
-
 local function DrawAchievementIntroductionPage(scroll_frame)
 	local first_menu_description_title = AceGUI:Create("Label")
 	first_menu_description_title:SetWidth(500)
@@ -387,14 +395,26 @@ local function DrawAchievementIntroductionPage(scroll_frame)
 	scroll_frame:AddChild(first_menu_description)
 end
 
-local function DrawStartingAchievementsPage(container, _scroll_frame, _hardcore_character, _mutable, _failure_function_executor)
+local function DrawStartingAchievementsPage(
+	container,
+	_scroll_frame,
+	_hardcore_character,
+	_mutable,
+	_failure_function_executor
+)
 	DrawClassTitleRowOffset(_scroll_frame, "General")
 
 	for k, achievement_name in pairs(_G.achievements_order) do
 		local achievement = _G.achievements[achievement_name]
 		if achievement ~= nil then
 			if achievement.class == "All" then
-				DrawAchievementRow(achievement, _scroll_frame, _hardcore_character, _mutable, _failure_function_executor)
+				DrawAchievementRow(
+					achievement,
+					_scroll_frame,
+					_hardcore_character,
+					_mutable,
+					_failure_function_executor
+				)
 			end
 		end
 	end
@@ -405,7 +425,13 @@ local function DrawStartingAchievementsPage(container, _scroll_frame, _hardcore_
 		DrawClassTitleRow(_scroll_frame, class)
 		for k, achievement in pairs(_G.achievements) do
 			if achievement.class == class then
-				DrawAchievementRow(achievement, _scroll_frame, _hardcore_character, _mutable, _failure_function_executor)
+				DrawAchievementRow(
+					achievement,
+					_scroll_frame,
+					_hardcore_character,
+					_mutable,
+					_failure_function_executor
+				)
 			end
 		end
 	end
@@ -416,7 +442,13 @@ local function DrawStartingAchievementsPage(container, _scroll_frame, _hardcore_
 	_scroll_frame:AddChild(bottom_buffer)
 end
 
-local function DrawStartingAchievementsPageIconForm(container, scroll_container, _hardcore_character, _mutable, _failure_function_executor)
+local function DrawStartingAchievementsPageIconForm(
+	container,
+	scroll_container,
+	_hardcore_character,
+	_mutable,
+	_failure_function_executor
+)
 	local function addEntry(_scroll_frame, _player_name, _self_name) end
 
 	local achievements_container = AceGUI:Create("SimpleGroup")
@@ -441,73 +473,87 @@ local function DrawStartingAchievementsPageIconForm(container, scroll_container,
 				achievement_icon:SetHeight(size)
 				achievement_icon:SetImage(achievement.icon_path)
 				achievement_icon:SetImageSize(size, size)
-				if _mutable then 
-				  achievement_icon.image:SetVertexColor(0.2, 0.2, 0.2)
-				  if _hardcore_character.achievements == nil then
-					  _hardcore_character.achievements = {}
-				  end
-				  for i, v in ipairs(_hardcore_character.achievements) do
-					  if v == achievement.name then
-						  achievement_icon.image:SetVertexColor(1, 1, 1)
-					  end
-				  end
-				else 
-				    achievement_icon.image:SetVertexColor(1, 1, 1)
+				if _mutable then
+					achievement_icon.image:SetVertexColor(0.2, 0.2, 0.2)
+					if _hardcore_character.achievements == nil then
+						_hardcore_character.achievements = {}
+					end
+					for i, v in ipairs(_hardcore_character.achievements) do
+						if v == achievement.name then
+							achievement_icon.image:SetVertexColor(1, 1, 1)
+						end
+					end
+				else
+					achievement_icon.image:SetVertexColor(1, 1, 1)
 				end
 
 				if _mutable then
-				  achievement_icon:SetCallback("OnClick", function()
-					  local activate = true
-					  for i, v in ipairs(_hardcore_character.achievements) do
-						  if v == achievement.name then
-							  activate = false
-							  table.remove(_hardcore_character.achievements, i)
-							  achievement_icon.image:SetVertexColor(0.1, 0.1, 0.1)
-							  achievement:Unregister()
-							  Hardcore:Print("Removed " .. achievement.name .. " challenge!")
-						  end
-					  end
+					achievement_icon:SetCallback("OnClick", function()
+						local activate = true
+						for i, v in ipairs(_hardcore_character.achievements) do
+							if v == achievement.name then
+								activate = false
+								table.remove(_hardcore_character.achievements, i)
+								achievement_icon.image:SetVertexColor(0.1, 0.1, 0.1)
+								achievement:Unregister()
+								Hardcore:Print("Removed " .. achievement.name .. " challenge!")
+							end
+						end
 
-					  if activate then
-						  local _, _, _class_id = UnitClass("player")
-						  if CLASSES[_class_id] ~= achievement.class and achievement.class ~= "All" then
-							  Hardcore:Print(
-								  "Cannot start achievement " .. achievement.title .. " as class " .. CLASSES[_class_id]
-							  )
-						  elseif
-							  achievement.restricted_game_versions ~= nil
-							  and achievement.restricted_game_versions[_G["HardcoreBuildLabel"]] ~= nil
-						  then
-							  Hardcore:Print(
-								  "Achievement " .. achievement.title .. " is not supported in " .. _G["HardcoreBuildLabel"]
-							  )
-						  else
-							  table.insert(_hardcore_character.achievements, achievement.name)
-							  achievement_icon.image:SetVertexColor(1, 1, 1)
-							  achievement:Register(_failure_function_executor, _hardcore_character)
-							  Hardcore:Print("Added " .. achievement.name .. " challenge!")
+						if activate then
+							local _, _, _class_id = UnitClass("player")
+							if CLASSES[_class_id] ~= achievement.class and achievement.class ~= "All" then
+								Hardcore:Print(
+									"Cannot start achievement "
+										.. achievement.title
+										.. " as class "
+										.. CLASSES[_class_id]
+								)
+							elseif
+								achievement.restricted_game_versions ~= nil
+								and achievement.restricted_game_versions[_G["HardcoreBuildLabel"]] ~= nil
+							then
+								Hardcore:Print(
+									"Achievement "
+										.. achievement.title
+										.. " is not supported in "
+										.. _G["HardcoreBuildLabel"]
+								)
+							else
+								table.insert(_hardcore_character.achievements, achievement.name)
+								achievement_icon.image:SetVertexColor(1, 1, 1)
+								achievement:Register(_failure_function_executor, _hardcore_character)
+								Hardcore:Print("Added " .. achievement.name .. " challenge!")
 
-							  if achievement.forces ~= nil then
-								  for i, other_a in ipairs(achievement.forces) do
-									  if _G.achievements[other_a] ~= nil then
-										  local already_active = false
-										  for _i, _a in ipairs(_hardcore_character.achievements) do
-											  if _a == other_a then
-												  already_active = true
-											  end
-										  end
-										  if already_active == false then
-											  table.insert(_hardcore_character.achievements, _G.achievements[other_a].name)
-											  achievement_icons[other_a].image:SetVertexColor(1, 1, 1)
-											  _G.achievements[other_a]:Register(_failure_function_executor, _hardcore_character)
-											  Hardcore:Print("Added " .. _G.achievements[other_a].name .. " challenge!")
-										  end
-									  end
-								  end
-							  end
-						  end
-					  end
-				  end)
+								if achievement.forces ~= nil then
+									for i, other_a in ipairs(achievement.forces) do
+										if _G.achievements[other_a] ~= nil then
+											local already_active = false
+											for _i, _a in ipairs(_hardcore_character.achievements) do
+												if _a == other_a then
+													already_active = true
+												end
+											end
+											if already_active == false then
+												table.insert(
+													_hardcore_character.achievements,
+													_G.achievements[other_a].name
+												)
+												achievement_icons[other_a].image:SetVertexColor(1, 1, 1)
+												_G.achievements[other_a]:Register(
+													_failure_function_executor,
+													_hardcore_character
+												)
+												Hardcore:Print(
+													"Added " .. _G.achievements[other_a].name .. " challenge!"
+												)
+											end
+										end
+									end
+								end
+							end
+						end
+					end)
 				end
 				SetAchievementTooltip(achievement_icon, achievement, _player_name)
 				class_container:AddChild(achievement_icon)
@@ -572,35 +618,38 @@ local function DrawStartingAchievementsPageIconForm(container, scroll_container,
 	DrawClassContainer2(achievements_container, "Rogue", 36)
 end
 
-
-
-function achievement_tab_handler:DrawAchievementTab(tabcontainer, _hardcore_character, _mutable, _failure_function_executor)
+function achievement_tab_handler:DrawAchievementTab(
+	tabcontainer,
+	_hardcore_character,
+	_mutable,
+	_failure_function_executor
+)
 	local recently_selected_group = "Introduction"
-	local tree = { 
-	  { 
-	    value = "Introduction",
-	    text = "Introduction",
-	  },
-	  {
-	    value = "StartingAchievements",
-	    text = "Starting Achievements",
-	  },
-	  { 
-	    value = "Questing", 
-	    text = "Questing",
-	  },
-	  { 
-	    value = "Miscellaneous", 
-	    text = "Miscellaneous",
-	  },
-	  { 
-	    value = "Dungeons", 
-	    text = "Dungeons",
-	  },
-	  { 
-	    value = "Professions", 
-	    text = "Professions",
-	  },
+	local tree = {
+		{
+			value = "Introduction",
+			text = "Introduction",
+		},
+		{
+			value = "StartingAchievements",
+			text = "Starting Achievements",
+		},
+		{
+			value = "Questing",
+			text = "Questing",
+		},
+		{
+			value = "Miscellaneous",
+			text = "Miscellaneous",
+		},
+		{
+			value = "Dungeons",
+			text = "Dungeons",
+		},
+		{
+			value = "Professions",
+			text = "Professions",
+		},
 	}
 	local tree_container = AceGUI:Create("TreeGroup")
 	tree_container:SetTree(tree)
@@ -609,56 +658,86 @@ function achievement_tab_handler:DrawAchievementTab(tabcontainer, _hardcore_char
 	tree_container:SetHeight(450)
 	tree_container:SetLayout("Fill")
 	local function chooseTreeChild(_container, group)
-		  _container:ReleaseChildren()
-		  local scroll_container = AceGUI:Create("SimpleGroup")
-		  scroll_container:SetWidth(494)
-		  scroll_container:SetHeight(375)
-		  scroll_container:SetLayout("Fill")
-		  tree_container:AddChild(scroll_container)
+		_container:ReleaseChildren()
+		local scroll_container = AceGUI:Create("SimpleGroup")
+		scroll_container:SetWidth(494)
+		scroll_container:SetHeight(375)
+		scroll_container:SetLayout("Fill")
+		tree_container:AddChild(scroll_container)
 
-		  local scroll_frame = AceGUI:Create("ScrollFrame")
-		  scroll_frame:SetLayout("Flow")
-		  scroll_container:AddChild(scroll_frame)
+		local scroll_frame = AceGUI:Create("ScrollFrame")
+		scroll_frame:SetLayout("Flow")
+		scroll_container:AddChild(scroll_frame)
 
-		  if string.match(group, "Introduction") then
-			  DrawAchievementIntroductionPage(scroll_frame)
-		  elseif string.match(group, "StartingAchievements") then
-			  if row_form then
-				  DrawStartingAchievementsPage(_container, scroll_frame, _hardcore_character, _mutable, _failure_function_executor)
-			  else
-				  DrawStartingAchievementsPageIconForm(container, scroll_frame, _hardcore_character, _mutable, _failure_function_executor)
-			  end
-		  elseif string.match(group, "Miscellaneous") then
-			  if row_form then
-				  DrawPassiveAchievementsTab3(_container, scroll_frame, "Miscellaneous", exclude_alliance, exclude_horde)
-			  else
-				  DrawPassiveAchievementsPageIconForm(container, scroll_frame, "Miscellaneous", exclude_alliance, exclude_horde)
-			  end
-		  elseif string.match(group, "Questing") then
-			  if row_form then
-				  DrawPassiveAchievementsTab3(_container, scroll_frame, nil, exclude_alliance, exclude_horde)
-			  else
-				  DrawPassiveAchievementsPageIconForm(container, scroll_frame, nil, exclude_alliance, exclude_horde)
-			  end
-		  elseif string.match(group, "Dungeons") then
-			  if row_form then
-				  DrawPassiveAchievementsTab3(_container, scroll_frame, "Dungeons", exclude_alliance, exclude_horde)
-			  else
-				  DrawPassiveAchievementsPageIconForm(_container, scroll_frame, "Dungeons", exclude_alliance, exclude_horde)
-			  end
-		  elseif string.match(group, "Professions") then
-			  if row_form then
-				  DrawPassiveAchievementsTab3(_container, scroll_frame, "Profession", exclude_alliance, exclude_horde)
-			  else
-				  DrawPassiveAchievementsPageIconForm(_container, scroll_frame, "Profession", exclude_alliance, exclude_horde)
-			  end
-		  end
-	  end
+		if string.match(group, "Introduction") then
+			DrawAchievementIntroductionPage(scroll_frame)
+		elseif string.match(group, "StartingAchievements") then
+			if row_form then
+				DrawStartingAchievementsPage(
+					_container,
+					scroll_frame,
+					_hardcore_character,
+					_mutable,
+					_failure_function_executor
+				)
+			else
+				DrawStartingAchievementsPageIconForm(
+					container,
+					scroll_frame,
+					_hardcore_character,
+					_mutable,
+					_failure_function_executor
+				)
+			end
+		elseif string.match(group, "Miscellaneous") then
+			if row_form then
+				DrawPassiveAchievementsTab3(_container, scroll_frame, "Miscellaneous", exclude_alliance, exclude_horde)
+			else
+				DrawPassiveAchievementsPageIconForm(
+					container,
+					scroll_frame,
+					"Miscellaneous",
+					exclude_alliance,
+					exclude_horde
+				)
+			end
+		elseif string.match(group, "Questing") then
+			if row_form then
+				DrawPassiveAchievementsTab3(_container, scroll_frame, nil, exclude_alliance, exclude_horde)
+			else
+				DrawPassiveAchievementsPageIconForm(container, scroll_frame, nil, exclude_alliance, exclude_horde)
+			end
+		elseif string.match(group, "Dungeons") then
+			if row_form then
+				DrawPassiveAchievementsTab3(_container, scroll_frame, "Dungeons", exclude_alliance, exclude_horde)
+			else
+				DrawPassiveAchievementsPageIconForm(
+					_container,
+					scroll_frame,
+					"Dungeons",
+					exclude_alliance,
+					exclude_horde
+				)
+			end
+		elseif string.match(group, "Professions") then
+			if row_form then
+				DrawPassiveAchievementsTab3(_container, scroll_frame, "Profession", exclude_alliance, exclude_horde)
+			else
+				DrawPassiveAchievementsPageIconForm(
+					_container,
+					scroll_frame,
+					"Profession",
+					exclude_alliance,
+					exclude_horde
+				)
+			end
+		end
+	end
 
-	  tree_container:SetCallback("OnGroupSelected", function(_container, events, group)
-		  recently_selected_group = group
-		  chooseTreeChild(_container, group)
-	  end)
+	tree_container:SetCallback("OnGroupSelected", function(_container, events, group)
+		recently_selected_group = group
+		chooseTreeChild(_container, group)
+	end)
 
 	tabcontainer:AddChild(tree_container)
 	chooseTreeChild(tree_container, recently_selected_group)
@@ -669,9 +748,8 @@ function achievement_tab_handler:DrawAchievementTab(tabcontainer, _hardcore_char
 	scroll_container:SetLayout("Flow")
 	tabcontainer:AddChild(scroll_container)
 
-
 	local toggle_exclude_horde_form = AceGUI:Create("CheckBox")
-	toggle_exclude_horde_form:SetLabel("Exclude \"Horde Only\"")
+	toggle_exclude_horde_form:SetLabel('Exclude "Horde Only"')
 	toggle_exclude_horde_form:SetValue(exclude_horde)
 	toggle_exclude_horde_form:SetCallback("OnValueChanged", function(args)
 		exclude_horde = toggle_exclude_horde_form:GetValue()
@@ -680,7 +758,7 @@ function achievement_tab_handler:DrawAchievementTab(tabcontainer, _hardcore_char
 	scroll_container:AddChild(toggle_exclude_horde_form)
 
 	local toggle_exclude_alliance_form = AceGUI:Create("CheckBox")
-	toggle_exclude_alliance_form:SetLabel("Exclude \"Alliance Only\"")
+	toggle_exclude_alliance_form:SetLabel('Exclude "Alliance Only"')
 	toggle_exclude_alliance_form:SetValue(exclude_alliance)
 	toggle_exclude_alliance_form:SetCallback("OnValueChanged", function(args)
 		exclude_alliance = toggle_exclude_alliance_form:GetValue()

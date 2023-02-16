@@ -11,13 +11,15 @@ _achievement.level_cap = 50
 _achievement.bl_text = "Profession"
 _achievement.pts = 10
 _achievement.craft_set = {
-  ["Dreamweave Gloves"] = 1,
-  ["Dreamweave Circlet"] = 1,
-  ["Dreamweave Vest"] = 1,
+	["Dreamweave Gloves"] = 1,
+	["Dreamweave Circlet"] = 1,
+	["Dreamweave Vest"] = 1,
 }
-_achievement.craft_name = "|cff0070dd[Dreamweave Gloves]|r, |cff0070dd[Dreamweave Circlet]|r, and |cff0070dd[Dreamweave Vest]|r"
+_achievement.craft_name =
+	"|cff0070dd[Dreamweave Gloves]|r, |cff0070dd[Dreamweave Circlet]|r, and |cff0070dd[Dreamweave Vest]|r"
 _achievement.category = "Profession"
-_achievement.description = HCGeneratePassiveAchievementCraftedDescription(_achievement.craft_name, _achievement.level_cap)
+_achievement.description =
+	HCGeneratePassiveAchievementCraftedDescription(_achievement.craft_name, _achievement.level_cap)
 _achievement.restricted_game_versions = {
 	["WotLK"] = 1,
 }
@@ -25,7 +27,7 @@ _achievement.restricted_game_versions = {
 -- Registers
 function _achievement:Register(succeed_function_executor)
 	_achievement:RegisterEvent("CHAT_MSG_LOOT")
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
 function _achievement:Unregister()

@@ -3,8 +3,8 @@ local thunderstruck_achievement = CreateFrame("Frame")
 _G.achievements.Thunderstruck = thunderstruck_achievement
 
 local whitelist = {
-  [18205] = 1, -- Black Malice
-  [16375] = 1, -- Faintly glowing skull
+	[18205] = 1, -- Black Malice
+	[16375] = 1, -- Faintly glowing skull
 }
 
 local temporary_disable = false
@@ -47,11 +47,11 @@ thunderstruck_achievement:SetScript("OnEvent", function(self, event, ...)
 			end
 		end
 	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
-	  if whitelist[arg[3]] then
-	    temporary_disable = true
-	    C_Timer.After(10.0, function()
-	      temporary_disable = false 
-	    end)
-	  end
+		if whitelist[arg[3]] then
+			temporary_disable = true
+			C_Timer.After(10.0, function()
+				temporary_disable = false
+			end)
+		end
 	end
 end)

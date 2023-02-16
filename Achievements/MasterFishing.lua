@@ -13,7 +13,11 @@ _achievement.category = "Profession"
 _achievement.profession_threshold = 300
 _achievement.bl_text = "Profession"
 _achievement.pts = 10
-_achievement.description = HCGeneratePassiveAchievementProfLevelDescription(_achievement.profession_name, _achievement.profession_threshold, _achievement.level_cap)
+_achievement.description = HCGeneratePassiveAchievementProfLevelDescription(
+	_achievement.profession_name,
+	_achievement.profession_threshold,
+	_achievement.level_cap
+)
 _achievement.restricted_game_versions = {
 	["WotLK"] = 1,
 }
@@ -22,7 +26,7 @@ _achievement.restricted_game_versions = {
 function _achievement:Register(succeed_function_executor)
 	_achievement:RegisterEvent("SKILL_LINES_CHANGED")
 	_achievement:RegisterEvent("PLAYER_ENTERING_WORLD")
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
 function _achievement:Unregister()

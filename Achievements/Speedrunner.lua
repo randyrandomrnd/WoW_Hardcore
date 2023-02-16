@@ -25,7 +25,7 @@ local first_recorded = nil
 local function CalculateAdjustedTime(_timeplayed, _irl_time)
 	local adjusted_time = _timeplayed
 	if _irl_time / 86400 > 14 then
-	  adjusted_time = adjusted_time + (_irl_time  - (86400 * 14)) * 13.5/86400*60
+		adjusted_time = adjusted_time + (_irl_time - (86400 * 14)) * 13.5 / 86400 * 60
 	end
 	return adjusted_time
 end
@@ -58,14 +58,22 @@ function speedrunner_achievement:Unregister()
 end
 
 function speedrunner_achievement:UpdateDescription()
-
 	speedrunner_achievement.description =
 		"Complete the Hardcore challenge in less than 100 hours (4 days and 4 hours) of adjusted played time. Make sure to show your /played time when you hit 60. Adjusted played time is equal to played time + 13.5 minutes for every real life day that exceeds 14 days."
 
 	local timeplayed = time_played_snapshot + GetServerTime() - snapshot_server_time
 	local irl_time = GetServerTime() - first_recorded
 	speedrunner_achievement.adjusted_time = CalculateAdjustedTime(timeplayed, irl_time)
-	speedrunner_achievement.description = speedrunner_achievement.description .. "\n|c00FFFF00Played Time: " .. SecondsToTime(timeplayed, false) .. "|r." .. "\n|c00FFFF00IRL Time: " .. SecondsToTime(irl_time, false) .. "|r." .. "\n|c00FFFF00Adjusted Time: " .. SecondsToTime(speedrunner_achievement.adjusted_time, false) .. "|r."
+	speedrunner_achievement.description = speedrunner_achievement.description
+		.. "\n|c00FFFF00Played Time: "
+		.. SecondsToTime(timeplayed, false)
+		.. "|r."
+		.. "\n|c00FFFF00IRL Time: "
+		.. SecondsToTime(irl_time, false)
+		.. "|r."
+		.. "\n|c00FFFF00Adjusted Time: "
+		.. SecondsToTime(speedrunner_achievement.adjusted_time, false)
+		.. "|r."
 end
 
 -- Register Definitions
@@ -74,8 +82,8 @@ speedrunner_achievement:SetScript("OnEvent", function(self, event, ...)
 	if event == "PLAYER_LEVEL_UP" then
 		RequestTimePlayed()
 		if arg[1] == 60 then
-		      speedrunner_achievement.UpdateDescription()
-		      speedrunner_achievement.hardcore_char_ref.adjusted_sixty_time = speedrunner_achievement.adjusted_time
+			speedrunner_achievement.UpdateDescription()
+			speedrunner_achievement.hardcore_char_ref.adjusted_sixty_time = speedrunner_achievement.adjusted_time
 		end
 	elseif event == "TIME_PLAYED_MSG" then
 		local seconds_played = arg[1]

@@ -145,7 +145,9 @@ function duo_rules:Unregister()
 end
 
 function duo_rules:Warn()
-	if UnitLevel("player") == 1 then return end
+	if UnitLevel("player") == 1 then
+		return
+	end
 	duo_rules.accumulated_warn_time = duo_rules.accumulated_warn_time + check_rate
 	if max_warn_time - duo_rules.accumulated_warn_time > 0 then
 		minimap_button.icon = "Interface\\Addons\\Hardcore\\Media\\duo_minimap_warning.blp"
@@ -192,7 +194,7 @@ function duo_rules:Check()
 		else -- if Hardcore_Character.game_version == "WotLK" or anything else
 			max_level = 80
 		end
-		if UnitLevel( "player" ) >= max_level then
+		if UnitLevel("player") >= max_level then
 			return
 		end
 	end

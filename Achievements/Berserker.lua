@@ -37,19 +37,25 @@ berserker_achievement:SetScript("OnEvent", function(self, event, ...)
 			if item_subtype == "Shields" or item_subtype == "Mail" or item_subtype == "Plate" then
 				local time_elapsed = 0 -- seconds
 				C_Timer.NewTicker(1, function(self)
-				  time_elapsed = time_elapsed + 1
-				  Hardcore:Print("<Berserker>: Unequip Mail or Plate weapon, " .. item_name .. ", or your achievement will fail in " .. 60 - time_elapsed .. " seconds.")
-				  if IsEquippedItem(item_id) == false then
-					  Hardcore:Print("<Berserker>: You unequipped " .. item_name .. ". No further action needed.")
-					  self:Cancel()
-					  return
-				  end
-				  if time_elapsed > 60 then
-					Hardcore:Print("Equiped " .. item_name .. ".")
-					berserker_achievement.fail_function_executor.Fail(berserker_achievement.name)
+					time_elapsed = time_elapsed + 1
+					Hardcore:Print(
+						"<Berserker>: Unequip Mail or Plate weapon, "
+							.. item_name
+							.. ", or your achievement will fail in "
+							.. 60 - time_elapsed
+							.. " seconds."
+					)
+					if IsEquippedItem(item_id) == false then
+						Hardcore:Print("<Berserker>: You unequipped " .. item_name .. ". No further action needed.")
+						self:Cancel()
+						return
+					end
+					if time_elapsed > 60 then
+						Hardcore:Print("Equiped " .. item_name .. ".")
+						berserker_achievement.fail_function_executor.Fail(berserker_achievement.name)
 
-					  self:Cancel()
-				  end
+						self:Cancel()
+					end
 				end)
 			end
 		end

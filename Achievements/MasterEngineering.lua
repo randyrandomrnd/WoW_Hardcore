@@ -12,10 +12,11 @@ _achievement.category = "Profession"
 _achievement.bl_text = "Profession"
 _achievement.pts = 10
 _achievement.craft_set = {
-  ["Masterwork Target Dummy"] = 1,
+	["Masterwork Target Dummy"] = 1,
 }
 _achievement.craft_name = "[Masterwork Target Dummy]"
-_achievement.description = HCGeneratePassiveAchievementCraftedDescription(_achievement.craft_name, _achievement.level_cap)
+_achievement.description =
+	HCGeneratePassiveAchievementCraftedDescription(_achievement.craft_name, _achievement.level_cap)
 _achievement.restricted_game_versions = {
 	["WotLK"] = 1,
 }
@@ -23,7 +24,7 @@ _achievement.restricted_game_versions = {
 -- Registers
 function _achievement:Register(succeed_function_executor)
 	_achievement:RegisterEvent("CHAT_MSG_LOOT")
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
 function _achievement:Unregister()

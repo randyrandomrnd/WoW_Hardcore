@@ -192,7 +192,9 @@ function trio_rules:Unregister()
 end
 
 function trio_rules:Warn()
-	if UnitLevel("player") == 1 then return end
+	if UnitLevel("player") == 1 then
+		return
+	end
 	trio_rules.accumulated_warn_time = trio_rules.accumulated_warn_time + check_rate
 	if max_warn_time - trio_rules.accumulated_warn_time > 0 then
 		minimap_button.icon = "Interface\\Addons\\Hardcore\\Media\\duo_minimap_warning.blp"
@@ -239,7 +241,7 @@ function trio_rules:Check()
 		else -- if Hardcore_Character.game_version == "WotLK" or anything else
 			max_level = 80
 		end
-		if UnitLevel( "player" ) >= max_level then
+		if UnitLevel("player") >= max_level then
 			return
 		end
 	end
@@ -285,11 +287,11 @@ function trio_rules:Check()
 	end
 
 	local in_follow_range_1 = CheckInteractDistance(member_str_1, 4)
-    	local in_follow_range_2 = CheckInteractDistance(member_str_2, 4)
-    	if in_follow_range_1 == true and in_follow_range_2 == true then
-        	trio_rules:ResetWarn()
-        	return
-    	end
+	local in_follow_range_2 = CheckInteractDistance(member_str_2, 4)
+	if in_follow_range_1 == true and in_follow_range_2 == true then
+		trio_rules:ResetWarn()
+		return
+	end
 
 	local my_map = C_Map.GetBestMapForUnit("player")
 	local teammates_map_1 = C_Map.GetBestMapForUnit(member_str_1)
