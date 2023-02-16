@@ -83,7 +83,9 @@ scavenger_achievement:SetScript("OnEvent", function(self, event, ...)
 		for i = 1, 12 do
 			if _G["MerchantItem" .. i] then
 				_, texture_path = GetMerchantItemInfo(i)
-				if texture_path then merchant_item_cache_[tostring(texture_path)] = 1 end
+				if texture_path then
+					merchant_item_cache_[tostring(texture_path)] = 1
+				end
 			end
 		end
 		C_Timer.After(1.0, function()

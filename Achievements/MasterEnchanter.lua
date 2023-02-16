@@ -11,7 +11,11 @@ _achievement.level_cap = 59
 _achievement.profession_name = "Enchanting"
 _achievement.profession_threshold = 226
 _achievement.category = "Profession"
-_achievement.description = HCGeneratePassiveAchievementProfLevelDescription(_achievement.profession_name, _achievement.profession_threshold, _achievement.level_cap)
+_achievement.description = HCGeneratePassiveAchievementProfLevelDescription(
+	_achievement.profession_name,
+	_achievement.profession_threshold,
+	_achievement.level_cap
+)
 _achievement.bl_text = "Profession"
 _achievement.pts = 10
 _achievement.restricted_game_versions = {
@@ -22,7 +26,7 @@ _achievement.restricted_game_versions = {
 function _achievement:Register(succeed_function_executor)
 	_achievement:RegisterEvent("SKILL_LINES_CHANGED")
 	_achievement:RegisterEvent("PLAYER_ENTERING_WORLD")
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
 function _achievement:Unregister()

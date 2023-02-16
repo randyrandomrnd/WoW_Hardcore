@@ -19,10 +19,10 @@ function not_so_talented_achievement:Register(fail_function_executor)
 	-- Talent frame might not exist before calling this function
 	ToggleTalentFrame()
 	if _G["PlayerTalentFrame"] then
-	  _G["PlayerTalentFrame"]:SetScript("OnShow", function(self)
-		  Hardcore:Print("Hiding talent frame for Not So Talented.")
-		  ToggleTalentFrame()
-	  end)
+		_G["PlayerTalentFrame"]:SetScript("OnShow", function(self)
+			Hardcore:Print("Hiding talent frame for Not So Talented.")
+			ToggleTalentFrame()
+		end)
 	end
 end
 

@@ -142,7 +142,7 @@ AceGUI:RegisterLayout("CenteredFlow", function(content, children)
 	elseif rowstart then
 		local centered_offset = 180 - 180 / 9 * math.min(#children, 9)
 		if #children == 1 then
-		  centered_offset = 0
+			centered_offset = 0
 		end
 		rowstart:SetPoint("TOPLEFT", content, "TOPLEFT", centered_offset, -(height + (rowoffset - rowstartoffset) + 3))
 	end
@@ -151,38 +151,37 @@ AceGUI:RegisterLayout("CenteredFlow", function(content, children)
 	safecall(content.obj.LayoutFinished, content.obj, nil, height)
 end)
 
-AceGUI:RegisterLayout("ListTight",
-	function(content, children)
-		local height = 0
-		local width = content.width or content:GetWidth() or 0
-		for i = 1, #children do
-			local child = children[i]
+AceGUI:RegisterLayout("ListTight", function(content, children)
+	local height = 0
+	local width = content.width or content:GetWidth() or 0
+	for i = 1, #children do
+		local child = children[i]
 
-			local frame = child.frame
-			frame:ClearAllPoints()
-			frame:Show()
-			if i == 1 then
-				frame:SetPoint("TOPLEFT", content,0,20)
-			else
-				frame:SetPoint("TOPLEFT", children[i-1].frame, "BOTTOMLEFT",0,23)
-			end
-
-			if child.width == "fill" then
-				child:SetWidth(width)
-				frame:SetPoint("RIGHT", content)
-
-				if child.DoLayout then
-					child:DoLayout()
-				end
-			elseif child.width == "relative" then
-				child:SetWidth(width * child.relWidth)
-
-				if child.DoLayout then
-					child:DoLayout()
-				end
-			end
-
-			height = height + (frame.height or frame:GetHeight() or 0)
+		local frame = child.frame
+		frame:ClearAllPoints()
+		frame:Show()
+		if i == 1 then
+			frame:SetPoint("TOPLEFT", content, 0, 20)
+		else
+			frame:SetPoint("TOPLEFT", children[i - 1].frame, "BOTTOMLEFT", 0, 23)
 		end
-		safecall(content.obj.LayoutFinished, content.obj, nil, height)
-	end)
+
+		if child.width == "fill" then
+			child:SetWidth(width)
+			frame:SetPoint("RIGHT", content)
+
+			if child.DoLayout then
+				child:DoLayout()
+			end
+		elseif child.width == "relative" then
+			child:SetWidth(width * child.relWidth)
+
+			if child.DoLayout then
+				child:DoLayout()
+			end
+		end
+
+		height = height + (frame.height or frame:GetHeight() or 0)
+	end
+	safecall(content.obj.LayoutFinished, content.obj, nil, height)
+end)

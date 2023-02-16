@@ -11,9 +11,13 @@ _achievement.level_cap = 45
 _achievement.quest_num = 2882
 _achievement.quest_name = "Cuergo's Gold"
 _achievement.zone = "Tanaris"
-_achievement.pts = 10 
+_achievement.pts = 10
 _achievement.bl_text = "Tanaris Quest"
-_achievement.description = HCGeneratePassiveAchievementBasicQuestDescription(_achievement.quest_name, _achievement.zone, _achievement.level_cap)
+_achievement.description = HCGeneratePassiveAchievementBasicQuestDescription(
+	_achievement.quest_name,
+	_achievement.zone,
+	_achievement.level_cap
+)
 _achievement.restricted_game_versions = {
 	["WotLK"] = 1,
 }
@@ -21,7 +25,7 @@ _achievement.restricted_game_versions = {
 -- Registers
 function _achievement:Register(succeed_function_executor)
 	_achievement:RegisterEvent("QUEST_TURNED_IN")
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
 function _achievement:Unregister()

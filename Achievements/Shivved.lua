@@ -36,24 +36,32 @@ shivved_achievement:SetScript("OnEvent", function(self, event, ...)
 			or item_equip_loc == "INVTYPE_WEAPON"
 		then
 			if item_subtype ~= "Daggers" then
-				if item_subtype == "Fishing Poles" or item_subtype == "Fishing Pole" or item_subtype == "Miscellaneous" then
+				if
+					item_subtype == "Fishing Poles"
+					or item_subtype == "Fishing Pole"
+					or item_subtype == "Miscellaneous"
+				then
 					return
 				else
 					local time_elapsed = 0 -- seconds
 
 					C_Timer.NewTicker(1, function(self)
-					  time_elapsed = time_elapsed + 1
-					  Hardcore:Print("<Shivved>: Unequip non-dagger weapon or your achievement will fail in " .. 60 - time_elapsed .. " seconds.")
-					  if IsEquippedItem(item_id) == false then
-						  Hardcore:Print("<Shivved>: You unequipped " .. item_name .. ". No further action needed.")
-						  self:Cancel()
-						  return
-					  end
-					  if time_elapsed > 60 then
-						  Hardcore:Print("Equiped " .. item_name .. ".")
-						  shivved_achievement.fail_function_executor.Fail(shivved_achievement.name)
-						  self:Cancel()
-					  end
+						time_elapsed = time_elapsed + 1
+						Hardcore:Print(
+							"<Shivved>: Unequip non-dagger weapon or your achievement will fail in "
+								.. 60 - time_elapsed
+								.. " seconds."
+						)
+						if IsEquippedItem(item_id) == false then
+							Hardcore:Print("<Shivved>: You unequipped " .. item_name .. ". No further action needed.")
+							self:Cancel()
+							return
+						end
+						if time_elapsed > 60 then
+							Hardcore:Print("Equiped " .. item_name .. ".")
+							shivved_achievement.fail_function_executor.Fail(shivved_achievement.name)
+							self:Cancel()
+						end
 					end)
 				end
 			end

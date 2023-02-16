@@ -12,9 +12,14 @@ _achievement.quest_num = 5242
 _achievement.quest_name = "A Final Blow"
 _achievement.zone = "Felwood"
 _achievement.bl_text = "Felwood Quest"
-_achievement.pts = 10 
+_achievement.pts = 10
 _achievement.kill_target = "Shadow Lord Fel'dan"
-_achievement.description = HCGeneratePassiveAchievementKillDescription(_achievement.kill_target, _achievement.quest_name, _achievement.zone, _achievement.level_cap)
+_achievement.description = HCGeneratePassiveAchievementKillDescription(
+	_achievement.kill_target,
+	_achievement.quest_name,
+	_achievement.zone,
+	_achievement.level_cap
+)
 _achievement.restricted_game_versions = {
 	["WotLK"] = 1,
 }
@@ -22,7 +27,7 @@ _achievement.restricted_game_versions = {
 -- Registers
 function _achievement:Register(succeed_function_executor)
 	_achievement:RegisterEvent("QUEST_TURNED_IN")
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
 function _achievement:Unregister()

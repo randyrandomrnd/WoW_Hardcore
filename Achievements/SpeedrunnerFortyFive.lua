@@ -17,14 +17,12 @@ _achievement.restricted_game_versions = {
 
 -- Registers
 function _achievement:Register(succeed_function_executor)
-	_achievement.succeed_function_executor = succeed_function_executor 
+	_achievement.succeed_function_executor = succeed_function_executor
 end
 
-function _achievement:Unregister()
-end
+function _achievement:Unregister() end
 
 -- Register Definitions
 _achievement:SetScript("OnEvent", function(self, event, ...)
 	local arg = { ... }
 end)
-
