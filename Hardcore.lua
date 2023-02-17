@@ -87,6 +87,8 @@ Hardcore_Character = {
 	custom_pronoun = false,
 }
 
+Backup_Character_Data = {}
+
 --[[ Local variables ]]
 --
 _G.hc_online_player_ranks = {}
@@ -1850,6 +1852,49 @@ function Hardcore:TIME_PLAYED_MSG(...)
 
 	-- Check to see if the gap since the last recording is too long.  When receiving played time for the first time.
 	if RECEIVED_FIRST_PLAYED_TIME_MSG == false and Hardcore_Character.accumulated_time_diff ~= nil then
+
+		local function checkForBackupMatch() -- Returns a match to backup if exists
+		      local function timePlayedCheck(backup_data) 
+			      if backup_data["time_played"] then
+				      if math.abs(backup_data["time_played"] - Hardcore_Character.time_played) < 7200 then -- 2hrs
+					      return true
+				      end
+			      end
+			      return false
+		      end
+
+		      local function raceCheck(backup_data) 
+			    if backup_data["race"] then
+				    if backup_data["race"] == UnitRace("player") then
+				      return true
+				    end
+			    end
+		      end
+
+		      local function levelCheck(backup_data) 
+			    if backup_data["level"] then
+				    if backup_data["level"] == UnitLevel("player") then
+				      return true
+				    end
+			    end
+		      end
+
+		      local function classCheck(backup_data) 
+			    if backup_data["class"] then
+				    if backup_data["class"] == UnitClass("player") then
+				      return true
+				    end
+			    end
+		      end
+
+		      for k,v in pairs(Backup_Character_Data) do
+			      if timePlayedCheck(v) and raceCheck(v) then 
+				return k, v
+			      end
+		      end
+		      return nil
+		end
+
 		local debug_message = "Playtime gap percentage: " .. Hardcore_Character.tracked_played_percentage .. "%."
 		Hardcore:Debug(debug_message)
 
@@ -1867,6 +1912,31 @@ function Hardcore:TIME_PLAYED_MSG(...)
 		debug_message = "Playtime gap duration: " .. duration_since_last_recording .. " seconds."
 		Hardcore:Debug(debug_message)
 
+		if Hardcore_Character.time_tracked < 1800 and Hardcore_Character.time_played > 7200 then -- 1/2 hr, 2 hrs
+			print("Detected lost player data.")
+			local backup_name, backup_data = checkForBackupMatch()
+			local function recoverFunction(element, _backup_data)
+			      if _backup_data[element] then
+				      Hardcore_Character[element] = _backup_data[element]
+			      end
+			end
+			if backup_name then
+			      print("Backup found; recovering data: ", backup_name)
+			      recoverFunction("time_tracked", backup_data)
+			      recoverFunction("achievements", backup_data)
+			      recoverFunction("first_recorded", backup_data)
+			      recoverFunction("played_time_gap_warnings", backup_data)
+			      recoverFunction("deaths", backup_data)
+			      recoverFunction("bubble_hearth_incidents", backup_data)
+			      recoverFunction("passive_achievements", backup_data)
+			      recoverFunction("trade_partners", backup_data)
+			      recoverFunction("team", backup_data)
+			      recoverFunction("dt", backup_data)
+			      recoverFunction("party_mode", backup_data)
+			end
+			return
+		end
+
 		if duration_since_last_recording > PLAYED_TIME_GAP_THRESH then
 			local played_time_gap_info = {}
 			played_time_gap_info.duration_since_last_recording = duration_since_last_recording
@@ -1883,6 +1953,26 @@ function Hardcore:TIME_PLAYED_MSG(...)
 				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].duration_since_last_recording
 				.. " seconds."
 			Hardcore:Print(message)
+		else 
+		  -- Backup character data grooming and maintainence
+
+		  -- Only hold character data for a week
+		  for k,v in pairs(Backup_Character_Data) do
+		    if v["backup_date"] and GetServerTime() - v["backup_date"] > 604800 then -- one week
+		      Backup_Character_Data[k] = nil
+		    end
+		  end
+
+		  local name_and_server = UnitName("player") .. "-" .. GetRealmName()
+		  Backup_Character_Data[name_and_server] = {
+		    ["backup_date"] = GetServerTime(), -- Unix Time
+		    ["race"] = UnitRace("player"),
+		    ["level"] = UnitLevel("player"),
+		    ["class"] = UnitClass("player"),
+		  }
+		  for k,v in pairs(Hardcore_Character) do
+		      Backup_Character_Data[name_and_server][k] = v
+		  end
 		end
 	end
 
