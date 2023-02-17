@@ -42,6 +42,7 @@ end
 
 gw_banned_tags = {}
 hc_self_block_flag = false -- Used to denote that this guild should not send death notifications
+hc_gw_lfgm_mode = false    -- Used to denote that this guild should only send and receive lfg/m messages 
 
 hc_mute_inguild = 0
 
@@ -214,6 +215,8 @@ function GwConfig:load()
                     gw_banned_tags[field[1]] = 1
                 elseif field[1] == 'd' then -- defense
                     hc_self_block_flag = true
+                elseif field[1] == 'r' then -- restricted mode; lfgm and death alerts only
+                    hc_gw_lfgm_mode = true
                 elseif field[1] == 'i' then
                     if field[2] then
                         hc_mute_inguild = tonumber(field[2])

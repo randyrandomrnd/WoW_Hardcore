@@ -112,6 +112,12 @@ function gw.ReplicateMessage(event, message, guild_id, arglist)
 				end
 			end
 
+			if hc_gw_lfgm_mode and hc_gw_lfgm_mode == true then
+				if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ")) then 
+				  return
+				end
+			end
+
                         gw.ChatFrame_MessageEventHandler(_G[frame], 'CHAT_MSG_' .. event, message,
                                 sender, language, '', target, flags, 0, 0, '', 0, line, guid)
                     end
