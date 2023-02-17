@@ -276,7 +276,7 @@ end
 function GwChannel:tl_send(type, message)
     local opcode
     if type == GW_MTYPE_CHAT then
-      opcode = 'C'
+	opcode = 'C'
     elseif type == GW_MTYPE_BROADCAST then
         opcode = 'B'
     elseif type == GW_MTYPE_NOTICE then
