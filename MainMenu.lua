@@ -1947,34 +1947,24 @@ local function DrawOfficerToolsTab(container)
 	local scroll_container = AceGUI:Create("SimpleGroup")
 	scroll_container:SetFullWidth(true)
 	scroll_container:SetFullHeight(true)
-	scroll_container:SetLayout("Fill")
+	scroll_container:SetLayout("List")
 	tabcontainer:AddChild(scroll_container)
 
 	local scroll_frame = AceGUI:Create("ScrollFrame")
-	scroll_frame:SetLayout("Flow")
+	scroll_frame:SetLayout("List")
 	scroll_container:AddChild(scroll_frame)
 
-	local first_menu_description_title = AceGUI:Create("Label")
-	first_menu_description_title:SetWidth(500)
-	first_menu_description_title:SetText("Officer Tools")
-	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
-	-- first_menu_description_title:SetPoint("TOP", 2,5)
-	scroll_frame:AddChild(first_menu_description_title)
-
-	local first_menu_description = AceGUI:Create("Label")
-	first_menu_description:SetWidth(850)
-	first_menu_description:SetText(
-		"Officer Notes Guide:\n\n `GWr` - Puts guild into LFG/LFM mode. In LFG/LFM mode, x-guild chat will only show up for LF messages and only if the requester is within 10 levels of the receiving character. Announcements can still be made using the announcement tool below.\nExample usage: `GWr`\n\n `GWd` - Puts guild into HC defense mode.  If this is put into officer notes, players in this guild will not emit a death notice.\nExample usage: `GWd`\n\n `GWi:x` - Mute guild member under x level.\nExample usage: `GWi:15`, will mute players (within the guild) under level 15\n\n `GWb:x` - Mutes messages coming from a guild with the matching tag.\nExample usage: `GWb:HG`, will mute all messages coming from HG players.\n\n\n"
-	)
-	first_menu_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	-- first_menu_description:SetPoint("TOP", 2,5)
-	scroll_frame:AddChild(first_menu_description)
+	local officer_announcement_container = AceGUI:Create("SimpleGroup")
+	officer_announcement_container:SetFullWidth(true)
+	officer_announcement_container:SetLayout("List")
+	-- officer_announcement_container:SetTitle("Officer Announcements")
+	scroll_frame:AddChild(officer_announcement_container)
 
 	local announcement_edit_text = AceGUI:Create("EditBox")
 	announcement_edit_text:SetWidth(800)
-	announcement_edit_text:SetHeight(120)
+	-- announcement_edit_text:SetHeight(120)
 	announcement_edit_text:SetDisabled(false)
-	announcement_edit_text:SetLabel("Send Announcement\n")
+	announcement_edit_text:SetLabel("Send Announcement")
 	announcement_edit_text:SetPoint("TOP", 2, 5)
 	announcement_edit_text:DisableButton(false)
 
@@ -1983,7 +1973,67 @@ local function DrawOfficerToolsTab(container)
 	  gw.config.channel.guild:send(GW_MTYPE_HC_ANNOUNCEMENT, text)
 	end)
 
-	scroll_frame:AddChild(announcement_edit_text)
+	officer_announcement_container:AddChild(announcement_edit_text)
+
+	local green_wall_config_container = AceGUI:Create("InlineGroup")
+	green_wall_config_container:SetFullWidth(true)
+	green_wall_config_container:SetLayout("Flow")
+	green_wall_config_container:SetTitle("Current Greenwall Configuration")
+	scroll_frame:AddChild(green_wall_config_container)
+
+	local current_gw_config_text = AceGUI:Create("Label")
+	current_gw_config_text:SetWidth(850)
+
+	local peer_guild_text = "    Peer Guilds:\n        "
+
+	for k,v in pairs(gw.config.peer) do
+	  peer_guild_text = peer_guild_text .. "|c0000FFFF" .. k .. "|r "
+	end
+
+	peer_guild_text = peer_guild_text .. "\n\n    Custom Options:\n" 
+	
+	if hc_self_block_flag and hc_self_block_flag == true then
+	  peer_guild_text = peer_guild_text .. "        |c00FFFF00Defense Mode|r  - Players from this guild will not emit death alerts\n"
+	end
+
+	if hc_gw_lfgm_mode and hc_gw_lfgm_mode == true then
+	  peer_guild_text = peer_guild_text .. "        |c00FFFF00LF Mode|r  - Only `looking for` +/- 10 levels, death alerts, and hc notifications will be communicated across guilds\n"
+	end
+
+	if hc_mute_inguild and tonumber(hc_mute_inguild) > 0 then
+	  peer_guild_text = peer_guild_text .. "        |c00FFFF00Mute low level|r  - Players in this guild under level " .. tonumber(hc_mute_inguild) .. " will be muted\n"
+	end
+
+	peer_guild_text = peer_guild_text .. "\n\n    Banned Tags:\n        " 
+	if gw_banned_tags then
+	  for k,v in pairs(gw_banned_tags) do
+	    peer_guild_text = peer_guild_text .. k .. " "
+	  end
+	end
+
+	peer_guild_text = peer_guild_text .. "\n\n"
+
+	current_gw_config_text:SetText(peer_guild_text)
+
+	current_gw_config_text:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
+	green_wall_config_container:AddChild(current_gw_config_text)
+
+
+	local officer_notes_guide_container = AceGUI:Create("InlineGroup")
+	officer_notes_guide_container:SetFullWidth(true)
+	officer_notes_guide_container:SetHeight(1000)
+	officer_notes_guide_container:SetLayout("Flow")
+	officer_notes_guide_container:SetTitle("Officer Notes Guide")
+	scroll_frame:AddChild(officer_notes_guide_container)
+
+	local officer_notes_guide_text = AceGUI:Create("Label")
+	officer_notes_guide_text:SetWidth(850)
+	officer_notes_guide_text:SetText(
+		"The followiong commands are used in officer notes to configure greenwall.\n\n |c00FFFF00GWr|r - Puts guild into LFG/LFM mode. In LFG/LFM mode, x-guild chat will only show up for LF messages and only if the requester is within 10 levels of the receiving character. Announcements can still be made using the announcement tool below.\nExample usage: |c00FFFF00GWr|r\n\n |c00FFFF00GWd|r - Puts guild into HC defense mode.  If this is put into officer notes, players in this guild will not emit a death notice.\nExample usage: |c00FFFF00GWd|r\n\n |c00FFFF00GWi:x|r - Mute guild member under x level.\nExample usage: |c00FFFF00GWi:15|r, will mute players (within the guild) under level 15\n\n |c00FFFF00GWb:x|r - Mutes messages coming from a guild with the matching tag.\nExample usage: |c00FFFF00GWb:HG|r, will mute all messages coming from HG players.\n\n |c00FFFF00GWp:<GuildName>:<GuildTag>|r - Adds a peer guild. Messages coming from other guilds will be prefixed with <GuildTag>.\nExample usage: |c00FFFF00GWp:HC Honor Guard:HG|r - Players will get messages from HC Honor Guard, which will be prefixed with <HG>.\n\n |c00FFFF00GWc:<CustomChannelName>:<ChannelPassword>|r - [REQUIRED] This determines what channel and password to use for communication.\nExample usage: |c00FFFF00GWc:HCCommonCommunicationChannel:SomeHCPassword|r - Players will communicate over the hidden HCCommonCommunicationChannel which requires SomeHCPassword password.\n\n"
+	)
+	officer_notes_guide_text:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
+	officer_notes_guide_container:AddChild(officer_notes_guide_text)
+
 end
 
 function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_function)
