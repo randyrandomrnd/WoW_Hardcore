@@ -116,6 +116,10 @@ function gw.ReplicateMessage(event, message, guild_id, arglist)
 				if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ")) then 
 				  return
 				end
+				local _level, message = strsplit("-", message, 2)
+				if math.abs(tonumber(_level) - UnitLevel("player")) > 10 then
+				  return
+				end
 			end
 
                         gw.ChatFrame_MessageEventHandler(_G[frame], 'CHAT_MSG_' .. event, message,

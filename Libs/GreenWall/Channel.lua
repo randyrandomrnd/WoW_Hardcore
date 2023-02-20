@@ -276,6 +276,13 @@ end
 function GwChannel:tl_send(type, message)
     local opcode
     if type == GW_MTYPE_CHAT then
+	if hc_gw_lfgm_mode and hc_gw_lfgm_mode == true then
+		if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ")) then 
+		  return
+		end
+		message = UnitLevel("player") .. "-" .. mesage
+	end
+
 	opcode = 'C'
     elseif type == GW_MTYPE_BROADCAST then
         opcode = 'B'
