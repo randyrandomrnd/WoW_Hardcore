@@ -276,6 +276,13 @@ end
 function GwChannel:tl_send(type, message)
     local opcode
     if type == GW_MTYPE_CHAT then
+	if hc_gw_lfgm_mode and hc_gw_lfgm_mode == true then
+		if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ")) then 
+		  return
+		end
+		message = UnitLevel("player") .. "-" .. mesage
+	end
+
 	opcode = 'C'
     elseif type == GW_MTYPE_BROADCAST then
         opcode = 'B'
@@ -287,6 +294,8 @@ function GwChannel:tl_send(type, message)
         opcode = 'M'
     elseif type == GW_MTYPE_EXTERNAL then
         opcode = 'E'
+    elseif type == GW_MTYPE_HC_ANNOUNCEMENT then
+        opcode = 'H'
     else
         gw.Debug(GW_LOG_ERROR, 'unknown message type: %d', type)
         return
@@ -381,6 +390,10 @@ function GwChannel:receive(f, ...)
                     gw.APIDispatcher(addon, sender, guild_id, api_message)
                 end
             end
+	elseif mtype == GW_MTYPE_HC_ANNOUNCEMENT then
+	  local sender_short = string.split("-", sender)
+	  message = "<" .. sender_short .. "> " .. message
+	  Hardcore:Notify(message)
         elseif sender ~= gw.player and guild_id ~= gw.config.guild_id then
 	  local sender_short = string.split("-", sender)
 	  hardcore_guild_member_dict[guild_id] = sender_short
@@ -464,6 +477,8 @@ function GwChannel:tl_receive(...)
         type = GW_MTYPE_ADDON
     elseif opcode == 'E' then
         type = GW_MTYPE_EXTERNAL
+    elseif opcode == 'H' then
+        type = GW_MTYPE_HC_ANNOUNCEMENT
     else
         gw.Debug(GW_LOG_WARNING, 'unknown segment opcode: %s', opcode)
     end
