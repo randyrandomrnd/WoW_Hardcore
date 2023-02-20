@@ -839,7 +839,21 @@ local function DrawVerifyTab(container, _hardcore_character)
 	first_menu_description.button:SetPoint("BOTTOMLEFT", 0, -150)
 	first_menu_description:SetWidth(750)
 	first_menu_description:SetLabel("")
-	first_menu_description:SetText(GenerateVerificationString())
+
+	local max_level = 60
+	if
+		(Hardcore_Character.game_version ~= "")
+		and (Hardcore_Character.game_version ~= "Era")
+		and (Hardcore_Character.game_version ~= "SoM")
+	then
+		max_level = 80
+	end
+
+	if UnitLevel("player") < max_level then
+		first_menu_description:SetText("You must be max level (" .. max_level .. ") to get a verification string your character.")
+	else
+		first_menu_description:SetText(GenerateVerificationString())
+	end
 	scroll_frame:AddChild(first_menu_description)
 
 	local copy_tip_label = AceGUI:Create("Label")
