@@ -212,7 +212,7 @@ function GwConfig:load()
                         gw.Debug(GW_LOG_DEBUG, 'peer=%s (%s)', peer_name, peer_id);
                     end
                 elseif field[1] == 'b' then
-                    gw_banned_tags[field[1]] = 1
+                    gw_banned_tags[field[2]] = 1
                 elseif field[1] == 'd' then -- defense
                     hc_self_block_flag = true
                 elseif field[1] == 'r' then -- restricted mode; lfgm and death alerts only

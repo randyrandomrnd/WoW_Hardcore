@@ -178,6 +178,7 @@ local DEPRECATED_COMMANDS = {
 
 -- stuff
 hc_recent_level_up = nil -- KEEP GLOBAL
+hc_guild_rank_index = nil
 local PLAYER_NAME, _ = nil, nil
 local PLAYER_GUID = nil
 local PLAYER_FACTION = nil
@@ -1278,6 +1279,11 @@ function Hardcore:PLAYER_LOGIN()
 	-- reset debug log; To view debug log, log out and see saved variables before logging back in
 	Hardcore_Settings.debug_log = {}
 
+	local isInGuild, _, guild_rank_index = GetGuildInfo("player")
+	if isInGuild then
+		hc_guild_rank_index = guild_rank_index
+	end
+
 	local function inSOM()
 		for i = 1, 40 do
 			local buff_name, _, _, _, _, _, _, _, _, _, _ = UnitBuff("player", i)
@@ -2255,6 +2261,9 @@ end
 
 --[[ Utility Methods ]]
 --
+function Hardcore:Notify(msg)
+	print("|cffed9121Hardcore Notification: " .. (msg or "") .. "|r")
+end
 
 function Hardcore:Print(msg)
 	print("|cffed9121Hardcore|r: " .. (msg or ""))
@@ -3054,12 +3063,13 @@ end
 function Hardcore:InitiatePulse()
 	-- Set send pulses ticker
 	C_Timer.NewTicker(COMM_PULSE_FREQUENCY, function()
-		local isInGuild = GetGuildInfo("player")
+		local isInGuild, _, guild_rank_index = GetGuildInfo("player")
 		if CTL and isInGuild then
 			-- Send along the version we're using
 			local version = GetAddOnMetadata("Hardcore", "Version")
 			local commMessage = COMM_COMMANDS[1] .. COMM_COMMAND_DELIM .. version
 			CTL:SendAddonMessage("BULK", COMM_NAME, commMessage, "GUILD")
+			hc_guild_rank_index = guild_rank_index
 		end
 	end)
 end

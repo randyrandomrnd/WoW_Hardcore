@@ -1943,6 +1943,49 @@ local function DrawPassiveAchievementsTab(container)
 	scroll_container:AddChild(achievements_title)
 end
 
+local function DrawOfficerToolsTab(container)
+	local scroll_container = AceGUI:Create("SimpleGroup")
+	scroll_container:SetFullWidth(true)
+	scroll_container:SetFullHeight(true)
+	scroll_container:SetLayout("Fill")
+	tabcontainer:AddChild(scroll_container)
+
+	local scroll_frame = AceGUI:Create("ScrollFrame")
+	scroll_frame:SetLayout("Flow")
+	scroll_container:AddChild(scroll_frame)
+
+	local first_menu_description_title = AceGUI:Create("Label")
+	first_menu_description_title:SetWidth(500)
+	first_menu_description_title:SetText("Officer Tools")
+	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
+	-- first_menu_description_title:SetPoint("TOP", 2,5)
+	scroll_frame:AddChild(first_menu_description_title)
+
+	local first_menu_description = AceGUI:Create("Label")
+	first_menu_description:SetWidth(850)
+	first_menu_description:SetText(
+		"Officer Notes Guide:\n\n `GWr` - Puts guild into LFG/LFM mode. In LFG/LFM mode, x-guild chat will only show up for LF messages and only if the requester is within 10 levels of the receiving character. Announcements can still be made using the announcement tool below.\nExample usage: `GWr`\n\n `GWd` - Puts guild into HC defense mode.  If this is put into officer notes, players in this guild will not emit a death notice.\nExample usage: `GWd`\n\n `GWi:x` - Mute guild member under x level.\nExample usage: `GWi:15`, will mute players (within the guild) under level 15\n\n `GWb:x` - Mutes messages coming from a guild with the matching tag.\nExample usage: `GWb:HG`, will mute all messages coming from HG players.\n\n\n"
+	)
+	first_menu_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	-- first_menu_description:SetPoint("TOP", 2,5)
+	scroll_frame:AddChild(first_menu_description)
+
+	local announcement_edit_text = AceGUI:Create("EditBox")
+	announcement_edit_text:SetWidth(800)
+	announcement_edit_text:SetHeight(120)
+	announcement_edit_text:SetDisabled(false)
+	announcement_edit_text:SetLabel("Send Announcement\n")
+	announcement_edit_text:SetPoint("TOP", 2, 5)
+	announcement_edit_text:DisableButton(false)
+
+	announcement_edit_text:SetCallback("OnEnterPressed", function()
+	  local text = announcement_edit_text:GetText()
+	  gw.config.channel.guild:send(GW_MTYPE_HC_ANNOUNCEMENT, text)
+	end)
+
+	scroll_frame:AddChild(announcement_edit_text)
+end
+
 function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_function)
 	hardcore_modern_menu = AceGUI:Create("HardcoreFrameModernMenu")
 	hardcore_modern_menu:SetCallback("OnClose", function(widget)
@@ -1971,7 +2014,7 @@ function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_functio
 	hardcore_modern_menu:SetWidth(_menu_width)
 
 	tabcontainer = AceGUI:Create("TabGroup") -- "InlineGroup" is also good
-	tabcontainer:SetTabs({
+	local tab_table = {
 		{ value = "WelcomeTab", text = "General" },
 		{ value = "RulesTab", text = "Rules" },
 		{ value = "VerifyTab", text = "Verify" },
@@ -1980,7 +2023,12 @@ function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_functio
 		{ value = "DungeonsTab", text = "Dungeons" },
 		{ value = "AccountabilityTab", text = "Accountability" },
 		{ value = "AchievementsTab", text = "Achievements" },
-	}) -- ,
+	}
+	if hc_guild_rank_index and hc_guild_rank_index < 2 then -- 0 is GM, 1 is generally officer
+	  table.insert(tab_table, { value = "OfficerToolsTab", text = "Officer Tools" })
+	end
+
+	tabcontainer:SetTabs(tab_table)
 	tabcontainer:SetFullWidth(true)
 	tabcontainer:SetFullHeight(true) -- probably?
 	tabcontainer:SetLayout("Flow") -- important!
@@ -2019,6 +2067,8 @@ function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_functio
 			scroll_container:AddChild(scroll_frame)
 		elseif group == "AchievementsTab" then
 			achievement_tab_handler:DrawAchievementTab(tabcontainer, _hardcore_character, false)
+		elseif group == "OfficerToolsTab" then
+			DrawOfficerToolsTab(container)
 		end
 	end
 
