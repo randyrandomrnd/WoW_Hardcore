@@ -820,26 +820,6 @@ local function DrawVerifyTab(container, _hardcore_character)
 	scroll_frame:SetLayout("Flow")
 	scroll_container:AddChild(scroll_frame)
 
-	local first_menu_description_title = AceGUI:Create("Label")
-	first_menu_description_title:SetWidth(500)
-	first_menu_description_title:SetText("Verify Your Character")
-	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
-	scroll_frame:AddChild(first_menu_description_title)
-
-	local general_rules_description = AceGUI:Create("Label")
-	general_rules_description:SetWidth(_menu_width)
-	general_rules_description:SetText("\n\nTo get verified, copy the string below and visit the classichc website.")
-	general_rules_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(general_rules_description)
-
-	local first_menu_description = AceGUI:Create("MultiLineEditBox")
-	first_menu_description.button:Hide()
-	first_menu_description:SetMaxLetters(0)
-	first_menu_description:SetHeight(850)
-	first_menu_description.button:SetPoint("BOTTOMLEFT", 0, -150)
-	first_menu_description:SetWidth(750)
-	first_menu_description:SetLabel("")
-
 	local max_level = 60
 	if
 		(Hardcore_Character.game_version ~= "")
@@ -849,16 +829,43 @@ local function DrawVerifyTab(container, _hardcore_character)
 		max_level = 80
 	end
 
+
+	local first_menu_description_title = AceGUI:Create("Label")
+	first_menu_description_title:SetWidth(500)
+	first_menu_description_title:SetText("Verify Your Character")
+	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
+	scroll_frame:AddChild(first_menu_description_title)
+
+
+	local extra_lines = ""
 	if UnitLevel("player") < max_level then
-		first_menu_description:SetText("You must be max level (" .. max_level .. ") to get a verification string your character.")
+		local general_rules_description = AceGUI:Create("Label")
+		general_rules_description:SetWidth(_menu_width)
+		general_rules_description:SetText("\n\nYou must be max level for your chosen expansion (60 or 80) to get a verification string your character.")
+		general_rules_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+		scroll_frame:AddChild(general_rules_description)
+		extra_lines = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	else
+		local general_rules_description = AceGUI:Create("Label")
+		general_rules_description:SetWidth(_menu_width)
+		general_rules_description:SetText("\n\nTo get verified, copy the string below and visit the classichc website.")
+		general_rules_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+		scroll_frame:AddChild(general_rules_description)
+
+		local first_menu_description = AceGUI:Create("MultiLineEditBox")
+		first_menu_description.button:Hide()
+		first_menu_description:SetMaxLetters(0)
+		first_menu_description:SetHeight(850)
+		first_menu_description.button:SetPoint("BOTTOMLEFT", 0, -150)
+		first_menu_description:SetWidth(750)
+		first_menu_description:SetLabel("")
 		first_menu_description:SetText(GenerateVerificationString())
+		scroll_frame:AddChild(first_menu_description)
 	end
-	scroll_frame:AddChild(first_menu_description)
 
 	local copy_tip_label = AceGUI:Create("Label")
 	local statusString1, statusString2 = Hardcore:GenerateVerificationStatusStrings()
-	local text = "\n\n\n\n\n\n\n\n\n\n\n\n\nSelect All (Ctrl-A), Copy (Ctrl-C), and Paste (Ctrl-V)"
+	local text = extra_lines .. "\n\n\n\n\n\n\n\n\n\n\n\n\nSelect All (Ctrl-A), Copy (Ctrl-C), and Paste (Ctrl-V)"
 		.. "\n\n\n"
 		.. statusString1
 		.. "\n"
