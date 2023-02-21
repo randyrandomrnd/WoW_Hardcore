@@ -661,6 +661,15 @@ local function SlashHandler(msg, editbox)
 		end
 	elseif cmd == "AppealDungeonCode" then
 		DungeonTrackerHandleAppealCode(args)
+	elseif cmd == "setHCTag" then
+		local arg1 = nil
+		for substring in args:gmatch("%S+") do
+			if arg1 == nil then
+			  arg1 = substring
+			end
+		end
+		Hardcore_Settings.hardcore_player_name = arg1
+		Hardcore:Print("Set HC Tag to " .. arg1 .. ".  Reload as soon as it is convenient to save.")
 	elseif cmd == "AppealPassiveAchievementCode" then
 		local code = nil
 		local ach_num = nil
@@ -1314,6 +1323,10 @@ function Hardcore:PLAYER_LOGIN()
 		else
 			Hardcore_Character.game_version = _G["HardcoreBuildLabel"]
 		end
+	end
+
+	if Hardcore_Settings.hardcore_player_name == nil or Hardcore_Settings.hardcore_player_name == "" then
+		Hardcore:Print("You are missing a HC Tag.  Please enter a HC Tag by going to interface options or by using the command `/hc setHCTag <YourTag>` to stop seeing this message.  The HC Tag should match your discord name.")
 	end
 end
 
