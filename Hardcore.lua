@@ -705,6 +705,42 @@ local function SlashHandler(msg, editbox)
 		else
 			Hardcore:Print("Incorrect code. Double check with a moderator." .. GetCode(ach_num) .. " " .. code)
 		end
+	elseif cmd == "RemovePassiveAchievementCode" then
+		local code = nil
+		local ach_num = nil
+		for substring in args:gmatch("%S+") do
+			if code == nil then
+				code = substring
+			else
+				ach_num = substring
+			end
+		end
+		if code == nil then
+			Hardcore:Print("Wrong syntax: Missing first argument")
+			return
+		end
+		if ach_num == nil or _G.ach then
+			Hardcore:Print("Wrong syntax: Missing second argument")
+			return
+		end
+
+		if _G.passive_achievements[_G.id_pa[ach_num]] == nil then
+			Hardcore:Print("Wrong syntax: achievement isn't found for " .. ach_num)
+			return
+		end
+
+		if tostring(GetCode(ach_num)):sub(1, 10) == tostring(tonumber(code)):sub(1, 10) then
+			for i, v in ipairs(Hardcore_Character.passive_achievements) do
+				if v == _G.id_pa[ach_num] then
+					table.remove(Hardcore_Character.passive_achievements, i)
+					Hardcore:Print("Successfully removed " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge.")
+					return
+				end
+			end
+			Hardcore:Print("Player has not achieved " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge.")
+		else
+			Hardcore:Print("Incorrect code. Double check with a moderator." .. GetCode(ach_num) .. " " .. code)
+		end
 	elseif cmd == "SetRank" then
 		local code = nil
 		local ach_num = nil
