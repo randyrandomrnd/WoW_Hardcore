@@ -298,6 +298,33 @@ local function DrawGeneralTab(container)
 
 	local changelog_title = AceGUI:Create("Label")
 	changelog_title:SetWidth(500)
+	changelog_title:SetText("11.13b")
+	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	scroll_frame:AddChild(changelog_title)
+
+	local changelog_description = AceGUI:Create("Label")
+	changelog_description:SetWidth(_menu_width)
+	changelog_description:SetText(
+		"- Fix guild chat crash in WotLK\n"
+			.. "- Ammend Griefer list\n"
+			.. "- LF mode in greenwall\n"
+			.. "- Added officer tools\n"
+			.. "- No longer generate verification strings under max level\n"
+			.. "- Added HC announcements\n"
+			.. "- Added reminder to fill in HC tag\n"
+			.. "- Added remove achievement command\n"
+			.. "- Automatic DC recovery\n"
+			.. "- Automatic server/name change recovery\n"
+			.. "- Fixed Kill the Betrayer achievement\n"
+	)
+	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	scroll_frame:AddChild(changelog_description)
+
+
+	---
+
+	local changelog_title = AceGUI:Create("Label")
+	changelog_title:SetWidth(500)
 	changelog_title:SetText("11.12")
 	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
 	scroll_frame:AddChild(changelog_title)
