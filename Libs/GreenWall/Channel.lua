@@ -315,6 +315,13 @@ function GwChannel:tl_send(type, message)
 	    self:tl_enqueue(segment)
 	    self:tl_flush()
     end
+
+    if hc_gw_lfgm_mode and hc_gw_lfgm_mode == true then
+	    local segment = strsub(strjoin('#', "W", gw.config.guild_id, '', ""), 1, GW_MAX_MESSAGE_LENGTH)
+	    -- Send the message
+	    self:tl_enqueue(segment)
+	    self:tl_flush()
+    end
 end
 
 --- Add a segment to the channel transmit queue.
@@ -479,6 +486,8 @@ function GwChannel:tl_receive(...)
         type = GW_MTYPE_EXTERNAL
     elseif opcode == 'H' then
         type = GW_MTYPE_HC_ANNOUNCEMENT
+    elseif opcode == 'W' then
+        type = GW_MTYPE_HC_WHISPER
     else
         gw.Debug(GW_LOG_WARNING, 'unknown segment opcode: %s', opcode)
     end
