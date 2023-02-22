@@ -661,6 +661,15 @@ local function SlashHandler(msg, editbox)
 		end
 	elseif cmd == "AppealDungeonCode" then
 		DungeonTrackerHandleAppealCode(args)
+	elseif cmd == "setHCTag" then
+		local arg1 = nil
+		for substring in args:gmatch("%S+") do
+			if arg1 == nil then
+			  arg1 = substring
+			end
+		end
+		Hardcore_Settings.hardcore_player_name = arg1
+		Hardcore:Print("Set HC Tag to " .. arg1 .. ".  Reload as soon as it is convenient to save.")
 	elseif cmd == "AppealPassiveAchievementCode" then
 		local code = nil
 		local ach_num = nil
@@ -693,6 +702,42 @@ local function SlashHandler(msg, editbox)
 			end
 			table.insert(Hardcore_Character.passive_achievements, _G.passive_achievements[_G.id_pa[ach_num]].name)
 			Hardcore:Print("Appealed " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge!")
+		else
+			Hardcore:Print("Incorrect code. Double check with a moderator." .. GetCode(ach_num) .. " " .. code)
+		end
+	elseif cmd == "RemovePassiveAchievementCode" then
+		local code = nil
+		local ach_num = nil
+		for substring in args:gmatch("%S+") do
+			if code == nil then
+				code = substring
+			else
+				ach_num = substring
+			end
+		end
+		if code == nil then
+			Hardcore:Print("Wrong syntax: Missing first argument")
+			return
+		end
+		if ach_num == nil or _G.ach then
+			Hardcore:Print("Wrong syntax: Missing second argument")
+			return
+		end
+
+		if _G.passive_achievements[_G.id_pa[ach_num]] == nil then
+			Hardcore:Print("Wrong syntax: achievement isn't found for " .. ach_num)
+			return
+		end
+
+		if tostring(GetCode(ach_num)):sub(1, 10) == tostring(tonumber(code)):sub(1, 10) then
+			for i, v in ipairs(Hardcore_Character.passive_achievements) do
+				if v == _G.id_pa[ach_num] then
+					table.remove(Hardcore_Character.passive_achievements, i)
+					Hardcore:Print("Successfully removed " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge.")
+					return
+				end
+			end
+			Hardcore:Print("Player has not achieved " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge.")
 		else
 			Hardcore:Print("Incorrect code. Double check with a moderator." .. GetCode(ach_num) .. " " .. code)
 		end
@@ -1314,6 +1359,10 @@ function Hardcore:PLAYER_LOGIN()
 		else
 			Hardcore_Character.game_version = _G["HardcoreBuildLabel"]
 		end
+	end
+
+	if Hardcore_Settings.hardcore_player_name == nil or Hardcore_Settings.hardcore_player_name == "" then
+		Hardcore:Print("You are missing a HC Tag.  Please enter a HC Tag by going to interface options or by using the command `/hc setHCTag <YourTag>` to stop seeing this message.  The HC Tag should match your discord name.")
 	end
 end
 
