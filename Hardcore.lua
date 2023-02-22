@@ -119,6 +119,7 @@ local monitor_msg_throttle = {
 	ADD = {},
 	DEAD = {},
 }
+local guild_player_first_ping_time = {}
 local online_pulsing = {}
 local guild_versions = {}
 local guild_versions_status = {}
