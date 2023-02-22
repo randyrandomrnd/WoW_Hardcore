@@ -1199,7 +1199,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	local played_data
 	local date_data
 	local boss_data
-	local show_boss_column = false -- For Zdeyn's boss kill time statistic, just set to true
+	local show_boss_column = true -- For Zdeyn's boss kill time statistic, just set to true
 
 	local function UpdateDungeonsData(_dt_runs, _dt_pending, _dt_current)
 		-- Initialise data
@@ -1209,21 +1209,13 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		local played_str = ""
 		local boss_str = ""
 
-		-- Put some example boss data; this should come from some function call in the speedcore code
-		local boss_kill_data = {
-			["Ragefire Chasm"] = { 3600, { "Oggleflint", 1300 }, { "Bazzalan", 3600 } },
-			["Wailing Caverns"] = { 4000, { "Lady Anacondra", 1200 }, { "Verdan the Everliving", 4000 } },
-			["The Deadmines"] = { 0, { "Sneed's Shredder", 1300 }, { "Edwin Van Cleef", 5000 } },
-			["Blackfathom Deeps"] = { 4500, { "Ghamoo-Ra", 1100 }, { "Aku'mai", 4500 } },
-			["Scarlet Monastery (Lib)"] = { 2300, { "Houndmaster Loksey", 900 }, { "Arcanist Doan", 2300 } },
-		}
-
-		local function GetBossTimeString(the_boss_data, the_name)
-			if the_boss_data ~= nil and the_name ~= nil and the_boss_data[the_name] ~= nil then
-				if the_boss_data[the_name][1] > 0 then
-					return SecondsToTime(the_boss_data[the_name][1]) .. "\n"
+		local function GetBossTimeString(run)
+			num_bosses, main_boss_kill_time = DungeonTrackerGetBossKillDataForRun( run )
+			if num_bosses >= 0 then
+				if main_boss_kill_time > 0 then
+					return num_bosses .. " (" .. SecondsToTime(main_boss_kill_time) .. ")\n"
 				else
-					return "X\n" -- Dungeon done, but end boss not killed
+					return num_bosses .. " (X)\n" -- Dungeon done, but end boss not killed
 				end
 			else
 				return "?\n" -- No info
@@ -1247,7 +1239,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 				played_str = played_str .. "?\n"
 			end
 			date_str = date_str .. v.date .. "\n"
-			boss_str = boss_str .. GetBossTimeString(boss_kill_data, v.name)
+			boss_str = boss_str .. GetBossTimeString(v)
 			num_lines = num_lines + 1
 		end
 		for i, v in pairs(_dt_pending) do
@@ -1256,7 +1248,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			level_str = level_str .. v.level .. "\n"
 			played_str = played_str .. SecondsToTime(v.time_inside) .. "\n"
 			date_str = date_str .. v.date .. "\n"
-			boss_str = boss_str .. GetBossTimeString(boss_kill_data, v.name)
+			boss_str = boss_str .. GetBossTimeString(v)
 			num_lines = num_lines + 1
 		end
 		if next(_dt_current) then
@@ -1264,7 +1256,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			level_str = level_str .. _dt_current.level .. "\n"
 			played_str = played_str .. SecondsToTime(_dt_current.time_inside) .. "\n"
 			date_str = date_str .. _dt_current.date .. "\n"
-			boss_str = boss_str .. GetBossTimeString(boss_kill_data, _dt_current.name)
+			boss_str = boss_str .. GetBossTimeString(_dt_current)
 			num_lines = num_lines + 1
 		end
 
@@ -1327,7 +1319,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	scroll_frame:AddChild(row_header)
 	-- Name row header
 	local name_label = AceGUI:Create("Label")
-	name_label:SetWidth(405)
+	name_label:SetWidth(375)
 	name_label:SetText("|c00FFFF00Dungeon|r")
 	name_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	row_header:AddChild(name_label)
@@ -1351,9 +1343,9 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	row_header:AddChild(played_time_label)
 	-- Boss time row header
 	local boss_time_label = AceGUI:Create("Label")
-	boss_time_label:SetWidth(125)
+	boss_time_label:SetWidth(155)
 	if show_boss_column then
-		boss_time_label:SetText("|c00FFFF00Boss Time|r")
+		boss_time_label:SetText("|c00FFFF00Bosses [# (end boss)]|r")
 	else
 		boss_time_label:SetText("") --- Don't write it
 	end
@@ -1370,7 +1362,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	-- Name column
 	local entry -- Some container that we don't care about
 	name_data = AceGUI:Create("Label")
-	name_data:SetWidth(405)
+	name_data:SetWidth(375)
 	name_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(name_data)
 
@@ -1394,7 +1386,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 	-- Boss column
 	boss_data = AceGUI:Create("Label")
-	boss_data:SetWidth(125)
+	boss_data:SetWidth(155)
 	boss_data:SetFont("Fonts\\FRIZQT__.TTF", 12)
 	data_rows:AddChild(boss_data)
 
