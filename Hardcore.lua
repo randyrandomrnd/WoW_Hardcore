@@ -104,6 +104,8 @@ local speedrun_levels = {
 }
 local last_received_xguild_chat = ""
 local debug = false
+local dc_recovery_info = nil
+local received_recover_time_ack = nil
 local expecting_achievement_appeal = false
 local loaded_inspect_frame = false
 local pulses = {}
@@ -152,21 +154,23 @@ local COMM_FIELD_DELIM = "|"
 local COMM_SUBFIELD_DELIM = "~"
 local COMM_RECORD_DELIM = "^"
 local COMM_COMMANDS = {
-	"PULSE",
-	"ADD", -- depreciated, we can only handle receiving
-	"DEAD", -- new death command
-	"CHARACTER_INFO", -- new death command
-	"REQUEST_CHARACTER_INFO", -- new death command
-	"SACRIFICE", -- new sacrifice command
-	"REQUEST_PCT", -- request a party change token
-	"APPLY_PCT", -- request a party change
-	"SEND_ACHIEVEMENT_APPEAL", -- send appeal for achievement
-	"XGUILD_DEAD_RELAY", -- Send death message a player in another guild to relay
-	"XGUILD_DEAD", -- Send death message to other guild
-	"XGUILD_CHAT_RELAY", -- Send chat message a player in another guild to relay
-	"XGUILD_CHAT", -- Send chat message to other guild
-	"NOTIFY_RANKING",
-	"DTPULSE", 			-- dungeon tracker active pulse; if this changes, also change in Dungeons.lua / DTSendPulse!
+	"PULSE", -- 1
+	"ADD", -- 2 depreciated, we can only handle receiving
+	"DEAD", -- 3 new death command
+	"CHARACTER_INFO", -- 4  new death command
+	"REQUEST_CHARACTER_INFO", -- 5 new death command
+	"SACRIFICE", -- 6 new sacrifice command
+	"REQUEST_PCT", -- 7 request a party change token
+	"APPLY_PCT", -- 8 request a party change
+	"SEND_ACHIEVEMENT_APPEAL", -- 9 send appeal for achievement
+	"XGUILD_DEAD_RELAY", -- 10 Send death message a player in another guild to relay
+	"XGUILD_DEAD", -- 11 Send death message to other guild
+	"XGUILD_CHAT_RELAY", -- 12 Send chat message a player in another guild to relay
+	"XGUILD_CHAT", -- 13 Send chat message to other guild
+	"NOTIFY_RANKING", -- 14
+	"DTPULSE", -- 15 dungeon tracker active pulse; if this changes, also change in Dungeons.lua / DTSendPulse!
+	"REQUEST_RECOVERY_TIME", -- 16 Used to request recovery segments if detected DC
+	"REQUEST_RECOVERY_TIME_ACK", -- 17 Recovery request ack
 }
 local COMM_SPAM_THRESHOLD = { -- msgs received within durations (s) are flagged as spam
 	PULSE = 3,
@@ -205,6 +209,7 @@ local COLOR_YELLOW = "|c00ffff00"
 local STRING_ADDON_STATUS_SUBTITLE = "Guild Addon Status"
 local STRING_ADDON_STATUS_SUBTITLE_LOADING = "Guild Addon Status (Loading)"
 local THROTTLE_DURATION = 5
+local DETECT_OFFLINE_DURATION = 120 -- [s] If a pulse hasn't been received in this duration; assume the player is offline
 local SACRIFICE_LEVEL_MIN = 55
 local SACRIFICE_LEVEL_MAX = 58
 local MOD_CHAR_NAMES = {
@@ -667,7 +672,7 @@ local function SlashHandler(msg, editbox)
 		local arg1 = nil
 		for substring in args:gmatch("%S+") do
 			if arg1 == nil then
-			  arg1 = substring
+				arg1 = substring
 			end
 		end
 		Hardcore_Settings.hardcore_player_name = arg1
@@ -685,14 +690,14 @@ local function SlashHandler(msg, editbox)
 		end
 
 		if tostring(GetCode(-1)):sub(1, 10) == tostring(tonumber(code)):sub(1, 10) then
-		  if Hardcore_Character.name_changed == nil then
-			Hardcore:Print("Character did not have a name changed tag.")
-			return
-		  end
-		  Hardcore_Character.name_changed = nil
-		  Hardcore:Print("Removed name changed tag! Reload now.")
+			if Hardcore_Character.name_changed == nil then
+				Hardcore:Print("Character did not have a name changed tag.")
+				return
+			end
+			Hardcore_Character.name_changed = nil
+			Hardcore:Print("Removed name changed tag! Reload now.")
 		else
-		  Hardcore:Print("Incorrect code. Double check with a moderator.")
+			Hardcore:Print("Incorrect code. Double check with a moderator.")
 		end
 	elseif cmd == "AppealPassiveAchievementCode" then
 		local code = nil
@@ -757,11 +762,15 @@ local function SlashHandler(msg, editbox)
 			for i, v in ipairs(Hardcore_Character.passive_achievements) do
 				if v == _G.id_pa[ach_num] then
 					table.remove(Hardcore_Character.passive_achievements, i)
-					Hardcore:Print("Successfully removed " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge.")
+					Hardcore:Print(
+						"Successfully removed " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge."
+					)
 					return
 				end
 			end
-			Hardcore:Print("Player has not achieved " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge.")
+			Hardcore:Print(
+				"Player has not achieved " .. _G.passive_achievements[_G.id_pa[ach_num]].name .. " challenge."
+			)
 		else
 			Hardcore:Print("Incorrect code. Double check with a moderator." .. GetCode(ach_num) .. " " .. code)
 		end
@@ -1386,10 +1395,14 @@ function Hardcore:PLAYER_LOGIN()
 	end
 
 	if Hardcore_Settings.hardcore_player_name == nil or Hardcore_Settings.hardcore_player_name == "" then
-		Hardcore:Print("You are missing a HC Tag.  Please enter a HC Tag by going to interface options or by using the command `/hc setHCTag <YourTag>` to stop seeing this message.  The HC Tag should match your discord name.")
+		Hardcore:Print(
+			"You are missing a HC Tag.  Please enter a HC Tag by going to interface options or by using the command `/hc setHCTag <YourTag>` to stop seeing this message.  The HC Tag should match your discord name."
+		)
 	end
 	if Hardcore_Character.name_changed ~= nil then
-		Hardcore:Print("Your character has a recorded name change.  Contact a mod for approval and to remove this message.")
+		Hardcore:Print(
+			"Your character has a recorded name change.  Contact a mod for approval and to remove this message."
+		)
 	end
 end
 
@@ -1861,6 +1874,87 @@ function Hardcore:PLAYER_LEVEL_UP(...)
 	end
 end
 
+local function initiateRecoverTime(duration_since_last_recording)
+	-- Request recover time information from guildmates
+	local commMessage = COMM_COMMANDS[16] .. COMM_COMMAND_DELIM .. ""
+	received_recover_time_ack = false
+	dc_recovery_info = {}
+
+	-- Lazy init
+	Hardcore_Character.last_segment_start_time = Hardcore_Character.last_segment_start_time or 0
+	Hardcore_Character.last_segment_end_time = Hardcore_Character.last_segment_end_time or 0
+
+	dc_recovery_info.recorded_last_segment_start_time = Hardcore_Character.last_segment_start_time
+	dc_recovery_info.recorded_last_segment_end_time = Hardcore_Character.last_segment_end_time
+	dc_recovery_info.responses = {}
+
+	CTL:SendAddonMessage("BULK", COMM_NAME, commMessage, "GUILD")
+
+	-- After delay, check guildmates responses and update played time
+	C_Timer.After(10, function()
+		if next(dc_recovery_info.responses) == nil then
+			return
+		end
+		-- process responses for longest found recovery segment
+		local earliest_response_start_time = nil
+		local latest_response_end_time = nil
+		for _, response in ipairs(dc_recovery_info.responses) do
+			if earliest_response_start_time == nil or response_start_time < earliest_response_start_time then
+				earliest_response_start_time = response.start_time
+			end
+			if latest_response_end_time == nil or response_end_time > latest_response_end_time then
+				latest_response_end_time = response.end_time
+			end
+		end
+
+		-- Update played time if responses are valid
+		if
+			earliest_response_start_time ~= nil
+			and latest_response_end_time ~= nil
+			and earliest_reponse_start_time > dc_recovery_info.recorded_last_segment_start_time
+			and latest_response_end_time > earliest_response_start_time
+		then
+			local recovered_time = dc_recovery_info.last_segment_end_time - dc_recovery_info.last_segment_start_time
+			Hardcore_Character.played_tracked = Hardcore_Character.played_tracked + recovered_time
+			local message = "\124cffFF0000Played time gap detected, but segment was successfully recovered! Recovered "
+				.. tostring(recovered_time)
+				.. "s!"
+			Hardcore:Print(message)
+			Hardcore_Character.tracked_played_percentage = Hardcore_Character.time_tracked
+				/ Hardcore_Character.time_played
+				* 100.0
+		-- Failed recovery; record and warn with playtime gap
+		else
+			local played_time_gap_info = {}
+			played_time_gap_info.duration_since_last_recording = duration_since_last_recording
+			played_time_gap_info.date = date("%m/%d/%y %H:%M:%S")
+			if Hardcore_Character.played_time_gap_warnings == nil then
+				Hardcore_Character.played_time_gap_warnings = {}
+				Hardcore_Character.played_time_gap_warnings[1] = played_time_gap_info
+			else
+				table.insert(Hardcore_Character.played_time_gap_warnings, played_time_gap_info)
+			end
+			local message = "\124cffFF0000Addon/Playtime gap detected at date"
+				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].date
+				.. " with a duration: "
+				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].duration_since_last_recording
+				.. " seconds."
+			Hardcore:Print(message)
+		end
+
+		-- Warn the user if played percentage is too low (with or without successful recovery)
+		-- This was previously skipped if recover time was initiated
+		if
+			Hardcore_Character.tracked_played_percentage < PLAYED_TIME_PERC_THRESH
+			and Hardcore_Character.time_played > PLAYED_TIME_MIN_PLAYED_THRESH
+		then
+			local message =
+				"\124cffFF0000Detected that the player's addon active time is much lower than played time. Please record the rest of your run."
+			Hardcore:Print(message)
+		end
+	end)
+end
+
 function Hardcore:TIME_PLAYED_MSG(...)
 	local totalTimePlayed, _ = ...
 	Hardcore_Character.time_played = totalTimePlayed or 1
@@ -1877,47 +1971,46 @@ function Hardcore:TIME_PLAYED_MSG(...)
 
 	-- Check to see if the gap since the last recording is too long.  When receiving played time for the first time.
 	if RECEIVED_FIRST_PLAYED_TIME_MSG == false and Hardcore_Character.accumulated_time_diff ~= nil then
-
 		local function checkForBackupMatch() -- Returns a match to backup if exists
-		      local function timePlayedCheck(backup_data) 
-			      if backup_data["time_played"] then
-				      if math.abs(backup_data["time_played"] - Hardcore_Character.time_played) < 7200 then -- 2hrs
-					      return true
-				      end
-			      end
-			      return false
-		      end
+			local function timePlayedCheck(backup_data)
+				if backup_data["time_played"] then
+					if math.abs(backup_data["time_played"] - Hardcore_Character.time_played) < 7200 then -- 2hrs
+						return true
+					end
+				end
+				return false
+			end
 
-		      local function raceCheck(backup_data) 
-			    if backup_data["race"] then
-				    if backup_data["race"] == UnitRace("player") then
-				      return true
-				    end
-			    end
-		      end
+			local function raceCheck(backup_data)
+				if backup_data["race"] then
+					if backup_data["race"] == UnitRace("player") then
+						return true
+					end
+				end
+			end
 
-		      local function levelCheck(backup_data) 
-			    if backup_data["level"] then
-				    if backup_data["level"] == UnitLevel("player") then
-				      return true
-				    end
-			    end
-		      end
+			local function levelCheck(backup_data)
+				if backup_data["level"] then
+					if backup_data["level"] == UnitLevel("player") then
+						return true
+					end
+				end
+			end
 
-		      local function classCheck(backup_data) 
-			    if backup_data["class"] then
-				    if backup_data["class"] == UnitClass("player") then
-				      return true
-				    end
-			    end
-		      end
+			local function classCheck(backup_data)
+				if backup_data["class"] then
+					if backup_data["class"] == UnitClass("player") then
+						return true
+					end
+				end
+			end
 
-		      for k,v in pairs(Backup_Character_Data) do
-			      if timePlayedCheck(v) and raceCheck(v) then 
-				return k, v
-			      end
-		      end
-		      return nil
+			for k, v in pairs(Backup_Character_Data) do
+				if timePlayedCheck(v) and raceCheck(v) then
+					return k, v
+				end
+			end
+			return nil
 		end
 
 		local debug_message = "Playtime gap percentage: " .. Hardcore_Character.tracked_played_percentage .. "%."
@@ -1941,85 +2034,74 @@ function Hardcore:TIME_PLAYED_MSG(...)
 			local backup_name, backup_data = checkForBackupMatch()
 
 			local function recoverFunction(element, _backup_data)
-			      if _backup_data[element] then
-				      Hardcore_Character[element] = _backup_data[element]
-			      end
+				if _backup_data[element] then
+					Hardcore_Character[element] = _backup_data[element]
+				end
 			end
 			if backup_name then
+				local player_name_short, _server_name = string.split("-", backup_name)
+				if player_name_short == UnitName("player") and GetRealmName() == _server_name then
+					Hardcore:Print("Detected lost player data.  Backup found; recovering data...", backup_name)
+					Hardcore_Character.name_changed = {
+						["before"] = player_name_short,
+						["after"] = UnitName("player"),
+					}
+				elseif player_name_short ~= UnitName("player") and GetRealmName() == _server_name then
+					Hardcore:Print("Detected player name change.  Backup found; recovering data...", backup_name)
+					Hardcore_Character.name_changed = {
+						["before"] = player_name_short,
+						["after"] = UnitName("player"),
+					}
+				elseif GetRealmName() ~= _server_name then
+					Hardcore:Print("Detected server change.  Backup found; recovering data...", backup_name)
+				end
 
-			      local player_name_short, _server_name = string.split("-", backup_name)
-			      if player_name_short == UnitName("player") and GetRealmName() == _server_name then
-				    Hardcore:Print("Detected lost player data.  Backup found; recovering data...", backup_name)
-				    Hardcore_Character.name_changed = {
-				      ["before"] = player_name_short,
-				      ["after"] = UnitName("player"),
-				    }
-			      elseif player_name_short ~= UnitName("player") and GetRealmName() == _server_name then
-				    Hardcore:Print("Detected player name change.  Backup found; recovering data...", backup_name)
-				    Hardcore_Character.name_changed = {
-				      ["before"] = player_name_short,
-				      ["after"] = UnitName("player"),
-				    }
-			      elseif GetRealmName() ~= _server_name then
-				    Hardcore:Print("Detected server change.  Backup found; recovering data...", backup_name)
-			      end
-
-			      recoverFunction("time_tracked", backup_data)
-			      recoverFunction("achievements", backup_data)
-			      recoverFunction("first_recorded", backup_data)
-			      recoverFunction("played_time_gap_warnings", backup_data)
-			      recoverFunction("deaths", backup_data)
-			      recoverFunction("bubble_hearth_incidents", backup_data)
-			      recoverFunction("passive_achievements", backup_data)
-			      recoverFunction("trade_partners", backup_data)
-			      recoverFunction("team", backup_data)
-			      recoverFunction("dt", backup_data)
-			      recoverFunction("party_mode", backup_data)
-			      Hardcore:Print("Recovery complete. Reload now")
+				recoverFunction("time_tracked", backup_data)
+				recoverFunction("achievements", backup_data)
+				recoverFunction("first_recorded", backup_data)
+				recoverFunction("played_time_gap_warnings", backup_data)
+				recoverFunction("deaths", backup_data)
+				recoverFunction("bubble_hearth_incidents", backup_data)
+				recoverFunction("passive_achievements", backup_data)
+				recoverFunction("trade_partners", backup_data)
+				recoverFunction("team", backup_data)
+				recoverFunction("dt", backup_data)
+				recoverFunction("party_mode", backup_data)
+				Hardcore:Print("Recovery complete. Reload now")
 			end
 			return
 		end
 
 		if duration_since_last_recording > PLAYED_TIME_GAP_THRESH then
-			local played_time_gap_info = {}
-			played_time_gap_info.duration_since_last_recording = duration_since_last_recording
-			played_time_gap_info.date = date("%m/%d/%y %H:%M:%S")
-			if Hardcore_Character.played_time_gap_warnings == nil then
-				Hardcore_Character.played_time_gap_warnings = {}
-				Hardcore_Character.played_time_gap_warnings[1] = played_time_gap_info
-			else
-				table.insert(Hardcore_Character.played_time_gap_warnings, played_time_gap_info)
+			initiateRecoverTime(duration_since_last_recording)
+		else
+			-- Backup character data grooming and maintainence
+
+			-- Only hold character data for a week
+			for k, v in pairs(Backup_Character_Data) do
+				if v["backup_date"] and GetServerTime() - v["backup_date"] > 604800 then -- one week
+					Backup_Character_Data[k] = nil
+				end
 			end
-			local message = "\124cffFF0000Addon/Playtime gap detected at date"
-				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].date
-				.. " with a duration: "
-				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].duration_since_last_recording
-				.. " seconds."
-			Hardcore:Print(message)
-		else 
-		  -- Backup character data grooming and maintainence
 
-		  -- Only hold character data for a week
-		  for k,v in pairs(Backup_Character_Data) do
-		    if v["backup_date"] and GetServerTime() - v["backup_date"] > 604800 then -- one week
-		      Backup_Character_Data[k] = nil
-		    end
-		  end
-
-		  local name_and_server = UnitName("player") .. "-" .. GetRealmName()
-		  Backup_Character_Data[name_and_server] = {
-		    ["backup_date"] = GetServerTime(), -- Unix Time
-		    ["race"] = UnitRace("player"),
-		    ["level"] = UnitLevel("player"),
-		    ["class"] = UnitClass("player"),
-		  }
-		  for k,v in pairs(Hardcore_Character) do
-		      Backup_Character_Data[name_and_server][k] = v
-		  end
+			local name_and_server = UnitName("player") .. "-" .. GetRealmName()
+			Backup_Character_Data[name_and_server] = {
+				["backup_date"] = GetServerTime(), -- Unix Time
+				["race"] = UnitRace("player"),
+				["level"] = UnitLevel("player"),
+				["class"] = UnitClass("player"),
+			}
+			for k, v in pairs(Hardcore_Character) do
+				Backup_Character_Data[name_and_server][k] = v
+			end
 		end
+		Hardcore_Character.last_segment_start_time = time()
 	end
 
 	RECEIVED_FIRST_PLAYED_TIME_MSG = true
+
+	-- Update segment's end time for potential future recovery
+	Hardcore_Character.last_segment_end_time = time()
 
 	if recent_levelup ~= nil then
 		-- cache this to make sure it doesn't disapeer
@@ -2203,6 +2285,43 @@ function Hardcore:CHAT_MSG_ADDON(prefix, datastr, scope, sender)
 	if COMM_NAME == prefix then
 		-- Get the command
 		local command, data = string.split(COMM_COMMAND_DELIM, datastr)
+		if command == COMM_COMMANDS[16] then -- Received request for recovery time
+			if CTL and isInGuild and guild_player_first_ping_time[sender] ~= nil and pulses[sender] ~= nil then
+				local commMessage = COMM_COMMANDS[17]
+					.. COMM_COMMAND_DELIM
+					.. tostring(guild_player_first_ping_time[sender])
+					.. COMM_COMMAND_DELIM
+					.. tostring(pulses[sender])
+				CTL:SendAddonMessage("BULK", COMM_NAME, commMessage, "WHISPER", sender)
+			end
+			return
+		end
+		if command == COMM_COMMANDS[17] then -- Received recovery time ack
+			-- The strategy here is to store as many responses as possible and recover based on the best one
+			if CTL and isInGuild then
+				local _, response_start_time_str, response_end_time_str = string.split(COMM_COMMAND_DELIM, datastr)
+				local response_start_time = tonumber(response_start_time_str)
+				local response_end_time = tonumber(response_end_time_str)
+				local current_time = time()
+				-- Don't add response if it seems invalid
+				if
+					response_start_time == nil
+					or response_start_time > current_time
+					or response_end_time
+					or response_end_time > current_time() == nil
+				then
+					return
+				end
+
+				local entry = {
+					start_time = response_start_time,
+					end_time = response_end_time,
+				}
+				table.insert(dc_recovery_info.responses, entry)
+			end
+			return
+		end
+
 		if command == COMM_COMMANDS[10] then -- Received request for guild members
 			-- receiveDeathMsg(data, sender, command) would duplicate for sender
 			local commMessage = COMM_COMMANDS[11] .. COMM_COMMAND_DELIM .. data
@@ -3360,6 +3479,11 @@ function Hardcore:ReceivePulse(data, sender)
 	local version = GetAddOnMetadata("Hardcore", "Version")
 	if version ~= guild_highest_version then
 		guild_versions_status[FULL_PLAYER_NAME] = "outdated"
+	end
+
+	local current_os_time = time()
+	if guild_player_first_ping_time[sender] == nil or current_os_time - pulses[sender] > DETECT_OFFLINE_DURATION then
+		guild_player_first_ping_time[sender] = current_os_time
 	end
 
 	pulses[sender] = time()
