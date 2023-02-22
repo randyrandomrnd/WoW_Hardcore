@@ -87,6 +87,8 @@ Hardcore_Character = {
 	custom_pronoun = false,
 }
 
+Backup_Character_Data = {}
+
 --[[ Local variables ]]
 --
 _G.hc_online_player_ranks = {}
@@ -670,6 +672,28 @@ local function SlashHandler(msg, editbox)
 		end
 		Hardcore_Settings.hardcore_player_name = arg1
 		Hardcore:Print("Set HC Tag to " .. arg1 .. ".  Reload as soon as it is convenient to save.")
+	elseif cmd == "removeNameChangeTag" then
+		local code = nil
+		for substring in args:gmatch("%S+") do
+			if code == nil then
+				code = substring
+			end
+		end
+		if code == nil then
+			Hardcore:Print("Wrong syntax: Missing first argument")
+			return
+		end
+
+		if tostring(GetCode(-1)):sub(1, 10) == tostring(tonumber(code)):sub(1, 10) then
+		  if Hardcore_Character.name_changed == nil then
+			Hardcore:Print("Character did not have a name changed tag.")
+			return
+		  end
+		  Hardcore_Character.name_changed = nil
+		  Hardcore:Print("Removed name changed tag! Reload now.")
+		else
+		  Hardcore:Print("Incorrect code. Double check with a moderator.")
+		end
 	elseif cmd == "AppealPassiveAchievementCode" then
 		local code = nil
 		local ach_num = nil
@@ -1364,6 +1388,9 @@ function Hardcore:PLAYER_LOGIN()
 	if Hardcore_Settings.hardcore_player_name == nil or Hardcore_Settings.hardcore_player_name == "" then
 		Hardcore:Print("You are missing a HC Tag.  Please enter a HC Tag by going to interface options or by using the command `/hc setHCTag <YourTag>` to stop seeing this message.  The HC Tag should match your discord name.")
 	end
+	if Hardcore_Character.name_changed ~= nil then
+		Hardcore:Print("Your character has a recorded name change.  Contact a mod for approval and to remove this message.")
+	end
 end
 
 local function GiveVidereWarning()
@@ -1850,6 +1877,49 @@ function Hardcore:TIME_PLAYED_MSG(...)
 
 	-- Check to see if the gap since the last recording is too long.  When receiving played time for the first time.
 	if RECEIVED_FIRST_PLAYED_TIME_MSG == false and Hardcore_Character.accumulated_time_diff ~= nil then
+
+		local function checkForBackupMatch() -- Returns a match to backup if exists
+		      local function timePlayedCheck(backup_data) 
+			      if backup_data["time_played"] then
+				      if math.abs(backup_data["time_played"] - Hardcore_Character.time_played) < 7200 then -- 2hrs
+					      return true
+				      end
+			      end
+			      return false
+		      end
+
+		      local function raceCheck(backup_data) 
+			    if backup_data["race"] then
+				    if backup_data["race"] == UnitRace("player") then
+				      return true
+				    end
+			    end
+		      end
+
+		      local function levelCheck(backup_data) 
+			    if backup_data["level"] then
+				    if backup_data["level"] == UnitLevel("player") then
+				      return true
+				    end
+			    end
+		      end
+
+		      local function classCheck(backup_data) 
+			    if backup_data["class"] then
+				    if backup_data["class"] == UnitClass("player") then
+				      return true
+				    end
+			    end
+		      end
+
+		      for k,v in pairs(Backup_Character_Data) do
+			      if timePlayedCheck(v) and raceCheck(v) then 
+				return k, v
+			      end
+		      end
+		      return nil
+		end
+
 		local debug_message = "Playtime gap percentage: " .. Hardcore_Character.tracked_played_percentage .. "%."
 		Hardcore:Debug(debug_message)
 
@@ -1867,6 +1937,49 @@ function Hardcore:TIME_PLAYED_MSG(...)
 		debug_message = "Playtime gap duration: " .. duration_since_last_recording .. " seconds."
 		Hardcore:Debug(debug_message)
 
+		if Hardcore_Character.time_tracked < 1800 and Hardcore_Character.time_played > 7200 then -- 1/2 hr, 2 hrs
+			local backup_name, backup_data = checkForBackupMatch()
+
+			local function recoverFunction(element, _backup_data)
+			      if _backup_data[element] then
+				      Hardcore_Character[element] = _backup_data[element]
+			      end
+			end
+			if backup_name then
+
+			      local player_name_short, _server_name = string.split("-", backup_name)
+			      if player_name_short == UnitName("player") and GetRealmName() == _server_name then
+				    Hardcore:Print("Detected lost player data.  Backup found; recovering data...", backup_name)
+				    Hardcore_Character.name_changed = {
+				      ["before"] = player_name_short,
+				      ["after"] = UnitName("player"),
+				    }
+			      elseif player_name_short ~= UnitName("player") and GetRealmName() == _server_name then
+				    Hardcore:Print("Detected player name change.  Backup found; recovering data...", backup_name)
+				    Hardcore_Character.name_changed = {
+				      ["before"] = player_name_short,
+				      ["after"] = UnitName("player"),
+				    }
+			      elseif GetRealmName() ~= _server_name then
+				    Hardcore:Print("Detected server change.  Backup found; recovering data...", backup_name)
+			      end
+
+			      recoverFunction("time_tracked", backup_data)
+			      recoverFunction("achievements", backup_data)
+			      recoverFunction("first_recorded", backup_data)
+			      recoverFunction("played_time_gap_warnings", backup_data)
+			      recoverFunction("deaths", backup_data)
+			      recoverFunction("bubble_hearth_incidents", backup_data)
+			      recoverFunction("passive_achievements", backup_data)
+			      recoverFunction("trade_partners", backup_data)
+			      recoverFunction("team", backup_data)
+			      recoverFunction("dt", backup_data)
+			      recoverFunction("party_mode", backup_data)
+			      Hardcore:Print("Recovery complete. Reload now")
+			end
+			return
+		end
+
 		if duration_since_last_recording > PLAYED_TIME_GAP_THRESH then
 			local played_time_gap_info = {}
 			played_time_gap_info.duration_since_last_recording = duration_since_last_recording
@@ -1883,6 +1996,26 @@ function Hardcore:TIME_PLAYED_MSG(...)
 				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].duration_since_last_recording
 				.. " seconds."
 			Hardcore:Print(message)
+		else 
+		  -- Backup character data grooming and maintainence
+
+		  -- Only hold character data for a week
+		  for k,v in pairs(Backup_Character_Data) do
+		    if v["backup_date"] and GetServerTime() - v["backup_date"] > 604800 then -- one week
+		      Backup_Character_Data[k] = nil
+		    end
+		  end
+
+		  local name_and_server = UnitName("player") .. "-" .. GetRealmName()
+		  Backup_Character_Data[name_and_server] = {
+		    ["backup_date"] = GetServerTime(), -- Unix Time
+		    ["race"] = UnitRace("player"),
+		    ["level"] = UnitLevel("player"),
+		    ["class"] = UnitClass("player"),
+		  }
+		  for k,v in pairs(Hardcore_Character) do
+		      Backup_Character_Data[name_and_server][k] = v
+		  end
 		end
 	end
 

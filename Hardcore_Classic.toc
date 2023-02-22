@@ -8,7 +8,7 @@
 
 
 ## DefaultState: enabled
-## SavedVariables: Hardcore_Settings,GreenWallAccount
+## SavedVariables: Hardcore_Settings,GreenWallAccount, Backup_Character_Data
 ## SavedVariablesPerCharacter: Hardcore_Character,GreenWall,GreenWallMeta,GreenWallLog
 
 embeds.xml
