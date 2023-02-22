@@ -1913,15 +1913,28 @@ function Hardcore:TIME_PLAYED_MSG(...)
 		Hardcore:Debug(debug_message)
 
 		if Hardcore_Character.time_tracked < 1800 and Hardcore_Character.time_played > 7200 then -- 1/2 hr, 2 hrs
-			print("Detected lost player data.")
 			local backup_name, backup_data = checkForBackupMatch()
+
 			local function recoverFunction(element, _backup_data)
 			      if _backup_data[element] then
 				      Hardcore_Character[element] = _backup_data[element]
 			      end
 			end
 			if backup_name then
-			      print("Backup found; recovering data: ", backup_name)
+
+			      local player_name_short, _server_name = string.split("-", backup_name)
+			      if player_name_short == UnitName("player") and GetRealmName() == _server_name then
+				    Hardcore:Print("Detected lost player data.  Backup found; recovering data...", backup_name)
+			      elseif player_name_short ~= UnitName("player") and GetRealmName() == _server_name then
+				    Hardcore:Print("Detected player name change.  Backup found; recovering data...", backup_name)
+				    Hardcore_Character.name_changed = {
+				      ["before"] = player_name_short,
+				      ["after"] = UnitName("player"),
+				    }
+			      elseif GetRealmName() ~= _server_name then
+				    Hardcore:Print("Detected server change.  Backup found; recovering data...", backup_name)
+			      end
+
 			      recoverFunction("time_tracked", backup_data)
 			      recoverFunction("achievements", backup_data)
 			      recoverFunction("first_recorded", backup_data)
@@ -1933,6 +1946,7 @@ function Hardcore:TIME_PLAYED_MSG(...)
 			      recoverFunction("team", backup_data)
 			      recoverFunction("dt", backup_data)
 			      recoverFunction("party_mode", backup_data)
+			      Hardcore:Print("Recovery complete. Reload now")
 			end
 			return
 		end
