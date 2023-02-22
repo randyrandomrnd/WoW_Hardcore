@@ -672,6 +672,28 @@ local function SlashHandler(msg, editbox)
 		end
 		Hardcore_Settings.hardcore_player_name = arg1
 		Hardcore:Print("Set HC Tag to " .. arg1 .. ".  Reload as soon as it is convenient to save.")
+	elseif cmd == "removeNameChangeTag" then
+		local code = nil
+		for substring in args:gmatch("%S+") do
+			if code == nil then
+				code = substring
+			end
+		end
+		if code == nil then
+			Hardcore:Print("Wrong syntax: Missing first argument")
+			return
+		end
+
+		if tostring(GetCode(-1)):sub(1, 10) == tostring(tonumber(code)):sub(1, 10) then
+		  if Hardcore_Character.name_changed == nil then
+			Hardcore:Print("Character did not have a name changed tag.")
+			return
+		  end
+		  Hardcore_Character.name_changed = nil
+		  Hardcore:Print("Removed name changed tag! Reload now.")
+		else
+		  Hardcore:Print("Incorrect code. Double check with a moderator.")
+		end
 	elseif cmd == "AppealPassiveAchievementCode" then
 		local code = nil
 		local ach_num = nil
@@ -1366,6 +1388,9 @@ function Hardcore:PLAYER_LOGIN()
 	if Hardcore_Settings.hardcore_player_name == nil or Hardcore_Settings.hardcore_player_name == "" then
 		Hardcore:Print("You are missing a HC Tag.  Please enter a HC Tag by going to interface options or by using the command `/hc setHCTag <YourTag>` to stop seeing this message.  The HC Tag should match your discord name.")
 	end
+	if Hardcore_Character.name_changed ~= nil then
+		Hardcore:Print("Your character has a recorded name change.  Contact a mod for approval and to remove this message.")
+	end
 end
 
 local function GiveVidereWarning()
@@ -1925,6 +1950,10 @@ function Hardcore:TIME_PLAYED_MSG(...)
 			      local player_name_short, _server_name = string.split("-", backup_name)
 			      if player_name_short == UnitName("player") and GetRealmName() == _server_name then
 				    Hardcore:Print("Detected lost player data.  Backup found; recovering data...", backup_name)
+				    Hardcore_Character.name_changed = {
+				      ["before"] = player_name_short,
+				      ["after"] = UnitName("player"),
+				    }
 			      elseif player_name_short ~= UnitName("player") and GetRealmName() == _server_name then
 				    Hardcore:Print("Detected player name change.  Backup found; recovering data...", backup_name)
 				    Hardcore_Character.name_changed = {
