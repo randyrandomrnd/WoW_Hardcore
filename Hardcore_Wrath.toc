@@ -1,14 +1,14 @@
 ## Interface: 30401
-## Title: Hardcore 0.11.12 + Greenwall 1.11.5+classic
+## Title: Hardcore 0.11.13 + Greenwall 1.11.5+classic
 ## Notes: Supports Classic Hardcore
 ## Author: The Classic Hardcore team, Molikar (Sean Kennedy), Mark Rogaski <stigg@aie-guild.org> as GreenWall author 
 ## X-License: All Rights Reserved
 ## X-Category: Leveling,Guild
-## Version: 0.11.12
+## Version: 0.11.13b
 
 
 ## DefaultState: enabled
-## SavedVariables: Hardcore_Settings,GreenWallAccount
+## SavedVariables: Hardcore_Settings,GreenWallAccount, Backup_Character_Data
 ## SavedVariablesPerCharacter: Hardcore_Character,GreenWall,GreenWallMeta,GreenWallLog
 
 embeds.xml
