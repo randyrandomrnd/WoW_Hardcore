@@ -298,7 +298,7 @@ local function DrawGeneralTab(container)
 
 	local changelog_title = AceGUI:Create("Label")
 	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.13b")
+	changelog_title:SetText("11.13")
 	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
 	scroll_frame:AddChild(changelog_title)
 
@@ -316,6 +316,7 @@ local function DrawGeneralTab(container)
 			.. "- Automatic DC recovery\n"
 			.. "- Automatic server/name change recovery\n"
 			.. "- Fixed Kill the Betrayer achievement\n"
+			.. "- Fixed achievements from not showing up in accountability tab\n"
 	)
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
