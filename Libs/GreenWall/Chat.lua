@@ -113,12 +113,15 @@ function gw.ReplicateMessage(event, message, guild_id, arglist)
 			end
 
 			if hc_gw_lfgm_mode and hc_gw_lfgm_mode == true then
-				if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ")) then 
+				if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ") and not message:match("LF%d") and not message:match("lf%d")) then 
 				  return
 				end
-				local _level, message = strsplit("-", message, 2)
-				if math.abs(tonumber(_level) - UnitLevel("player")) > 10 then
-				  return
+				local _level, filtered_message = strsplit("-", message, 2)
+				if _level and filtered_message and tonumber(_level) then 
+				  if math.abs(tonumber(_level) - UnitLevel("player")) > 10 then
+				    return
+				  end
+				  message = filtered_message
 				end
 			end
 
