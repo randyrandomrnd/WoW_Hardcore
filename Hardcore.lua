@@ -3456,7 +3456,6 @@ function Hardcore:InitiatePulsePlayed()
 
 	--time accumulator
 	C_Timer.NewTicker(TIME_TRACK_PULSE, function()
-		print("tracking")
 		Hardcore_Character.time_tracked = Hardcore_Character.time_tracked + TIME_TRACK_PULSE
 		if RECEIVED_FIRST_PLAYED_TIME_MSG == true then
 			Hardcore_Character.accumulated_time_diff = Hardcore_Character.time_played - Hardcore_Character.time_tracked
@@ -4094,5 +4093,4 @@ optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Hardcore", "Hard
 reorderPassiveAchievements()
 --[[ Start Addon ]]
 --
-print("reloaded")
 Hardcore:Startup()
