@@ -5,8 +5,7 @@
 -- Definitions
 local DT_WARN_INTERVAL = 10 					-- Warn every 10 seconds about repeated run (while in dungeon)
 local DT_INSIDE_MAX_TIME = 60 					-- Maximum time inside a dungeon without it being logged (61 looks nicer than 60 in-game)
-local DT_OUTSIDE_MAX_TRACKED_TIME = 1800 		-- If seen outside, how many seconds seen outside before finalization (1800 = 30m)
-local DT_OUTSIDE_MAX_REAL_TIME = 2700 			-- If seen outside, how many seconds since last seen inside before finalization (2700 = 45m)
+local DT_OUTSIDE_MAX_REAL_TIME = 1800 			-- If seen outside, how many seconds since last seen inside before finalization (1800 = 30m)
 local DT_OUTSIDE_MAX_RUN_TIME = 21600 			-- If seen outside, how many seconds since start of run before finalization (21600 = 6 hrs)
 local DT_TIME_STEP = 1 							-- Dungeon code called every 1 second
 local DT_GROUP_PULSE = 30 						-- Send group pulse every 30 seconds
@@ -348,7 +347,7 @@ local function DungeonTrackerWarnInfraction()
 
 	-- Don't warn in the first few seconds of an unidentified SM wing. The time_left will be shorter after
 	-- a reconnect to an existing wing run, so then that first warning of 60s would be confusing
-	if (Hardcore_Character.dt.current.name == "Scarlet Monastery") and (time_left > 51) then
+	if (Hardcore_Character.dt.current.name == "Scarlet Monastery") and (time_left > 50) then
 		return
 	end
 
@@ -483,7 +482,7 @@ local function DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
 	-- If this is SM (=189), and we don't know the wing yet, we try to find it
 	if map_id == 189 and Hardcore_Character.dt.current.name == SM then
 	
-		local door_spawns = {
+		local wing_spaws = {
 			{4293, "Scarlet Scryer", "GY"},
 			{4306, "Scarlet Torturer", "GY"},
 			{4287, "Scarlet Gallant", "Lib"},
@@ -499,15 +498,19 @@ local function DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
 			{4294, "Scarlet Sorceror", "Cath"},
 			-- Bosses as a last resort
 			{3983, "Interrogator Vishas", "GY"},
+			{6490, "Azshir the Sleepless", "GY"},
+			{6488, "Fallen Champion", "GY"},
+			{6489, "Ironspine", "GY"},
 			{3974, "Houndmaster Loksey", "Lib"},
 			{6487, "Arcanist Doan", "Lib"},
 			{3975, "Herod", "Arm"},
 			{3976, "Scarlet Commander Mograine", "Cath"},
-			{3977, "High Inquisitor Whitemane", "Cath"}
+			{3977, "High Inquisitor Whitemane", "Cath"},
+			{4542, "High Inquisitor Fairbanks", "Cath"},
 		}
 		
 		-- See if any of the listed mobs is recognised
-		for i, v in ipairs( door_spawns ) do
+		for i, v in ipairs( wing_spaws ) do
 			if mob_type_id == v[1] then
 				Hardcore_Character.dt.current.name = SM .. " (" .. v[3] .. ")"
 				Hardcore:Debug( "Identified SM wing " .. v[3] .. " from " .. v[2] )
@@ -619,8 +622,8 @@ function DungeonTrackerReceivePulse(data, sender)
 
 			-- If this is the run from which the ping originated, and the ping time is later than we already have, store it
 			if run_name == dungeon_name then
-				if ping_time > v.last_pulse then
-					v.last_pulse = ping_time
+				if ping_time > v.last_seen then
+					v.last_seen = ping_time
 				end
 
 				-- Add the ping sender to the party members, if not already there
@@ -906,6 +909,9 @@ local function DungeonTracker()
 			-- If we didn't find an instance ID yet, we drop this "ghost" run immediately (there is no point in keeping it)
 			if Hardcore_Character.dt.current.iid == nil then
 				Hardcore:Debug("Dropping active run without instanceID in " .. Hardcore_Character.dt.current.name)
+			elseif Hardcore_Character.dt.current.name == "Scarlet Monastery" then
+				-- If we didn't find the SM wing, we drop this run as well.
+				Hardcore:Debug("Dropping active Scarlet Monastery run without identified wing")
 			else
 				Hardcore:Debug("Queuing active run in " .. Hardcore_Character.dt.current.name)
 				table.insert(Hardcore_Character.dt.pending, Hardcore_Character.dt.current)
@@ -924,18 +930,12 @@ local function DungeonTracker()
 	-- Do this backwards so deleting an element is safe.
 	local now = GetServerTime()
 	for i = #Hardcore_Character.dt.pending, 1, -1 do
-		Hardcore_Character.dt.pending[i].time_outside = Hardcore_Character.dt.pending[i].time_outside + DT_TIME_STEP
+		-- Update idle time (=time since we left or got last group pulse)
+		Hardcore_Character.dt.pending[i].idle = now - Hardcore_Character.dt.pending[i].last_seen
 
-		-- Calculate remaining time; it's the smallest of the three outside time outs
-		local idle_time_left = DT_OUTSIDE_MAX_TRACKED_TIME - Hardcore_Character.dt.pending[i].time_outside
-		idle_time_left = min(idle_time_left, DT_OUTSIDE_MAX_REAL_TIME - (now - Hardcore_Character.dt.pending[i].last_seen))
-		idle_time_left = min(idle_time_left, DT_OUTSIDE_MAX_RUN_TIME - (now - Hardcore_Character.dt.pending[i].start))
-
-		-- Override the remaining time if we got a group pulse
-		idle_time_left = max(idle_time_left, DT_OUTSIDE_MAX_TRACKED_TIME - (now - Hardcore_Character.dt.pending[i].last_pulse))
-
-		-- Update idle time left for the user interface
-		Hardcore_Character.dt.pending[i].idle_left = idle_time_left
+		-- Calculate remaining time; it's the smallest of the two outside time outs
+		local idle_time_left = min(DT_OUTSIDE_MAX_REAL_TIME - Hardcore_Character.dt.pending[i].idle, 
+						DT_OUTSIDE_MAX_RUN_TIME - (now - Hardcore_Character.dt.pending[i].start))
 
 		-- Log it if it expired
 		if idle_time_left <= 0 then
@@ -997,11 +997,10 @@ local function DungeonTracker()
 		DUNGEON_RUN.id = instanceMapID
 		DUNGEON_RUN.date = date("%m/%d/%y %H:%M:%S")
 		DUNGEON_RUN.time_inside = 0
-		DUNGEON_RUN.time_outside = 0
 		DUNGEON_RUN.start = now
 		DUNGEON_RUN.last_seen = now
-		DUNGEON_RUN.last_pulse = 0
-		DUNGEON_RUN.idle_left = 0 -- Remaining idle time
+		DUNGEON_RUN.idle = 0
+		DUNGEON_RUN.bosses = {}
 		DUNGEON_RUN.level = UnitLevel("player")
 		local group_composition = UnitName("player")
 		if Hardcore_Character.dt.group_members ~= nil then
@@ -1017,7 +1016,6 @@ local function DungeonTracker()
 
 	-- Extend the current run (reconnected or new) by another time step and update the last_seen time
 	Hardcore_Character.dt.current.time_inside = Hardcore_Character.dt.current.time_inside + DT_TIME_STEP
-	Hardcore_Character.dt.current.time_outside = 0 -- don't want to cumulate outside times
 	Hardcore_Character.dt.current.last_seen = now
 
 	-- Send out pings to group members

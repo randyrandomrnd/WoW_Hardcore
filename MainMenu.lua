@@ -1242,7 +1242,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 				if main_boss_kill_time > 0 then
 					return num_bosses .. " (" .. SecondsToTime(main_boss_kill_time) .. ")\n"
 				else
-					return num_bosses .. " (X)\n" -- Dungeon done, but end boss not killed
+					return num_bosses .. " (N/A)\n" -- Dungeon done, but end boss not killed
 				end
 			else
 				return "?\n" -- No info
@@ -1270,8 +1270,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			num_lines = num_lines + 1
 		end
 		for i, v in pairs(_dt_pending) do
-			name_str = name_str .. "|c00FFFF00" .. v.name .. " (idle, " .. SecondsToTime(v.idle_left) .. ")\n"
-			--name_str = name_str .. "|c00FFFF00" .. v.name .. " (re-entry until " .. date("%H:%M:%S", now +  v.idle_left - 30) .. ")\n"
+			name_str = name_str .. "|c00FFFF00" .. v.name .. " (idle, " .. SecondsToTime(v.idle) .. ")\n"
 			level_str = level_str .. v.level .. "\n"
 			played_str = played_str .. SecondsToTime(v.time_inside) .. "\n"
 			date_str = date_str .. v.date .. "\n"
@@ -1319,8 +1318,9 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	first_menu_description_title:SetText(
 		"Dungeons marked with (legacy) are old dungeon runs derived "
 			.. "from completed quests.\nA run marked in white is finalised and the dungeon may not be entered again. "
-			.. "A run marked in|c00FFFF00 yellow|c00FFFFFF is pending, and will be finalised after the timer expires. "
-			.. "A run marked in |c0000FF00 green|c00FFFFFF is the one you are currently on.\n\n"
+			.. "A run marked in|c00FFFF00 yellow|c00FFFFFF is pending, and will be finalised after a time of inactivity. "
+			.. "A run marked in |c0000FF00 green|c00FFFFFF is the one you are currently on. "
+			.. "Note that the idle time is not a reliable indicator for the uniqueness of the dungeon ID!\n\n"
 	)
 	first_menu_description_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	tabcontainer:AddChild(first_menu_description_title)
@@ -1372,7 +1372,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	local boss_time_label = AceGUI:Create("Label")
 	boss_time_label:SetWidth(155)
 	if show_boss_column then
-		boss_time_label:SetText("|c00FFFF00Bosses [# (end boss)]|r")
+		boss_time_label:SetText("|c00FFFF00#Bosses (end time)|r")
 	else
 		boss_time_label:SetText("") --- Don't write it
 	end
