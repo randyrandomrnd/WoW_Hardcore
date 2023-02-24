@@ -2119,7 +2119,7 @@ function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_functio
 		{ value = "AccountabilityTab", text = "Accountability" },
 		{ value = "AchievementsTab", text = "Achievements" },
 	}
-	if hc_guild_rank_index and hc_guild_rank_index < 5 then -- 0 is GM, 1 is generally officer
+	if hc_guild_rank_index and hc_guild_rank_index < 2 then -- 0 is GM, 1 is generally officer
 	  table.insert(tab_table, { value = "OfficerToolsTab", text = "Officer Tools" })
 	end
 
