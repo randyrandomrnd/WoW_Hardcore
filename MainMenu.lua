@@ -1414,7 +1414,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	-- Boss column
 	boss_data = AceGUI:Create("Label")
 	boss_data:SetWidth(155)
-	boss_data:SetFont("Fonts\\FRIZQT__.TTF", 12)
+	boss_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(boss_data)
 
 	-- Fill in the data into the data fields
