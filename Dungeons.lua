@@ -3,26 +3,27 @@
 -- Written by Frank de Jong
 
 -- Definitions
-local DT_WARN_INTERVAL = 10 -- Warn every 10 seconds about repeated run (while in dungeon)
-local DT_INSIDE_MAX_TIME = 61 -- Maximum time inside a dungeon without it being logged (61 looks nicer than 60 in-game)
-local DT_OUTSIDE_MAX_TRACKED_TIME = 1200 -- If seen outside, how many seconds seen outside before finalization (1200 = 20m)
-local DT_OUTSIDE_MAX_REAL_TIME = 1800 -- If seen outside, how many seconds since last seen inside before finalization (1800 = 30m)
-local DT_OUTSIDE_MAX_RUN_TIME = 21600 -- If seen outside, how many seconds since start of run before finalization (21600 = 6 hrs)
-local DT_TIME_STEP = 1 -- Dungeon code called every 1 second
-local DT_GROUP_PULSE = 30 -- Send group pulse every 30 seconds
-local DT_VERSION = 3 -- Increasing this will trigger a full rebuild of the dungeon tracker info
+local DT_WARN_INTERVAL = 10 					-- Warn every 10 seconds about repeated run (while in dungeon)
+local DT_INSIDE_MAX_TIME = 60 					-- Maximum time inside a dungeon without it being logged (61 looks nicer than 60 in-game)
+local DT_OUTSIDE_MAX_REAL_TIME = 1800 			-- If seen outside, how many seconds since last seen inside before finalization (1800 = 30m)
+local DT_OUTSIDE_MAX_RUN_TIME = 21600 			-- If seen outside, how many seconds since start of run before finalization (21600 = 6 hrs)
+local DT_TIME_STEP = 1 							-- Dungeon code called every 1 second
+local DT_GROUP_PULSE = 30 						-- Send group pulse every 30 seconds
+local DT_VERSION = 3 							-- Increasing this will trigger a full rebuild of the dungeon tracker info
 
 -- Some local variables defined in Hardcore.lua -- Make sure these are the same as in Hardcore.lua!!
 local CTL = _G.ChatThrottleLib
-local COMM_NAME = "HardcoreAddon" -- Overwritten in DungeonTrackerInitiate()
-local COMM_COMMAND_DELIM = "$" -- Overwritten in DungeonTrackerInitiate()
-local COMM_FIELD_DELIM = "|" -- Overwritten in DungeonTrackerInitiate()
-local DT_PULSE_COMMAND = "DTPULSE" -- Overwritten in DungeonTrackerInitiate()
+local COMM_NAME = "HardcoreAddon" 				-- Overwritten in DungeonTrackerInitiate()
+local COMM_COMMAND_DELIM = "$" 					-- Overwritten in DungeonTrackerInitiate()
+local COMM_FIELD_DELIM = "|" 					-- Overwritten in DungeonTrackerInitiate()
+local DT_PULSE_COMMAND = "DTPULSE" 				-- Overwritten in DungeonTrackerInitiate()
+
+local combat_log_frame = nil
 
 -- dt_db ( = dungeon tracker database )
 --
 -- Contains all the info for the dungeons:
--- { instanceMapID, zoneID, "English Name", type = { "D", "R", "B", "O" }, max_players, max_runs, { max_level_era, max_level_wotlk }, { quests } },
+-- { instanceMapID, zoneID, "English Name", type = { "D", "R", "B", "O" }, max_players, max_runs, { max_level_era, max_level_wotlk }, { quests }, { bosses } },
 -- Types: D = dungeon (5-player), R = raid, B = battleground, O = other
 
 local dt_db = {
@@ -38,37 +39,27 @@ local dt_db = {
 	{ 90, 721, "Gnomeregan", "D", 5, 1, { 38, 32 }, { 2904, 2951, 2945, 2922, 2928, 2924, 2930, 2929, 2841 } },
 	{ 129, 722, "Razorfen Downs", "D", 5, 1, { 46, 41 }, { 3636, 3341, 3525 } },
 	{ 189, 796, "Scarlet Monastery", "D", 5, 1, { 45, 44 }, {} },
-	{ 18901, 79601, "Scarlet Monastery (GY)", "D", 5, 1, { 45, 44 }, {} }, -- Bit of a hack here, 4 wings don't have a separate ID; No quests in GY
-	{ 18902, 79602, "Scarlet Monastery (Lib)", "D", 5, 1, { 45, 44 }, { 1050, 1053, 1049, 1048, 1160, 1951 } }, -- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
-	{ 18903, 79603, "Scarlet Monastery (Cath)", "D", 5, 1, { 45, 44 }, { 1053, 1048 } },
-	{ 18904, 79604, "Scarlet Monastery (Arm)", "D", 5, 1, { 45, 44 }, { 1053, 1048 } },
+	{ 18901, 79601, "Scarlet Monastery (GY)", "D", 5, 1, { 45, 44 }, 	 		-- Bit of a hack here, the 4 wings don't have a separate ID, so we fake one for them
+				{},																-- No quests in GY
+				{ {"Bloodmage Thalnos", 4543}, {"Interrogator Vishas", 3983}, {"Azshir the Sleepless", 6490}, {"Fallen Champion", 6488}, {"Ironspine", 6489} } }, 
+	{ 18902, 79602, "Scarlet Monastery (Lib)", "D", 5, 1, { 45, 44 }, 
+				{ 1050, 1053, 1049, 1048, 1160, 1951 }, 						-- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
+				{ {"Arcanist Doan", 6487}, {"Houndmaster Loksey", 3974} } }, 
+	{ 18903, 79603, "Scarlet Monastery (Cath)", "D", 5, 1, { 45, 44 }, 			
+				{ 1053, 1048 },													-- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
+				{ {"Scarlet Commander Mograine", 3976}, {"High Inquisitor Whitemane", 3977}, {"High Inquisitor Fairbanks", 4542 } } },
+	{ 18904, 79604, "Scarlet Monastery (Arm)", "D", 5, 1, { 45, 44 }, 
+				{ 1053, 1048 },													-- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
+				{ {"Herod", 3975} } },
 	{ 70, 1137, "Uldaman", "D", 5, 1, { 51, 44 }, { 1360, 2240, 1139, 2204, 2278 } },
 	{ 209, 1176, "Zul'Farrak", "D", 5, 1, { 54, 50 }, { 3042, 2865, 2846, 2768, 2770, 3527, 2991, 2936 } },
 	{ 349, 2100, "Maraudon", "D", 5, 1, { 55, 52 }, { 7041, 7029, 7065, 7064, 7067, 7044, 7046 } },
 	{ 109, 1477, "The Temple of Atal'Hakkar", "D", 5, 1, { 60, 54 }, { 3528, 3446, 3447, 3373 } }, -- 1475, 4143, 4146, removed: tablets and haze drop outside
-	{
-		229,
-		1583,
-		"Blackrock Spire",
-		"D",
-		10,
-		1,
-		{ 60, 62 },
-		{ 4701, 5001, 4724, 4982, 4903, 4862, 4729, 4788, 4768, 4974, 4764, 5102, 6821, 7761 },
-	}, -- UBRS and LBRS are one instance
+	{ 229, 1583, "Blackrock Spire",	"D", 10, 1, { 60, 62 },	{ 4701, 5001, 4724, 4982, 4903, 4862, 4729, 4788, 4768, 4974, 4764, 5102, 6821, 7761 } }, -- UBRS and LBRS are one instance
 	{ 230, 1584, "Blackrock Depths", "D", 5, 1, { 60, 60 }, { 4136, 4123, 4286, 4126, 4081, 4134 } },
 	{ 289, 2057, "Scholomance", "D", 5, 1, { 60, 62 }, { 5529, 5582, 5382, 5384, 5466, 5343, 5341 } },
 	{ 429, 2557, "Dire Maul", "D", 5, 1, { 60, 62 }, { 7488, 7489, 7441, 7461, 7462, 7703, 5526 } },
-	{
-		329,
-		2017,
-		"Stratholme",
-		"D",
-		5,
-		1,
-		{ 60, 62 },
-		{ 5282, 5214, 5251, 5262, 5848, 5122, 5212, 5263, 5243, 5122, 6163, 5463, 8945 },
-	}, -- Undead / Live parts are one instance
+	{ 329, 2017, "Stratholme", "D",	5, 1, { 60, 62 },{ 5282, 5214, 5251, 5262, 5848, 5122, 5212, 5263, 5243, 5122, 6163, 5463, 8945 } }, -- Undead / Live parts are one instance
 	-- Era Raids
 	{ 249, 2159, "Onyxia's Lair", "R", 40, 1000, { 1000, 1000 }, {} },
 	{ 309, 1977, "Zul'Gurub", "R", 20, 1000, { 1000, 1000 }, {} },
@@ -128,16 +119,7 @@ local dt_db = {
 	{ 578, 4228, "The Oculus", "D", 5, 1, { 1000, 80 }, { 13124, 13126, 13127, 13128, 13240, 13247 } },
 	{ 650, 4723, "Trial of the Champion", "D", 5, 1, { 1000, 80 }, { 14199 } },
 	{ 632, 4809, "The Forge of Souls", "D", 5, 1, { 1000, 80 }, { 24506, 24510, 24511, 24499, 24682, 24683 } },
-	{
-		658,
-		4813,
-		"Pit of Saron",
-		"D",
-		5,
-		1,
-		{ 1000, 80 },
-		{ 24682, 24683, 24507, 24498, 24712, 24710, 24713, 24711, 24559, 24461 },
-	},
+	{ 658, 4813, "Pit of Saron", "D", 5, 1, { 1000, 80 },{ 24682, 24683, 24507, 24498, 24712, 24710, 24713, 24711, 24559, 24461 }},
 	-- WotLK raids
 	{ 603, 4273, "Ulduar", "R", 25, 1000, { 1000, 1000 }, {} },
 	{ 615, 4493, "The Obsidian Sanctum", "R", 25, 1000, { 1000, 1000 }, {} },
@@ -158,31 +140,23 @@ local dt_db = {
 
 local dt_db_id_to_name = nil
 local dt_db_max_levels = nil
+local dt_db_name_to_index = nil			-- Gives index in the database of the dungeon with given name
 
--- DungeonTrackerGetDungeonName( id )
+-- DungeonTrackerInitializeHashes()
 --
--- Needed to get around regionalised names. We want everything in English, yo!
+-- Compiles the lookup tables dt_db_* for faster lookup of specific dungeons
 
-local function DungeonTrackerGetDungeonName(id)
-	-- Create the hash if we haven't already
+local function DungeonTrackerInitializeHashes()
+
+	-- Hash from MapID to dungeon name
 	if dt_db_id_to_name == nil then
 		dt_db_id_to_name = {}
 		for i, v in ipairs(dt_db) do
 			dt_db_id_to_name[v[1]] = v[3]
 		end
 	end
-
-	if dt_db_id_to_name[id] == nil then
-		return "Unknown"
-	end
-
-	return dt_db_id_to_name[id]
-end
-
-local function DungeonTrackerGetDungeonMaxLevel(name)
-	local max_level = 1000 -- Default: if we can't find it, or game version not set: it doesn't have a max level
-
-	-- Construct the hash if we haven't already
+	
+	-- Hash from name to max level
 	if dt_db_max_levels == nil then
 		dt_db_max_levels = {}
 		for i, v in ipairs(dt_db) do
@@ -193,8 +167,38 @@ local function DungeonTrackerGetDungeonMaxLevel(name)
 			end
 		end
 	end
+	
+	-- Hash from name to index in the database
+	if dt_db_name_to_index == nil then
+		dt_db_name_to_index = {}
+		for i, v in ipairs(dt_db) do
+			dt_db_name_to_index[v[3]] = i
+		end
+	end
+	
+end
 
-	if dt_db_max_levels[name] ~= nil then
+-- DungeonTrackerGetDungeonName( id )
+--
+-- Needed to get around regionalised names. We want everything in English, yo!
+
+local function DungeonTrackerGetDungeonName(id)
+
+	if dt_db_id_to_name == nil or dt_db_id_to_name[id] == nil then
+		return "Unknown"
+	end
+
+	return dt_db_id_to_name[id]
+end
+
+-- DungeonTrackerGetDungeonMaxLevel
+--
+-- Returns the max level for a dungeon from the database above, or 1000 if not known
+
+local function DungeonTrackerGetDungeonMaxLevel(name)
+	local max_level = 1000 -- Default: if we can't find it, or game version not set: it doesn't have a max level
+
+	if dt_db_max_levels ~= nil and dt_db_max_levels[name] ~= nil then
 		if Hardcore_Character.game_version ~= nil then
 			if Hardcore_Character.game_version == "Era" or Hardcore_Character.game_version == "SoM" then
 				max_level = dt_db_max_levels[name][1]
@@ -234,7 +238,7 @@ local function DungeonTrackerPopulateFromQuests()
 	-- finished. Only use the ones that can ONLY be done inside the dungeon! (So for instance, not
 	-- WC/Serpentbloom or SM/Hearts of Zeal)
 
-	-- Double check that we haven't JUST been reset by an appeal command
+	-- Double check that we haven't JUST been reset by an appeal command (this command is on a timer)
 	if Hardcore_Character.dt == nil then
 		return
 	end
@@ -313,10 +317,7 @@ local function DungeonTrackerUpdateInfractions()
 
 	for i = 1, #Hardcore_Character.dt.runs do
 		-- Check overleveled run
-		if
-			Hardcore_Character.dt.runs[i].level
-			> DungeonTrackerGetDungeonMaxLevel(Hardcore_Character.dt.runs[i].name)
-		then
+		if Hardcore_Character.dt.runs[i].level > DungeonTrackerGetDungeonMaxLevel(Hardcore_Character.dt.runs[i].name) then
 			over_leveled = over_leveled + 1
 		end
 		-- Check if the run is repeated further down in the array (this prevents counting runs twice when i ends up at j)
@@ -332,23 +333,21 @@ local function DungeonTrackerUpdateInfractions()
 end
 
 local function DungeonTrackerWarnInfraction()
-	local time_left = DT_INSIDE_MAX_TIME - Hardcore_Character.dt.current.time_inside
+
 	-- We only warn if there is still chance to get out in time
+	local time_left = DT_INSIDE_MAX_TIME - Hardcore_Character.dt.current.time_inside
 	if time_left <= 0 then
 		return
 	end
 
 	-- Don't warn too frequently
-	if
-		(Hardcore_Character.dt.current.last_warn ~= nil)
-		and (Hardcore_Character.dt.current.time_inside - Hardcore_Character.dt.current.last_warn < DT_WARN_INTERVAL)
-	then
+	if (Hardcore_Character.dt.current.last_warn ~= nil) and (Hardcore_Character.dt.current.time_inside - Hardcore_Character.dt.current.last_warn < DT_WARN_INTERVAL) then
 		return
 	end
 
 	-- Don't warn in the first few seconds of an unidentified SM wing. The time_left will be shorter after
 	-- a reconnect to an existing wing run, so then that first warning of 60s would be confusing
-	if (Hardcore_Character.dt.current.name == "Scarlet Monastery") and (time_left > 51) then
+	if (Hardcore_Character.dt.current.name == "Scarlet Monastery") and (time_left > 50) then
 		return
 	end
 
@@ -386,7 +385,7 @@ local function DungeonTrackerWarnInfraction()
 		Hardcore:Print(message)
 	end
 
-	-- See if this dungeon was already in the list of runs, and warn every so many seconds if that is so
+	-- See if this dungeon was already in the list of completed runs, and warn every so many seconds if that is so
 	for i, v in ipairs(Hardcore_Character.dt.runs) do
 		if DungeonTrackerIsRepeatedRun(v, Hardcore_Character.dt.current) then
 			Hardcore_Character.dt.current.last_warn = Hardcore_Character.dt.current.time_inside
@@ -401,12 +400,41 @@ local function DungeonTrackerWarnInfraction()
 			break -- No need to warn about 3rd and higher entries
 		end
 	end
+
+	-- See if this dungeon was already in the list of pending runs (but with a different instanceID), and warn every so many seconds if that is so
+	for i, v in ipairs(Hardcore_Character.dt.pending) do
+		-- We never warn about pending runs without an instanceID, they may or may not be the same as the current
+		-- (However, such pending runs should not exist, as they are deleted immediately when you exit the dungeon)
+		-- It is not possible for the IIDs to be the same at this point, as they would have been merged already
+		if v.iid ~= nil and Hardcore_Character.dt.current.iid ~= nil then
+			if DungeonTrackerIsRepeatedRun(v, Hardcore_Character.dt.current) then
+				Hardcore_Character.dt.current.last_warn = Hardcore_Character.dt.current.time_inside
+				message = "\124cffFF0000You entered another instance ID of "
+					.. v.name
+					.. " already at date "
+					.. v.date
+					.. " -- leave the dungeon within "
+					.. time_left
+					.. " seconds!"
+				Hardcore:Print(message)
+				break -- No need to warn about 3rd and higher entries
+			end
+		end
+	end
+
 end
 
 local function DungeonTrackerLogRun(run)
+
 	-- We don't log this run if the inside time is too small
 	if run.time_inside < DT_INSIDE_MAX_TIME then
 		Hardcore:Debug("Not logging short run in " .. run.name)
+		return
+	end
+
+	-- We don't log this run if no instance ID was found (indicating that no mobs were attacked)
+	if run.iid == nil then
+		Hardcore:Print("Not logging run without instanceID in " .. run.name)
 		return
 	end
 
@@ -442,18 +470,66 @@ local function DungeonTrackerLogRun(run)
 	DungeonTrackerUpdateInfractions()
 end
 
--- For TargetUnit() trick to find door mobs for Scarlet Monastery
-local dt_forbidden = false
+-- DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
+--
+-- Finds the SM wing in which a certain mob_type_id is found. Only works for unique mob_ids,
+-- so not for mobs that appear in more than one wing.
 
--- Function to do the unitscan trick of seeing nearby NPC for dungeon tracking
--- Called from the ADDON_ACTION_FORBIDDEN event handler in Hardcore.lua
-function DungeonTrackerHandleActionForbidden(arg1)
-	if arg1 == "Hardcore" then
-		dt_forbidden = true
+local function DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
+
+	local SM = "Scarlet Monastery" 
+
+	-- If this is SM (=189), and we don't know the wing yet, we try to find it
+	if map_id == 189 and Hardcore_Character.dt.current.name == SM then
+	
+		local wing_spaws = {
+			{4293, "Scarlet Scryer", "GY"},
+			{4306, "Scarlet Torturer", "GY"},
+			{4287, "Scarlet Gallant", "Lib"},
+			{4296, "Scarlet Adept", "Lib"},
+			{4286, "Scarlet Soldier", "Arm"},
+			{4297, "Scarlet Conjuror", "Arm"},
+			{4298, "Scarlet Defender", "Cath"},
+			-- One more round of deeper-in mobs
+			{6427, "Haunting Phantasm", "GY"},
+			{4288, "Scarlet Beastmaster", "Lib"},
+			{4291, "Scarlet Diviner", "Lib"},
+			{4289, "Scarlet Evoker", "Arm"},
+			{4294, "Scarlet Sorceror", "Cath"},
+			-- Bosses as a last resort
+			{3983, "Interrogator Vishas", "GY"},
+			{6490, "Azshir the Sleepless", "GY"},
+			{6488, "Fallen Champion", "GY"},
+			{6489, "Ironspine", "GY"},
+			{3974, "Houndmaster Loksey", "Lib"},
+			{6487, "Arcanist Doan", "Lib"},
+			{3975, "Herod", "Arm"},
+			{3976, "Scarlet Commander Mograine", "Cath"},
+			{3977, "High Inquisitor Whitemane", "Cath"},
+			{4542, "High Inquisitor Fairbanks", "Cath"},
+		}
+		
+		-- See if any of the listed mobs is recognised
+		for i, v in ipairs( wing_spaws ) do
+			if mob_type_id == v[1] then
+				Hardcore_Character.dt.current.name = SM .. " (" .. v[3] .. ")"
+				Hardcore:Debug( "Identified SM wing " .. v[3] .. " from " .. v[2] )
+				return
+			end
+		end
 	end
+	
+	-- If not SM, or wing already known, or wing not found, we do nothing
+
 end
 
+-- DungeonTrackerCheckChanged(name)
+--
+-- Handles changes of dungeon (to do "emergency" logging or current run)
+-- Also adapts the SM dungeon name to include the wing, if we know it
+
 local function DungeonTrackerCheckChanged(name)
+
 	-- If there is no current, there is no change
 	if not next(Hardcore_Character.dt.current) then
 		return name
@@ -464,130 +540,7 @@ local function DungeonTrackerCheckChanged(name)
 	-- If this is Scarlet Monastery (any wing), we need to check if the wing changed
 	if name == SM then
 		-- If we don't know which wing we are in, try to identify any of the dungeon wing's mobs
-		if Hardcore_Character.dt.current.name == SM then
-			-- Override the door spawn list for other often-used locales
-			local door_spawns = {}
-			local lang = GetLocale()
-			if lang == "enGB" or lang == "enUS" then
-				-- List of door spawns; first try a couple of ones close to the door, then add a few from deeper
-				-- to make sure we're not missing anything; finally, add the bosses
-				-- Thanks to @Oats for compiling the list.
-				-- English or bust, too bad for the ones we didn't implement -- those will not have ther wing recognised,
-				-- but that will luckily actually lead to a non-logged SM run.
-				door_spawns = {
-					["Scarlet Scryer"] = "GY",
-					["Scarlet Torturer"] = "GY",
-					["Scarlet Gallant"] = "Lib",
-					["Scarlet Adept"] = "Lib",
-					["Scarlet Soldier"] = "Arm",
-					["Scarlet Conjuror"] = "Arm",
-					["Scarlet Defender"] = "Cath",
-					-- One more round of deeper-in mobs
-					["Haunting Phantasm"] = "GY",
-					["Scarlet Beastmaster"] = "Lib",
-					["Scarlet Diviner"] = "Lib",
-					["Scarlet Evoker"] = "Arm",
-					["Scarlet Sorceror"] = "Cath",
-					-- Bosses as a last resort
-					["Interrogator Vishas"] = "GY",
-					["Houndmaster Loksey"] = "Lib",
-					["Arcanist Doan"] = "Lib",
-					["Herod"] = "Arm",
-					["Scarlet Commander Mograine"] = "Cath",
-					["High Inquisitor Whitemane"] = "Cath",
-				}
-			elseif lang == "frFR" then
-				door_spawns = {
-					["Clairvoyant écarlate"] = "GY",
-					["Tortionnaire écarlate"] = "GY",
-					["Vaillant écarlate"] = "Lib",
-					["Adepte écarlate"] = "Lib",
-					["Soldat écarlate"] = "Arm",
-					["Conjurateur écarlate"] = "Arm",
-					["Défenseur écarlate"] = "Cath",
-					-- One more round of deeper-in mobs
-					["Illusion spectrale"] = "GY",
-					["Belluaire écarlate"] = "Lib",
-					["Devin écarlate"] = "Lib",
-					["Evocateur écarlate"] = "Arm",
-					["Ensorceleur écarlate"] = "Cath",
-					-- Bosses as a last resort
-					["Interrogateur Vishas"] = "GY",
-					["Maître-chien Loksey"] = "Lib",
-					["Arcaniste Doan"] = "Lib",
-					["Herod"] = "Arm",
-					["Commandant écarlate Mograine"] = "Cath",
-					["Grand Inquisiteur Whitemane"] = "Cath",
-				}
-			elseif lang == "deDE" then
-				door_spawns = {
-					["Scharlachroter Wahrsager"] = "GY",
-					["Scharlachroter Folterknecht"] = "GY",
-					["Scharlachroter Kavalier"] = "Lib",
-					["Scharlachroter Adept"] = "Lib",
-					["Scharlachroter Soldat"] = "Arm",
-					["Scharlachroter Herbeizauberer"] = "Arm",
-					["Scharlachroter Verteidiger"] = "Cath",
-					-- One more round of deeper-in mobs
-					["Spuktrugbild"] = "GY",
-					["Scharlachroter Bestienmeister"] = "Lib",
-					["Scharlachroter Rutengänger"] = "Lib",
-					["Scharlachroter Rufer"] = "Arm",
-					["Scharlachroter Zauberhexer"] = "Cath",
-					-- Bosses as a last resort
-					["Befrager Vishas"] = "GY",
-					["Hundemeister Loksey"] = "Lib",
-					["Arkanist Doan"] = "Lib",
-					["Herod"] = "Arm",
-					["Scharlachroter Kommandant Mograine"] = "Cath",
-					["Hochinquisitor Whitemane"] = "Cath",
-				}
-			elseif lang == "esES" or lang == "esMX" then
-				door_spawns = {
-					["Arúspice Escarlata"] = "GY",
-					["Torturador Escarlata"] = "GY",
-					["Gallardo Escarlata"] = "Lib",
-					["Adepto Escarlata"] = "Lib",
-					["Soldado Escarlata"] = "Arm",
-					["Conjurador Escarlata"] = "Arm",
-					["Defensor Escarlata"] = "Cath",
-					-- One more round of deeper-in mobs
-					["Fantasma encantado"] = "GY",
-					["Maestro de bestias Escarlata"] = "Lib",
-					["Adivinador Escarlata"] = "Lib",
-					["Evocador Escarlata"] = "Arm",
-					["Hechicero Escarlata"] = "Cath",
-					-- Bosses as a last resort
-					["Interrogador Vishas"] = "GY",
-					["Domador de jaurías Loksey"] = "Lib",
-					["Arcanista Doan"] = "Lib",
-					["Herod"] = "Arm",
-					["Comandante Escarlata Mograine"] = "Cath",
-					["Alta Inquisidora Melenablanca"] = "Cath",
-				}
-			else
-				-- Unsupported language -- wing cannot be recognised, so we stay with the name that is never counted as repeated
-			end
-
-			local npc, wing
-			local reaction = 0
-			for npc, wing in pairs(door_spawns) do
-				dt_forbidden = false
-				TargetUnit(npc, true) -- This throws an exception if the unit is found; we catch this and change dt_forbidden
-				if dt_forbidden == true then
-					--Hardcore:Debug( "Found " .. npc .. " in " .. wing )
-					-- We know where we are now, so set the proper wing name as dungeon name
-					name = name .. " (" .. wing .. ")"
-					-- Now check if we knew the wing already
-					if Hardcore_Character.dt.current.name == SM then
-						-- We didn't know the wing, so we set it and assume it didn't change
-						Hardcore_Character.dt.current.name = name
-						Hardcore:Debug("Identified SM wing " .. wing)
-					end
-					break
-				end
-			end
-		else
+		if Hardcore_Character.dt.current.name ~= SM then
 			-- We already know our wing -- just copy over what we already had
 			name = Hardcore_Character.dt.current.name
 		end
@@ -599,9 +552,10 @@ local function DungeonTrackerCheckChanged(name)
 
 	-- Now check if the name changed (whether it's SM or RFC or whatever)
 	-- This should normally not happen, as once we're outside, the current dungeon is queued
+	-- But it could happen if people disable the addon inside a dungeon, and re-enable it in another
 	if Hardcore_Character.dt.current.name ~= name then
 		-- Change to the new dungeon, but we store only if we spent enough time
-		Hardcore:Debug("Left dungeon " .. Hardcore_Character.dt.current.name .. " for dungeon " .. name)
+		Hardcore:Print("Left dungeon " .. Hardcore_Character.dt.current.name .. " for dungeon " .. name)
 		DungeonTrackerLogRun(Hardcore_Character.dt.current)
 		Hardcore_Character.dt.current = {}
 	end
@@ -616,12 +570,27 @@ end
 
 function DungeonTrackerReceivePulse(data, sender)
 	local short_name
+	local version
 	local ping_time
 	local dungeon_name
-	local run_name
+	local dungeon_id
+	local iid
 
-	short_name, version, ping_time, dungeon_name, dungeon_id = string.split(COMM_FIELD_DELIM, data)
+	short_name, version, ping_time, dungeon_name, dungeon_id, iid = string.split(COMM_FIELD_DELIM, data)
+	-- Handle malformed pulse that breaks the script
+	if dungeon_id == nil then
+		return
+	else
+		dungeon_id = tonumber(dungeon_id)
+	end
+	-- Old version of the pulse does not have instance ID, so set it to 0
+	if iid == nil then
+		iid = 0
+	else
+		iid = tonumber(iid)
+	end	
 	ping_time = tonumber(ping_time)
+
 	Hardcore:Debug(
 		"Received dungeon group pulse from "
 			.. sender
@@ -631,38 +600,41 @@ function DungeonTrackerReceivePulse(data, sender)
 			.. ping_time
 			.. ", "
 			.. dungeon_name
+			.. ", "
+			.. iid
 	)
 
 	-- Check for errors, dt might not be set right now (if it just got reset for some weird reason)
-	if
-		(Hardcore_Character.dt == nil)
-		or (not next(Hardcore_Character.dt))
-		or (not next(Hardcore_Character.dt.pending))
-	then
+	if (Hardcore_Character.dt == nil) or (not next(Hardcore_Character.dt)) or (not next(Hardcore_Character.dt.pending)) then
 		return
 	end
 
 	-- Update the latest ping time in the idle runs only (no need to do it in current run)
 	for i, v in pairs(Hardcore_Character.dt.pending) do
-		-- If we receive a pulse from "Scarlet Monastery" (without wing), then we have no choice but
-		-- to store that pulse in all idle SM runs (the inside party member might be standing on the
-		-- doorstep of a partly cleared wing, and see no door mobs).
-		-- So then we don't care about the wing of the pending run, and just update them all
-		if dungeon_name == "Scarlet Monastery" then
-			run_name = string.sub(v.name, 1, 17) -- This also cuts "The Temple of Atal'Hakkar" to "The Temple of Ata", but that's okay
-		else
-			run_name = v.name
-		end
 
-		-- If this is the run from which the ping originated, and the ping time is later than we already have, store it
-		if run_name == dungeon_name then
-			if ping_time > v.last_pulse then
-				v.last_pulse = ping_time
+		-- We only update the pulse time if the instanceIDs from pending and party member aren't known, or when they are the same
+		if v.iid == nil or iid == 0 or v.iid == iid then
+			local run_name
+			-- If we receive a pulse from "Scarlet Monastery" (without wing), then we have no choice but
+			-- to store that pulse in all idle SM runs (the inside party member might be standing on the
+			-- doorstep of a partly cleared wing, and see no door mobs).
+			-- So then we don't care about the wing of the pending run, and just update them all
+			if dungeon_name == "Scarlet Monastery" then
+				run_name = string.sub(v.name, 1, 17) -- This also cuts "The Temple of Atal'Hakkar" to "The Temple of Ata", but that's okay
+			else
+				run_name = v.name
 			end
 
-			-- Add the ping sender to the party members, if not already there
-			if string.find(v.party, short_name) == nil then
-				v.party = v.party .. "," .. short_name
+			-- If this is the run from which the ping originated, and the ping time is later than we already have, store it
+			if run_name == dungeon_name then
+				if ping_time > v.last_seen then
+					v.last_seen = ping_time
+				end
+
+				-- Add the ping sender to the party members, if not already there
+				if string.find(v.party, short_name) == nil then
+					v.party = v.party .. "," .. short_name
+				end
 			end
 		end
 	end
@@ -682,6 +654,10 @@ local function DungeonTrackerSendPulse(now)
 	-- Send my own info to the party (=name + server time + dungeon)
 	if CTL then
 		local name = UnitName("player")
+		local iid = 0
+		if Hardcore_Character.dt.current.iid ~= nil then
+			iid = Hardcore_Character.dt.current.iid
+		end
 		local data = name
 			.. COMM_FIELD_DELIM
 			.. GetAddOnMetadata("Hardcore", "Version")
@@ -691,6 +667,8 @@ local function DungeonTrackerSendPulse(now)
 			.. Hardcore_Character.dt.current.name
 			.. COMM_FIELD_DELIM
 			.. Hardcore_Character.dt.current.id
+			.. COMM_FIELD_DELIM
+			.. iid
 		local comm_msg = DT_PULSE_COMMAND .. COMM_COMMAND_DELIM .. data
 		Hardcore:Debug("Sending dungeon group pulse: " .. comm_msg)
 		CTL:SendAddonMessage("NORMAL", COMM_NAME, comm_msg, "PARTY")
@@ -701,6 +679,182 @@ local function DungeonTrackerSendPulse(now)
 		end
 	end
 end
+
+-- DungeonTrackerIsBoss( map_id, mob_id )
+--
+-- Queries the dungeon database to see if the mob_id was a boss,
+-- returning true or false
+
+local function DungeonTrackerIsBoss( name, mob_id )
+
+	if dt_db_name_to_index ~= nil and dt_db_name_to_index[ name ] ~= nil then
+		local index = dt_db_name_to_index[ name ]
+		local record = dt_db[ index ]
+		if record[9] ~= nil then
+			local boss_list = record[9]
+			for i, v in ipairs( boss_list ) do
+				if v[2] ~= nil and v[2] == mob_id then
+					return true
+				end
+			end
+		end
+	end
+	
+	-- Error or not found
+	return false
+
+end
+
+
+-- DungeonTrackerLogKill( dst_guid, dst_name )
+--
+-- Logs the killing of specific units
+
+local function DungeonTrackerLogKill( mob_type_id )
+
+	-- Check if it's a boss
+	if DungeonTrackerIsBoss( Hardcore_Character.dt.current.name, mob_type_id ) then
+		-- Add it to the list of bosses we've killed
+		if Hardcore_Character.dt.current.bosses == nil then
+			Hardcore_Character.dt.current.bosses = {}
+		end
+		if Hardcore_Character.dt.current.bosses[ mob_type_id ] == nil then
+			Hardcore_Character.dt.current.bosses[ mob_type_id ] = GetServerTime()
+		else
+			-- This should not happen, so we log it here
+			Hardcore:Debug( "Warning -- repeated boss kill ignored" )
+			Hardcore_Character.dt.current.repeated_boss_kill = true
+		end
+	else
+		-- Add it to the list of NPCs we've killed
+		if Hardcore_Character.dt.current.kills == nil then
+			Hardcore_Character.dt.current.kills = {}
+		end
+		if Hardcore_Character.dt.current.kills[ mob_type_id ] == nil then
+			Hardcore_Character.dt.current.kills[ mob_type_id ] = 1
+		else
+			Hardcore_Character.dt.current.kills[ mob_type_id ] = Hardcore_Character.dt.current.kills[ mob_type_id ] + 1
+		end
+	end
+
+end
+
+-- CombatLogEventHandler
+--
+-- Handler for combat events inside the dungeon
+-- Retrieves the mapID (fixed for each dungeon), instanceID (dynamic) and NPCID (fixed) from combat events
+-- and updates the dungeon log accordingly. 
+
+local function CombatLogEventHandler( self, event )
+
+	-- Bail out right away if we don't have an active run (shouldn't happen, but could)
+	if not next( Hardcore_Character.dt.current ) then
+		return
+	end
+
+	-- Get the combat log data
+	local time_stamp, subevent, _, src_guid, src_name, _, _, dst_guid, dst_name = CombatLogGetCurrentEventInfo()
+
+	-- Combat events have a source and a destination (doing and getting the damage). We don't care which one is the NPC.
+	-- If it's an NPC, we'll take it.
+	local mob_guid = nil
+	local mob_name = nil
+	if src_guid ~= nil then
+		local mob_type = string.split("-", src_guid)
+		if mob_type == "Creature" then
+			mob_guid = src_guid
+			mob_name = src_name
+		end
+	end
+	if mob_guid == nil and dst_guid ~= nil then
+		local mob_type = string.split("-", dst_guid)
+		if mob_type == "Creature" then
+			mob_guid = dst_guid
+			mob_name = dst_name
+		end
+	end
+	
+	-- Return immediately if no NPC guid was found
+	if mob_guid == nil then
+		return		
+	end
+
+	--print( mob_guid )
+	
+	-- Split the GUID
+	local mob_type, _, server, map_id, instance_id, mob_type_id = string.split("-", mob_guid)
+	map_id = tonumber( map_id )
+	instance_id = tonumber( instance_id )
+	mob_type_id = tonumber( mob_type_id )
+	
+	-- Get the spawn time data from the GUID
+	--local mob_spawn_index = bit.rshift( bit.band(tonumber(string.sub(mob_guid[7], 1, 5), 16), 0xFFF8), 3 )
+	
+	-- Do some checks, to eliminate unexpected results
+	if map_id ~= Hardcore_Character.dt.current.id then
+		Hardcore:Debug( "Error: Got a combat log message witn an NPC " .. mob_name .. " (" .. mob_type_id .. ") in wrong dungeon map " .. map_id .. " -- bailing out!" )
+		return
+	end
+
+	-- Store the instanceID (the dynamic one)
+	-- To be thread-safe and fast, the reconnecting happens in the main timer routine
+	Hardcore_Character.dt.current.iid = instance_id
+		
+	-- Pass this mob to the SM wing identifier. This will update dt.current.name if possible. 
+	DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
+
+	-- If this is a kill, log it (including boss kills)
+	if subevent == "UNIT_DIED" then
+		DungeonTrackerLogKill( mob_type_id )
+	end
+	
+end
+
+-- DungeonTrackerGetBossKillDataForRun( run )
+--
+-- Called from MainMenu.lua to populate the dungeon log (boss column)
+
+function DungeonTrackerGetBossKillDataForRun( run )
+
+	local main_boss = nil
+	local main_boss_time = 0
+	local num_bosses = 0
+	
+	-- If there are no killed bosses (as in legacy runs) for this run, we return immediately
+	if run == nil or run.bosses == nil then
+		return -1, 0
+	end
+			
+	-- Get main boss for this run
+	if dt_db_name_to_index[ run.name ] ~= nil then
+		local index = dt_db_name_to_index[ run.name ]
+		local fields = dt_db[ index ]
+		if fields[9] ~= nil then
+			local boss_list = fields[9]
+			main_boss = boss_list[1]			-- e.g. {"Bloodmage Thalnos", 4543}
+		end
+	end
+	
+	-- Now find the main boss kill time
+	if main_boss ~= nil then
+		local main_boss_id = main_boss[2]
+
+		-- Look for the boss kill time with this id
+		if run.bosses[ main_boss_id ] ~= nil then
+			main_boss_time = run.bosses[ main_boss_id ] - run.start
+		end
+	end
+	
+	-- Count the number of bosses
+	for i,v in pairs( run.bosses ) do
+		num_bosses = num_bosses + 1
+	end
+
+	-- Now return the number of bosses and the main boss time
+	return num_bosses, main_boss_time
+
+end
+
 
 -- DungeonTracker
 --
@@ -714,11 +868,10 @@ local function DungeonTracker()
 		GetInstanceInfo()
 
 	-- Handle invalid or legacy data files, or version upgrade (triggers full rebuild of dungeon database)
-	if
-		(Hardcore_Character.dt == nil) -- no DT yet
-		or (Hardcore_Character.dt.version == nil) -- initial DT version without a version number
-		or (Hardcore_Character.dt.version ~= DT_VERSION)
-	then -- older version (with a version number)
+	if (Hardcore_Character.dt == nil) 						-- no DT yet
+		or (Hardcore_Character.dt.version == nil) 			-- initial DT version without a version number
+		or (Hardcore_Character.dt.version ~= DT_VERSION)	-- older version (with a version number)
+	then 
 		Hardcore_Character.dt = {}
 	end
 	if not next(Hardcore_Character.dt) then
@@ -743,7 +896,8 @@ local function DungeonTracker()
 		Hardcore_Character.dt.legacy_runs_imported = true
 	end
 
-	-- Quick check to see if there is no work to be done. We also store the group composition for later (only works outside the instance)
+	-- Quick check to see if there is no work to be done (i.e. we are outside and there are no pending or current runs)
+	-- We also store the group composition for later (only works outside the instance)
 	if instanceType == "none" then
 		Hardcore_Character.dt.group_members = GetHomePartyInfo()
 		if (not next(Hardcore_Character.dt.current)) and (not next(Hardcore_Character.dt.pending)) then
@@ -751,36 +905,42 @@ local function DungeonTracker()
 		end
 	end
 
-	-- At this point, we are either in a dungeon, or we just left one (dt.pending is still valid)
-	local now = GetServerTime()
-
-	-- If we are no longer in a dungeon, move current to pending, and update timeouts
+	-- At this point, we are either in a dungeon, or we just left one (dt.current is still valid)
+	-- If we just left a dungeon, move current to pending, and update timeouts
 	if instanceType ~= "party" then
+	
 		-- Move current to pending
 		if next(Hardcore_Character.dt.current) then
-			Hardcore:Debug("Queuing active run in " .. Hardcore_Character.dt.current.name)
-			table.insert(Hardcore_Character.dt.pending, Hardcore_Character.dt.current)
+			-- If we didn't find an instance ID yet, we drop this "ghost" run immediately (there is no point in keeping it)
+			if Hardcore_Character.dt.current.iid == nil then
+				Hardcore:Debug("Dropping active run without instanceID in " .. Hardcore_Character.dt.current.name)
+			elseif Hardcore_Character.dt.current.name == "Scarlet Monastery" then
+				-- If we didn't find the SM wing, we drop this run as well.
+				Hardcore:Debug("Dropping active Scarlet Monastery run without identified wing")
+			else
+				Hardcore:Debug("Queuing active run in " .. Hardcore_Character.dt.current.name)
+				table.insert(Hardcore_Character.dt.pending, Hardcore_Character.dt.current)
+			end
 			Hardcore_Character.dt.current = {}
+			
+			-- We don't need the combat log anymore
+			if combat_log_frame ~= nil then
+				combat_log_frame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+				combat_log_frame.dtcl_script_registered = nil			-- trigger re-registering later
+			end				
 		end
 	end
 
 	-- Finalize any pending runs for which more than the timeout has passed and for which no recent party pulse was received
 	-- Do this backwards so deleting an element is safe.
+	local now = GetServerTime()
 	for i = #Hardcore_Character.dt.pending, 1, -1 do
-		Hardcore_Character.dt.pending[i].time_outside = Hardcore_Character.dt.pending[i].time_outside + DT_TIME_STEP
+		-- Update idle time (=time since we left or got last group pulse)
+		Hardcore_Character.dt.pending[i].idle = now - Hardcore_Character.dt.pending[i].last_seen
 
-		-- Calculate remaining time; it's the smallest of the three outside time outs
-		local idle_time_left = DT_OUTSIDE_MAX_TRACKED_TIME - Hardcore_Character.dt.pending[i].time_outside
-		idle_time_left =
-			min(idle_time_left, DT_OUTSIDE_MAX_REAL_TIME - (now - Hardcore_Character.dt.pending[i].last_seen))
-		idle_time_left = min(idle_time_left, DT_OUTSIDE_MAX_RUN_TIME - (now - Hardcore_Character.dt.pending[i].start))
-
-		-- Override the remaining time if we got a group pulse
-		idle_time_left =
-			max(idle_time_left, DT_OUTSIDE_MAX_TRACKED_TIME - (now - Hardcore_Character.dt.pending[i].last_pulse))
-
-		-- Update idle time left for the user interface
-		Hardcore_Character.dt.pending[i].idle_left = idle_time_left
+		-- Calculate remaining time; it's the smallest of the two outside time outs
+		local idle_time_left = min(DT_OUTSIDE_MAX_REAL_TIME - Hardcore_Character.dt.pending[i].idle, 
+						DT_OUTSIDE_MAX_RUN_TIME - (now - Hardcore_Character.dt.pending[i].start))
 
 		-- Log it if it expired
 		if idle_time_left <= 0 then
@@ -794,22 +954,44 @@ local function DungeonTracker()
 		return
 	end
 
+	-- Start the combat log event handler to get the instance ID, SM wing identification and mob kills
+	if combat_log_frame == nil then
+		combat_log_frame = CreateFrame("Frame")
+	end
+	if combat_log_frame.dtcl_script_registered == nil then
+		combat_log_frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+		combat_log_frame:SetScript("OnEvent", CombatLogEventHandler )
+		combat_log_frame.dtcl_script_registered = true
+	end
+
 	-- Override the name, we don't want to use the local language versions (unless we can't find the name)
 	local EN_name = DungeonTrackerGetDungeonName(instanceMapID)
 	if EN_name ~= "Unknown" then
 		name = EN_name
 	end
 
-	-- Check if we are in a new dungeon (this has the special handling of Scarlet Monastery)
+	-- Check if we are in a new dungeon (this has the special handling of Scarlet Monastery, which changes
+	-- the name to the name including the wing, if it has been identified)
 	name = DungeonTrackerCheckChanged(name)
 
 	-- See if we can reconnect to a pending run (this forgets the current run, which is probably in an unidentified SM wing)
+	-- We do this only if the current run and the pending run have the same name and the same instance ID
 	for i = 1, #Hardcore_Character.dt.pending do
 		if Hardcore_Character.dt.pending[i].name == name then
-			Hardcore_Character.dt.current = Hardcore_Character.dt.pending[i]
-			table.remove(Hardcore_Character.dt.pending, i)
-			Hardcore:Debug("Reconnected to pending run in " .. Hardcore_Character.dt.current.name)
-			break
+			if Hardcore_Character.dt.pending[i].iid ~= nil 			-- Should never happen, but yeah...
+				and Hardcore_Character.dt.current.iid ~= nil
+				and Hardcore_Character.dt.pending[i].iid == Hardcore_Character.dt.current.iid 
+			then
+				-- Add the inside time of the current run (should be defined since the iid has been found
+				Hardcore_Character.dt.pending[i].time_inside = Hardcore_Character.dt.pending[i].time_inside + Hardcore_Character.dt.current.time_inside
+				Hardcore_Character.dt.current = Hardcore_Character.dt.pending[i]
+				table.remove(Hardcore_Character.dt.pending, i)
+				Hardcore:Debug("Reconnected to pending run in " .. Hardcore_Character.dt.current.name)
+				break
+			else
+				-- User did a "reset all instances", probably, or the current didn't have an IID yet.
+				-- In the former case, a warning will be a given further down
+			end
 		end
 	end
 
@@ -820,11 +1002,10 @@ local function DungeonTracker()
 		DUNGEON_RUN.id = instanceMapID
 		DUNGEON_RUN.date = date("%m/%d/%y %H:%M:%S")
 		DUNGEON_RUN.time_inside = 0
-		DUNGEON_RUN.time_outside = 0
 		DUNGEON_RUN.start = now
 		DUNGEON_RUN.last_seen = now
-		DUNGEON_RUN.last_pulse = 0
-		DUNGEON_RUN.idle_left = 0 -- Remaining idle time
+		DUNGEON_RUN.idle = 0
+		DUNGEON_RUN.bosses = {}
 		DUNGEON_RUN.level = UnitLevel("player")
 		local group_composition = UnitName("player")
 		if Hardcore_Character.dt.group_members ~= nil then
@@ -840,7 +1021,6 @@ local function DungeonTracker()
 
 	-- Extend the current run (reconnected or new) by another time step and update the last_seen time
 	Hardcore_Character.dt.current.time_inside = Hardcore_Character.dt.current.time_inside + DT_TIME_STEP
-	Hardcore_Character.dt.current.time_outside = 0 -- don't want to cumulate outside times
 	Hardcore_Character.dt.current.last_seen = now
 
 	-- Send out pings to group members
@@ -863,10 +1043,14 @@ function DungeonTrackerInitiate(comm_name, pulse_cmd, cmd_delim, field_delim)
 	COMM_COMMAND_DELIM = cmd_delim
 	COMM_FIELD_DELIM = field_delim
 
+	-- Compile some hash tables from the database
+	DungeonTrackerInitializeHashes()
+
 	-- Start the timer
 	C_Timer.NewTicker(DT_TIME_STEP, function()
 		DungeonTracker()
 	end)
+	
 end
 
 -- DungeonTrackerHandleAppealCode()
