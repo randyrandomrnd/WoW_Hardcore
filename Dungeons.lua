@@ -573,16 +573,21 @@ function DungeonTrackerReceivePulse(data, sender)
 	local version
 	local ping_time
 	local dungeon_name
+	local dungeon_id
 	local iid
 
 	short_name, version, ping_time, dungeon_name, dungeon_id, iid = string.split(COMM_FIELD_DELIM, data)
 	-- Handle malformed pulse that breaks the script
 	if dungeon_id == nil then
 		return
+	else
+		dungeon_id = tonumber(dungeon_id)
 	end
 	-- Old version of the pulse does not have instance ID, so set it to 0
 	if iid == nil then
 		iid = 0
+	else
+		iid = tonumber(iid)
 	end	
 	ping_time = tonumber(ping_time)
 
