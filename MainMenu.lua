@@ -1470,6 +1470,7 @@ local function DrawAccountabilityTab(container)
 			if
 				other_hardcore_character_cache[player_name_short].achievements == nil
 				or #other_hardcore_character_cache[player_name_short].achievements > 0
+				or #other_hardcore_character_cache[player_name_short].passive_achievements > 0
 			then
 				local inline_text = ""
 				for i, achievement_name in ipairs(other_hardcore_character_cache[player_name_short].achievements) do
