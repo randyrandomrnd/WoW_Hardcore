@@ -574,7 +574,7 @@ function DungeonTrackerReceivePulse(data, sender)
 
 	short_name, version, ping_time, dungeon_name, dungeon_id, iid = string.split(COMM_FIELD_DELIM, data)
 	-- Handle malformed pulse that breaks the script
-	if dungeon_id == nil
+	if dungeon_id == nil then
 		return
 	end
 	-- Old version of the pulse does not have instance ID, so set it to 0
