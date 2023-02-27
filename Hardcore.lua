@@ -1300,6 +1300,7 @@ function Hardcore:PLAYER_LOGIN()
 
 	-- different guid means new character with the same name
 	if Hardcore_Character.guid ~= PLAYER_GUID then
+		Hardcore:Print("New character detected.  Contact a mod if this is unexpected.")
 		Hardcore:ForceResetSavedVariables()
 	end
 
