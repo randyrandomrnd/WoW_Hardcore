@@ -1291,7 +1291,7 @@ function Hardcore:PLAYER_LOGIN()
 	self:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
 
 	-- For dungeon tracking targetting of door npcs
-	self:RegisterEvent("ADDON_ACTION_FORBIDDEN")
+	--self:RegisterEvent("ADDON_ACTION_FORBIDDEN")
 
 	Hardcore:InitializeSavedVariables()
 	Hardcore:InitializeSettingsSavedVariables()
@@ -1454,9 +1454,9 @@ function Hardcore:UPDATE_MOUSEOVER_UNIT()
 end
 
 -- Function to do the unitscan trick of seeing nearby NPC for dungeon tracking -- pass to dungeons module
-function Hardcore:ADDON_ACTION_FORBIDDEN(arg1)
-	DungeonTrackerHandleActionForbidden(arg1)
-end
+--function Hardcore:ADDON_ACTION_FORBIDDEN(arg1)
+--	DungeonTrackerHandleActionForbidden(arg1)
+--end
 
 function Hardcore:UNIT_TARGET()
 	RequestHCDataIfValid("target")
