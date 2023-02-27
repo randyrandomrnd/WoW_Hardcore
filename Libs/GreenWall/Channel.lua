@@ -277,10 +277,10 @@ function GwChannel:tl_send(type, message)
     local opcode
     if type == GW_MTYPE_CHAT then
 	if hc_gw_lfgm_mode and hc_gw_lfgm_mode == true then
-		if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ")) then 
+		  if (not message:match("lfg") and not message:match("lfm") and not message:match("LFG") and not message:match("LFM") and not message:match("lf ") and not message:match("LF ") and not message:match("LF%d") and not message:match("lf%d")) then 
 		  return
 		end
-		message = UnitLevel("player") .. "-" .. mesage
+		message = UnitLevel("player") .. "-" .. message
 	end
 
 	opcode = 'C'

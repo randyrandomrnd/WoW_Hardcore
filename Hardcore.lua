@@ -1810,6 +1810,9 @@ function Hardcore:PLAYER_UNGHOST()
 		return
 	end -- prevent message on ghost login or zone
 
+	if hc_self_block_flag then
+		return
+	end
 	local playerName, _ = UnitName("player")
 
 	local message = playerName .. " has resurrected!"
