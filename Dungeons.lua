@@ -29,28 +29,38 @@ local combat_log_frame = nil
 local dt_db = {
 
 	-- Era dungeons
-	{ 389, 2437, "Ragefire Chasm", "D", 5, 1, { 18, 20 }, { 5728, 5761, 5722, 5723, 5725 } }, -- All 5 quests in RFC
+	{ 389, 2437, "Ragefire Chasm", "D", 5, 1, { 18, 20 }, 
+				{ 5728, 5761, 5722, 5723, 5725 } , -- All 5 quests in RFC
+				{{"Bazzalan",11519}, {"Taramagan the Hungerer",11520}, {"Oggleflint",11517}, {"Jergosh the Invoker",11518}} 
+	},
 	{ 36, 1581, "The Deadmines", "D", 5, 1, { 26, 24 }, { 2040, 166, 214, 373 } }, -- Underground Assault, The Defias Brotherhood, Red Silk Bandanas, The Unsent Letter
-	{ 43, 718, "Wailing Caverns", "D", 5, 1, { 24, 24 }, { 914, 1487, 3366 } }, -- Leaders of the Fang, Deviate Eradication, The Glowing Shard
+	{ 43, 718, "Wailing Caverns", "D", 5, 1, { 24, 24 }, 
+				{ 914, 1487, 3366 },			-- Leaders of the Fang, Deviate Eradication, The Glowing Shard
+				{{"Mutanus",3654}, {"Kresh",3653}, {"Lady Anacondra",3671}, {"Lord Cobrahn",3669}, {"Lord Pythas",3670}, {"Skum",3674}, {"Lord Serpentis",3673}, {"Verdan the Everliving",5775}}
+	}, 
 	{ 33, 209, "Shadowfang Keep", "D", 5, 1, { 30, 25 }, { 1013, 1098, 1014 } }, -- The Book of Ur, Deathstalkers in Shadowfang, Arugal Must Die
 	{ 48, 719, "Blackfathom Deeps", "D", 5, 1, { 32, 28 }, { 971, 1198, 1199, 1275, 6565, 6921, 1200, 6561, 6922 } },
 	{ 34, 717, "The Stockade", "D", 5, 1, { 32, 29 }, { 387, 386, 378, 388, 377, 391 } },
 	{ 47, 491, "Razorfen Kraul", "D", 5, 1, { 38, 31 }, { 1221, 1102, 1109, 1101, 1144, 1142, 6522 } },
 	{ 90, 721, "Gnomeregan", "D", 5, 1, { 38, 32 }, { 2904, 2951, 2945, 2922, 2928, 2924, 2930, 2929, 2841 } },
 	{ 129, 722, "Razorfen Downs", "D", 5, 1, { 46, 41 }, { 3636, 3341, 3525 } },
-	{ 189, 796, "Scarlet Monastery", "D", 5, 1, { 45, 44 }, {} },
+	{ 189, 796, "Scarlet Monastery", "D", 5, 1, { 45, 44 }, {}, {} },			-- Empty boss list allows logging of bosses in the wings
 	{ 18901, 79601, "Scarlet Monastery (GY)", "D", 5, 1, { 45, 44 }, 	 		-- Bit of a hack here, the 4 wings don't have a separate ID, so we fake one for them
 				{},																-- No quests in GY
-				{ {"Bloodmage Thalnos", 4543}, {"Interrogator Vishas", 3983}, {"Azshir the Sleepless", 6490}, {"Fallen Champion", 6488}, {"Ironspine", 6489} } }, 
+				{ {"Bloodmage Thalnos", 4543}, {"Interrogator Vishas", 3983}, {"Azshir the Sleepless", 6490}, {"Fallen Champion", 6488}, {"Ironspine", 6489} } 
+	}, 
 	{ 18902, 79602, "Scarlet Monastery (Lib)", "D", 5, 1, { 45, 44 }, 
 				{ 1050, 1053, 1049, 1048, 1160, 1951 }, 						-- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
-				{ {"Arcanist Doan", 6487}, {"Houndmaster Loksey", 3974} } }, 
+				{ {"Arcanist Doan", 6487}, {"Houndmaster Loksey", 3974} } 
+	}, 
 	{ 18903, 79603, "Scarlet Monastery (Cath)", "D", 5, 1, { 45, 44 }, 			
 				{ 1053, 1048 },													-- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
-				{ {"Scarlet Commander Mograine", 3976}, {"High Inquisitor Whitemane", 3977}, {"High Inquisitor Fairbanks", 4542 } } },
+				{ {"Scarlet Commander Mograine", 3976}, {"High Inquisitor Whitemane", 3977}, {"High Inquisitor Fairbanks", 4542 } } 
+	},
 	{ 18904, 79604, "Scarlet Monastery (Arm)", "D", 5, 1, { 45, 44 }, 
 				{ 1053, 1048 },													-- 1048+1053: kill 4 bosses needs Lib+Cath+Arm
-				{ {"Herod", 3975} } },
+				{ {"Herod", 3975} } 
+	},
 	{ 70, 1137, "Uldaman", "D", 5, 1, { 51, 44 }, { 1360, 2240, 1139, 2204, 2278 } },
 	{ 209, 1176, "Zul'Farrak", "D", 5, 1, { 54, 50 }, { 3042, 2865, 2846, 2768, 2770, 3527, 2991, 2936 } },
 	{ 349, 2100, "Maraudon", "D", 5, 1, { 55, 52 }, { 7041, 7029, 7065, 7064, 7067, 7044, 7046 } },
@@ -680,7 +690,30 @@ local function DungeonTrackerSendPulse(now)
 	end
 end
 
--- DungeonTrackerIsBoss( map_id, mob_id )
+
+-- DungeonTrackerDatabaseHasBossInfo( name )
+--
+-- Queries the dungeon database to see if the boss info is set for this dungeon,
+-- basically to cover the period in which we gather the boss info
+-- returning true or false
+
+local function DungeonTrackerDatabaseHasBossInfo( name )
+
+	if dt_db_name_to_index ~= nil and dt_db_name_to_index[ name ] ~= nil then
+		local index = dt_db_name_to_index[ name ]
+		local record = dt_db[ index ]
+		if record[9] ~= nil then
+			return true
+		end
+	end
+	
+	-- Error or not found
+	return false
+
+end
+
+
+-- DungeonTrackerIsBoss( name, mob_id )
 --
 -- Queries the dungeon database to see if the mob_id was a boss,
 -- returning true or false
@@ -1005,7 +1038,6 @@ local function DungeonTracker()
 		DUNGEON_RUN.start = now
 		DUNGEON_RUN.last_seen = now
 		DUNGEON_RUN.idle = 0
-		DUNGEON_RUN.bosses = {}
 		DUNGEON_RUN.level = UnitLevel("player")
 		local group_composition = UnitName("player")
 		if Hardcore_Character.dt.group_members ~= nil then
@@ -1015,6 +1047,12 @@ local function DungeonTracker()
 		end
 		DUNGEON_RUN.party = group_composition
 
+		-- Having a nil bosses list means we didn't track the bosses; while an empty list 
+		-- means we simply didn't kill any. This depends on whether any boss info is in the database
+		if DungeonTrackerDatabaseHasBossInfo( name ) then
+			DUNGEON_RUN.bosses = {}
+		end
+		
 		Hardcore_Character.dt.current = DUNGEON_RUN
 		Hardcore:Debug("Starting new run in " .. Hardcore_Character.dt.current.name)
 	end
