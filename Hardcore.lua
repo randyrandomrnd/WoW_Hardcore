@@ -2036,13 +2036,13 @@ function Hardcore:TIME_PLAYED_MSG(...)
 		Hardcore:Debug(debug_message)
 
 		if Hardcore_Character.time_tracked < 1800 and Hardcore_Character.time_played > 7200 then -- 1/2 hr, 2 hrs
-			local backup_name, backup_data = checkForBackupMatch()
+			-- local backup_name, backup_data = checkForBackupMatch()
 
-			local function recoverFunction(element, _backup_data)
-				if _backup_data[element] then
-					Hardcore_Character[element] = _backup_data[element]
-				end
-			end
+			-- local function recoverFunction(element, _backup_data)
+			-- 	if _backup_data[element] then
+			-- 		Hardcore_Character[element] = _backup_data[element]
+			-- 	end
+			-- end
 			if backup_name then
 				local player_name_short, _server_name = string.split("-", backup_name)
 				if player_name_short == UnitName("player") and GetRealmName() == _server_name then
@@ -2078,27 +2078,42 @@ function Hardcore:TIME_PLAYED_MSG(...)
 		end
 
 		if duration_since_last_recording > PLAYED_TIME_GAP_THRESH then
-			initiateRecoverTime(duration_since_last_recording)
+			-- initiateRecoverTime(duration_since_last_recording)
+			local played_time_gap_info = {}
+			played_time_gap_info.duration_since_last_recording = duration_since_last_recording
+			played_time_gap_info.date = date("%m/%d/%y %H:%M:%S")
+			if Hardcore_Character.played_time_gap_warnings == nil then
+				Hardcore_Character.played_time_gap_warnings = {}
+				Hardcore_Character.played_time_gap_warnings[1] = played_time_gap_info
+			else
+				table.insert(Hardcore_Character.played_time_gap_warnings, played_time_gap_info)
+			end
+			local message = "\124cffFF0000Addon/Playtime gap detected at date"
+				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].date
+				.. " with a duration: "
+				.. Hardcore_Character.played_time_gap_warnings[#Hardcore_Character.played_time_gap_warnings].duration_since_last_recording
+				.. " seconds."
+			Hardcore:Print(message)
 		else
 			-- Backup character data grooming and maintainence
 
 			-- Only hold character data for a week
-			for k, v in pairs(Backup_Character_Data) do
-				if v["backup_date"] and GetServerTime() - v["backup_date"] > 604800 then -- one week
-					Backup_Character_Data[k] = nil
-				end
-			end
+			-- for k, v in pairs(Backup_Character_Data) do
+			-- 	if v["backup_date"] and GetServerTime() - v["backup_date"] > 604800 then -- one week
+			-- 		Backup_Character_Data[k] = nil
+			-- 	end
+			-- end
 
-			local name_and_server = UnitName("player") .. "-" .. GetRealmName()
-			Backup_Character_Data[name_and_server] = {
-				["backup_date"] = GetServerTime(), -- Unix Time
-				["race"] = UnitRace("player"),
-				["level"] = UnitLevel("player"),
-				["class"] = UnitClass("player"),
-			}
-			for k, v in pairs(Hardcore_Character) do
-				Backup_Character_Data[name_and_server][k] = v
-			end
+			-- local name_and_server = UnitName("player") .. "-" .. GetRealmName()
+			-- Backup_Character_Data[name_and_server] = {
+			-- 	["backup_date"] = GetServerTime(), -- Unix Time
+			-- 	["race"] = UnitRace("player"),
+			-- 	["level"] = UnitLevel("player"),
+			-- 	["class"] = UnitClass("player"),
+			-- }
+			-- for k, v in pairs(Hardcore_Character) do
+			-- 	Backup_Character_Data[name_and_server][k] = v
+			-- end
 		end
 		Hardcore_Character.last_segment_start_time = time()
 	end
