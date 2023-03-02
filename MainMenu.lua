@@ -298,6 +298,25 @@ local function DrawGeneralTab(container)
 
 	local changelog_title = AceGUI:Create("Label")
 	changelog_title:SetWidth(500)
+	changelog_title:SetText("11.15")
+	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	scroll_frame:AddChild(changelog_title)
+
+	local changelog_description = AceGUI:Create("Label")
+	changelog_description:SetWidth(_menu_width)
+	changelog_description:SetText(
+		"- Dungeon tracker improvements\n"
+			.. "- HC Defense fix; resurrecting no longer causes alert\n"
+			.. "- LF mode fixes; no longer crashes for lower version players.\n"
+			.. "- Disable automatic recovery methods\n"
+	)
+	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	scroll_frame:AddChild(changelog_description)
+
+	---
+
+	local changelog_title = AceGUI:Create("Label")
+	changelog_title:SetWidth(500)
 	changelog_title:SetText("11.14")
 	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
 	scroll_frame:AddChild(changelog_title)
