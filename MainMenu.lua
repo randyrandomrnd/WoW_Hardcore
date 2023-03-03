@@ -1254,12 +1254,14 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		local boss_str = ""
 
 		local function GetBossTimeString(run)
-			num_bosses, main_boss_kill_time = DungeonTrackerGetBossKillDataForRun( run )
+			local num_bosses, max_bosses, main_boss_kill_time
+			num_bosses, max_bosses, main_boss_kill_time = DungeonTrackerGetBossKillDataForRun( run )
 			if num_bosses >= 0 then
+				local num_max_bosses = num_bosses .. "/" .. max_bosses .. " "
 				if main_boss_kill_time > 0 then
-					return num_bosses .. " (" .. SecondsToTime(main_boss_kill_time) .. ")\n"
+					return num_max_bosses .. "(" .. SecondsToTime(main_boss_kill_time) .. ")\n"
 				else
-					return num_bosses .. " (N/A)\n" -- Dungeon done, but end boss not killed
+					return num_max_bosses .. "(N/A)\n" 		-- Dungeon done, but end boss not killed
 				end
 			else
 				return "?\n" -- No info

@@ -893,10 +893,11 @@ function DungeonTrackerGetBossKillDataForRun( run )
 	local main_boss = nil
 	local main_boss_time = 0
 	local num_bosses = 0
+	local max_bosses = -1
 	
 	-- If there are no killed bosses (as in legacy runs) for this run, we return immediately
 	if run == nil or run.bosses == nil then
-		return -1, 0
+		return -1, -1, 0
 	end
 			
 	-- Get main boss for this run
@@ -905,7 +906,10 @@ function DungeonTrackerGetBossKillDataForRun( run )
 		local fields = dt_db[ index ]
 		if fields[9] ~= nil then
 			local boss_list = fields[9]
-			main_boss = boss_list[1]			-- e.g. {"Bloodmage Thalnos", 4543}
+			max_bosses = #boss_list
+			if max_bosses > 0 then
+				main_boss = boss_list[1]			-- e.g. {"Bloodmage Thalnos", 4543}
+			end
 		end
 	end
 	
@@ -919,13 +923,13 @@ function DungeonTrackerGetBossKillDataForRun( run )
 		end
 	end
 	
-	-- Count the number of bosses
+	-- Count the number of killed bosses
 	for i,v in pairs( run.bosses ) do
 		num_bosses = num_bosses + 1
 	end
 
 	-- Now return the number of bosses and the main boss time
-	return num_bosses, main_boss_time
+	return num_bosses, max_bosses, main_boss_time
 
 end
 
