@@ -309,6 +309,7 @@ local function DrawGeneralTab(container)
 			.. "- HC Defense fix; resurrecting no longer causes alert\n"
 			.. "- LF mode fixes; no longer crashes for lower version players.\n"
 			.. "- Disable automatic recovery methods\n"
+			.. "- Removed summon mounts from failing Imp Master\n"
 	)
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
