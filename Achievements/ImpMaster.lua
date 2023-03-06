@@ -6,8 +6,6 @@ local blacklist_spells = {
 	"Summon Succcubus",
 	"Summon Voidwalker",
 	"Summon Felhunter",
-	"Summon Felsteed",
-	"Summon Dreadsteed",
 }
 
 -- General info
