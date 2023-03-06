@@ -20,6 +20,8 @@ local DT_PULSE_COMMAND = "DTPULSE" 				-- Overwritten in DungeonTrackerInitiate(
 
 local combat_log_frame = nil
 
+local dt_checked_for_missing_runs = false		-- Did we check for missing runs in this session already?
+
 -- dt_db ( = dungeon tracker database )
 --
 -- Contains all the info for the dungeons:
@@ -284,27 +286,61 @@ function DungeonTrackerGetAllDungeonMaxLevels()
 	return the_table
 end
 
-local function DungeonTrackerPopulateFromQuests()
-	-- Try to guess the dungeon history prior to tracking by looking at the dungeon quests that have been
-	-- finished. Only use the ones that can ONLY be done inside the dungeon! (So for instance, not
-	-- WC/Serpentbloom or SM/Hearts of Zeal)
+-- DungeonTrackerHasRun( name )
+--
+-- Returns true if a dungeon with the given name was found in any of .runs[], .pending[] or .current,
+-- or false otherwise
 
-	-- Double check that we haven't JUST been reset by an appeal command (this command is on a timer)
-	if Hardcore_Character.dt == nil then
+local function DungeonTrackerHasRun( name )
+
+	if Hardcore_Character.dt.runs ~= nil then
+		for i, v in ipairs(Hardcore_Character.dt.runs) do
+			if v.name == name then
+				return true
+			end
+		end
+	end
+	
+	if Hardcore_Character.dt.pending ~= nil then
+		for i, v in ipairs(Hardcore_Character.dt.pending) do
+			if v.name == name then
+				return true
+			end
+		end
+	end
+	
+	if Hardcore_Character.dt.current ~= nil then
+		if current.name == name then
+			return true
+		end
+	end
+	
+	return false
+
+end
+
+
+
+-- DungeonTrackerFindMissingRunsFromQuests()
+--
+-- Finds any dungeons that have the flagging quests, but do not have an associated run
+-- (for whatever reason, such as weird update problems).
+
+local function DungeonTrackerFindMissingRunsFromQuests()
+
+	-- Double check inputs
+	if Hardcore_Character.dt == nil or Hardcore_Character.dt.runs == nil then
 		return
 	end
 
-	-- Only run this when we have no other dungeon info, to prevent mix-ups between legacy and current dungeons
-	if next(Hardcore_Character.dt.runs) then
-		return
-	end
-
-	Hardcore:Debug("Logging legacy runs..")
+	Hardcore:Debug("Logging missing runs..")
 
 	-- Go through the list and log a run for each dungeon for which one or more quests are flagged as completed
 	for i, v in pairs(dt_db) do
 		local dungeon_done = false
 		local quests = v[8]
+		local name = v[3]
+		local map_id = v[1]
 		if quests ~= nil then
 			local j
 			for j = 1, #quests do
@@ -316,18 +352,21 @@ local function DungeonTrackerPopulateFromQuests()
 			end
 		end
 		if dungeon_done == true then
-			DUNGEON_RUN = {}
-			DUNGEON_RUN.name = v[3]
-			DUNGEON_RUN.id = v[1]
-			DUNGEON_RUN.date = "(legacy)"
-			DUNGEON_RUN.time_inside = 0
-			DUNGEON_RUN.level = 0
-			DUNGEON_RUN.quest_id = quests[j]
-			Hardcore:Print("Logging legacy run in " .. DUNGEON_RUN.name)
-			table.insert(Hardcore_Character.dt.runs, DUNGEON_RUN)
+			if DungeonTrackerHasRun( name ) == false then
+				DUNGEON_RUN = {}
+				DUNGEON_RUN.name = name
+				DUNGEON_RUN.id = map_id
+				DUNGEON_RUN.date = "(legacy)"
+				DUNGEON_RUN.time_inside = 0
+				DUNGEON_RUN.level = 0
+				DUNGEON_RUN.quest_id = quests[j]
+				Hardcore:Debug("Logging missing run in " .. DUNGEON_RUN.name)
+				table.insert(Hardcore_Character.dt.runs, DUNGEON_RUN)
+			end
 		end
 	end
 end
+
 
 local function DungeonTrackerIsRepeatedRun(run1, run2)
 	-- If one of the runs is for an unknown SM wing, we don't count this as repeated
@@ -958,20 +997,21 @@ local function DungeonTracker()
 		Hardcore_Character.dt.pending = {}
 		Hardcore_Character.dt.repeated_runs = 0
 		Hardcore_Character.dt.overleveled_runs = 0
-		Hardcore_Character.dt.legacy_runs_imported = false
 		Hardcore_Character.dt.warn_infractions = true
 		Hardcore_Character.dt.version = DT_VERSION
 		Hardcore_Character.dt.sent_pulse = 0 -- Never sent out a pulse (yet)
 	end
 
-	-- If there are no logged runs yet, we try to figure out which dungeons were already done from the completed quests.
-	-- For some weird reason, this doesn't always work if you just came into an instance or back into the world, so
-	-- we do this on a timer. We only do this once, ever.
-	if Hardcore_Character.dt.legacy_runs_imported == false then
+	-- Sometimes, runs don't get logged correctly, like when they are pending and the addon is updated to a version
+	-- with a different format or when runs are deleted through appeal commands. In those cases, runs might disappear
+	-- entirely, while they should be there. We check for any missing runs exactly once per session. 
+	if dt_checked_for_missing_runs == false then
+		dt_checked_for_missing_runs = true
 		C_Timer.After(5, function()
-			DungeonTrackerPopulateFromQuests()
+			DungeonTrackerFindMissingRunsFromQuests()
 		end)
-		Hardcore_Character.dt.legacy_runs_imported = true
+		-- Get rid of some old data associated with the old way of doing legacy quest identification
+		Hardcore_Character.dt.legacy_runs_imported = nil
 	end
 
 	-- Quick check to see if there is no work to be done (i.e. we are outside and there are no pending or current runs)
