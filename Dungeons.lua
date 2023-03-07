@@ -111,7 +111,14 @@ local dt_db = {
 				{ 5529, 5582, 5382, 5384, 5466, 5343, 5341 },
 				{{"Darkmaster Gandling",1853}, {"Kirtonos the Herald",10506}, {"Jandice Barov",10503}, {"Rattlegore",11622}, {"Marduk Blackpool",10433}, {"Vectus",10432}, {"Ras Frostwhisper",10508}, {"Instructor Malicia",10505}, {"Doctor Theolin Krastinov",11261}, {"Lorekeeper Polkelt",10901}, {"The Ravenian",10507}, {"Lord Alexei Barov",10504}, {"Lady Ilucia Barov",10502}}
 	},
-	{ 429, 2557, "Dire Maul", "D", 5, 1, { 60, 62 }, { 7488, 7489, 7441, 7461, 7462, 7703, 5526 } },
+	{ 429, 2557, "Dire Maul", "D", 5, 1, { 60, 62 }, 
+				{ 7488, 7489, 7441, 7461, 7462, 7703, 5526 },
+				{ {"King Gordok",11501}, 
+					{"Pusillin",14354},{"Lethendris",14327}, {"Hydrospawn",13280}, {"Zevrim Thornhoof",11490},{"Alzzin the Wildshaper",11492},
+					{"Guard Mol'dar",14326},{"Stomper Kreeg",14322},{"Guard Fengus",14321},{"Guard Slip'kik",14323},{"Captain Kromcrush",14325},{"Cho'Rush the Observer",14324},
+					{"Tendris Warpwood",11489},{"Magister Kalendris",11487},{"Tsu'zee",11467},{"Illyanna Ravenoak",11488},{"Immol'thar",11496},{"Prince Tortheldrin",11486},
+				}
+	},
 	{ 329, 2017, "Stratholme", "D",	5, 1, { 60, 62 },{ 5282, 5214, 5251, 5262, 5848, 5122, 5212, 5263, 5243, 5122, 6163, 5463, 8945 } }, -- Undead / Live parts are one instance
 	-- Era Raids
 	{ 249, 2159, "Onyxia's Lair", "R", 40, 1000, { 1000, 1000 }, {} },
@@ -333,7 +340,7 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 		return
 	end
 
-	Hardcore:Debug("Logging missing runs..")
+	Hardcore:Debug("Looking for missing runs...")
 
 	-- Go through the list and log a run for each dungeon for which one or more quests are flagged as completed
 	for i, v in pairs(dt_db) do
@@ -341,18 +348,32 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 		local quests = v[8]
 		local name = v[3]
 		local map_id = v[1]
-		if quests ~= nil then
-			local j
-			for j = 1, #quests do
-				if C_QuestLog.IsQuestFlaggedCompleted(quests[j]) then
-					Hardcore:Debug("Found legacy quest " .. quests[j])
-					dungeon_done = true
-					break
-				end
+		local max_levels = v[7]
+		local dungeon_doable = false		-- Skip this dungeon if max level given as 1000 or >60 for Era
+
+		-- For Era, we only look at the quests for dungeons with a max level of 60
+		if Hardcore_Character.game_version == "Era" or Hardcore_Character.game_version == "SoM" then
+			if max_levels[1] <= 60 then
+				dungeon_doable = true
+			end
+		elseif Hardcore_Character.game_version == "WotLK" then
+			if max_levels[2] <= 80 then
+				dungeon_doable = true
 			end
 		end
-		if dungeon_done == true then
-			if DungeonTrackerHasRun( name ) == false then
+
+		if dungeon_doable == true and DungeonTrackerHasRun( name ) == false then
+			if quests ~= nil then
+				local j
+				for j = 1, #quests do
+					if C_QuestLog.IsQuestFlaggedCompleted(quests[j]) then
+						Hardcore:Debug("Found legacy quest " .. quests[j])
+						dungeon_done = true
+						break
+					end
+				end
+			end
+			if dungeon_done == true then
 				DUNGEON_RUN = {}
 				DUNGEON_RUN.name = name
 				DUNGEON_RUN.id = map_id
@@ -524,7 +545,7 @@ local function DungeonTrackerLogRun(run)
 
 	-- We don't log this run if no instance ID was found (indicating that no mobs were attacked)
 	if run.iid == nil then
-		Hardcore:Print("Not logging run without instanceID in " .. run.name)
+		Hardcore:Debug("Not logging run without instanceID in " .. run.name)
 		return
 	end
 
@@ -1003,7 +1024,7 @@ local function DungeonTrackerUpgradeLogVersion3()
 	end
 	if Hardcore_Character.dt.current ~= nil and next(Hardcore_Character.dt.current) then
 		if Hardcore_Character.dt.current.iid == nil and Hardcore_Character.dt.current.time_inside >= DT_INSIDE_MAX_TIME then
-			Hardcore_Character.dt.current.iid = 0
+			Hardcore_Character.dt.current.iid = 0			-- Will probably be overwritten by a later kill, but if not, then user can't reconnect later. So be it.
 		end					
 		if Hardcore_Character.dt.current.kills ~= nil then
 			Hardcore_Character.dt.current.num_kills = 0
@@ -1013,6 +1034,9 @@ local function DungeonTrackerUpgradeLogVersion3()
 			Hardcore_Character.dt.current.kills = nil
 		end
 	end
+
+	-- Get rid of some old data associated with the old way of doing legacy quest identification
+	Hardcore_Character.dt.legacy_runs_imported = nil
 
 end
 
@@ -1059,8 +1083,6 @@ local function DungeonTracker()
 		C_Timer.After(5, function()
 			DungeonTrackerFindMissingRunsFromQuests()
 		end)
-		-- Get rid of some old data associated with the old way of doing legacy quest identification
-		Hardcore_Character.dt.legacy_runs_imported = nil
 	end
 
 	-- Quick check to see if there is no work to be done (i.e. we are outside and there are no pending or current runs)
@@ -1313,9 +1335,7 @@ function DungeonTrackerHandleAppealCode(args)
 
 	if cmd == "delete" then
 		if #quoted_args < 2 then
-			Hardcore:Print(
-				"Wrong syntax: delete cmd should be followed by dungeon name and date string (both in quotes)"
-			)
+			Hardcore:Print("Wrong syntax: delete cmd should be followed by dungeon name and date string (both in quotes)")
 			Hardcore:Print(usage1)
 			return
 		else
