@@ -9,7 +9,7 @@ local DT_OUTSIDE_MAX_REAL_TIME = 1800 			-- If seen outside, how many seconds si
 local DT_OUTSIDE_MAX_RUN_TIME = 21600 			-- If seen outside, how many seconds since start of run before finalization (21600 = 6 hrs)
 local DT_TIME_STEP = 1 							-- Dungeon code called every 1 second
 local DT_GROUP_PULSE = 30 						-- Send group pulse every 30 seconds
-local DT_VERSION = 3 							-- Increasing this will trigger a full rebuild of the dungeon tracker info
+local DT_VERSION = 4 							-- Increasing this will trigger a full rebuild of the dungeon tracker info
 
 -- Some local variables defined in Hardcore.lua -- Make sure these are the same as in Hardcore.lua!!
 local CTL = _G.ChatThrottleLib
@@ -310,7 +310,7 @@ local function DungeonTrackerHasRun( name )
 	end
 	
 	if Hardcore_Character.dt.current ~= nil then
-		if current.name == name then
+		if Hardcore_Character.dt.current.name == name then
 			return true
 		end
 	end
@@ -572,7 +572,7 @@ local function DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
 	-- If this is SM (=189), and we don't know the wing yet, we try to find it
 	if map_id == 189 and Hardcore_Character.dt.current.name == SM then
 	
-		local wing_spaws = {
+		local wing_spawns = {
 			{4293, "Scarlet Scryer", "GY"},
 			{4306, "Scarlet Torturer", "GY"},
 			{4287, "Scarlet Gallant", "Lib"},
@@ -600,7 +600,7 @@ local function DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
 		}
 		
 		-- See if any of the listed mobs is recognised
-		for i, v in ipairs( wing_spaws ) do
+		for i, v in ipairs( wing_spawns ) do
 			if mob_type_id == v[1] then
 				Hardcore_Character.dt.current.name = SM .. " (" .. v[3] .. ")"
 				Hardcore:Debug( "Identified SM wing " .. v[3] .. " from " .. v[2] )
@@ -838,17 +838,13 @@ local function DungeonTrackerLogKill( mob_type_id )
 			Hardcore:Debug( "Warning -- repeated boss kill ignored" )
 			Hardcore_Character.dt.current.repeated_boss_kill = true
 		end
-	else
-		-- Add it to the list of NPCs we've killed
-		if Hardcore_Character.dt.current.kills == nil then
-			Hardcore_Character.dt.current.kills = {}
-		end
-		if Hardcore_Character.dt.current.kills[ mob_type_id ] == nil then
-			Hardcore_Character.dt.current.kills[ mob_type_id ] = 1
-		else
-			Hardcore_Character.dt.current.kills[ mob_type_id ] = Hardcore_Character.dt.current.kills[ mob_type_id ] + 1
-		end
 	end
+	
+	-- Add it to the list of NPCs we've killed
+	if Hardcore_Character.dt.current.num_kills == nil then
+		Hardcore_Character.dt.current.num_kills = 0
+	end
+	Hardcore_Character.dt.current.num_kills = Hardcore_Character.dt.current.num_kills + 1
 
 end
 
@@ -972,6 +968,54 @@ function DungeonTrackerGetBossKillDataForRun( run )
 
 end
 
+-- DungeonTrackerUpgradeLogVersion3()
+-- 
+-- Upgrades and cleans up the dungeon log from a version 3 client
+
+local function DungeonTrackerUpgradeLogVersion3()
+
+	-- Fix up pending runs without an instance ID, or they will get dropped
+	-- Also get rid of the unnecessary non-boss kills info list, replace it with just total number
+	if Hardcore_Character.dt.pending ~= nil then
+		for i, v in ipairs( Hardcore_Character.dt.pending ) do
+			if v.iid == nil and v.time_inside >= DT_INSIDE_MAX_TIME then
+				v.iid = 0
+			end					
+			if v.kills ~= nil then
+				v.num_kills = 0
+				for j, w in pairs( v.kills ) do
+					v.num_kills = v.num_kills + w
+				end
+				v.kills = nil
+			end
+		end
+	end
+	if Hardcore_Character.dt.runs ~= nil then
+		for i, v in ipairs( Hardcore_Character.dt.runs ) do
+			if v.kills ~= nil then
+				v.num_kills = 0
+				for j, w in pairs( v.kills ) do
+					v.num_kills = v.num_kills + w
+				end
+				v.kills = nil
+			end
+		end
+	end
+	if Hardcore_Character.dt.current ~= nil and next(Hardcore_Character.dt.current) then
+		if Hardcore_Character.dt.current.iid == nil and Hardcore_Character.dt.current.time_inside >= DT_INSIDE_MAX_TIME then
+			Hardcore_Character.dt.current.iid = 0
+		end					
+		if Hardcore_Character.dt.current.kills ~= nil then
+			Hardcore_Character.dt.current.num_kills = 0
+			for j, w in pairs( Hardcore_Character.dt.current.kills ) do
+				Hardcore_Character.dt.current.num_kills = Hardcore_Character.dt.current.num_kills + w
+			end
+			Hardcore_Character.dt.current.kills = nil
+		end
+	end
+
+end
+
 
 -- DungeonTracker
 --
@@ -987,7 +1031,8 @@ local function DungeonTracker()
 	-- Handle invalid or legacy data files, or version upgrade (triggers full rebuild of dungeon database)
 	if (Hardcore_Character.dt == nil) 						-- no DT yet
 		or (Hardcore_Character.dt.version == nil) 			-- initial DT version without a version number
-		or (Hardcore_Character.dt.version ~= DT_VERSION)	-- older version (with a version number)
+		or (Hardcore_Character.dt.version == 1)				-- older version, needs rebuild
+		or (Hardcore_Character.dt.version == 2)				-- older version, needs rebuild
 	then 
 		Hardcore_Character.dt = {}
 	end
@@ -1000,6 +1045,10 @@ local function DungeonTracker()
 		Hardcore_Character.dt.warn_infractions = true
 		Hardcore_Character.dt.version = DT_VERSION
 		Hardcore_Character.dt.sent_pulse = 0 -- Never sent out a pulse (yet)
+	end
+	if Hardcore_Character.dt.version ~= nil and Hardcore_Character.dt.version == 3 then
+		Hardcore_Character.dt.version = DT_VERSION
+		DungeonTrackerUpgradeLogVersion3()
 	end
 
 	-- Sometimes, runs don't get logged correctly, like when they are pending and the addon is updated to a version
