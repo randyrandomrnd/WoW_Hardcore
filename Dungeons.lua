@@ -192,8 +192,8 @@ local dt_db = {
 	{ 628, 4710, "Isle of Conquest", "B", 40, 1000, { 1000, 1000 }, {} },
 
 	-- Other
-	{ 449, "Champion's Hall", 1000, 1000, { 1000, 1000 }, {} },
-	{ 450, "Hall of Legends", 1000, 1000, { 1000, 1000 }, {} },
+	--{ 449, "Champion's Hall", 1000, 1000, { 1000, 1000 }, {} },
+	--{ 450, "Hall of Legends", 1000, 1000, { 1000, 1000 }, {} },
 	--{ , "Borean Tundra", },					-- TO BE DONE, maybe
 	--{ , "Strand of the Ancients", },			-- TO BE DONE, maybe
 }
@@ -1009,6 +1009,7 @@ local function DungeonTrackerUpgradeLogVersion3()
 				end
 				v.kills = nil
 			end
+			v.log_now = true
 		end
 	end
 	if Hardcore_Character.dt.runs ~= nil then
@@ -1131,8 +1132,9 @@ local function DungeonTracker()
 		local idle_time_left = min(DT_OUTSIDE_MAX_REAL_TIME - Hardcore_Character.dt.pending[i].idle, 
 						DT_OUTSIDE_MAX_RUN_TIME - (now - Hardcore_Character.dt.pending[i].start))
 
-		-- Log it if it expired
-		if idle_time_left <= 0 then
+		-- Log it if it expired, or if it was flagged by the log version upgrade code
+		if idle_time_left <= 0 or Hardcore_Character.dt.pending[i].log_now ~= nil then
+			Hardcore_Character.dt.pending[i].log_now = nil			-- clean up
 			DungeonTrackerLogRun(Hardcore_Character.dt.pending[i])
 			table.remove(Hardcore_Character.dt.pending, i)
 		end
