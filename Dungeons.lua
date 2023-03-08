@@ -284,9 +284,10 @@ function DungeonTrackerGetAllDungeonMaxLevels()
 		if v[4] == "D" then
 			local max_era_level = v[7][1]
 			if max_era_level == 1000 then
-				max_era_level = "--"
+				table.insert(the_table, { v[3], "--", v[7][2] })
+			else
+				table.insert(the_table, { v[3], max_era_level, v[7][2] })
 			end
-			table.insert(the_table, { v[3], max_era_level, v[7][2] })
 		end
 	end
 
@@ -335,8 +336,22 @@ end
 
 local function DungeonTrackerFindMissingRunsFromQuests()
 
+	local game_version_index = 1
+	local game_version_max_level = 60
+
 	-- Double check inputs
 	if Hardcore_Character.dt == nil or Hardcore_Character.dt.runs == nil then
+		return
+	end
+
+	-- For Era/SoM, we only look at the quests for dungeons with a max level of 60
+	if Hardcore_Character.game_version == "Era" or Hardcore_Character.game_version == "SoM" then
+		game_version_index = 1
+		game_version_max_level = 60
+	elseif Hardcore_Character.game_version == "WotLK" then
+		game_version_index = 2
+		game_version_max_level = 80
+	else
 		return
 	end
 
@@ -349,28 +364,14 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 		local name = v[3]
 		local map_id = v[1]
 		local max_levels = v[7]
-		local dungeon_doable = false		-- Skip this dungeon if max level given as 1000 or >60 for Era
-
-		-- For Era, we only look at the quests for dungeons with a max level of 60
-		if Hardcore_Character.game_version == "Era" or Hardcore_Character.game_version == "SoM" then
-			if max_levels[1] <= 60 then
-				dungeon_doable = true
-			end
-		elseif Hardcore_Character.game_version == "WotLK" then
-			if max_levels[2] <= 80 then
-				dungeon_doable = true
-			end
-		end
-
-		if dungeon_doable == true and DungeonTrackerHasRun( name ) == false then
-			if quests ~= nil then
-				local j
-				for j = 1, #quests do
-					if C_QuestLog.IsQuestFlaggedCompleted(quests[j]) then
-						Hardcore:Debug("Found legacy quest " .. quests[j])
-						dungeon_done = true
-						break
-					end
+		
+		if (quests ~= nil) and (max_levels ~= nil) and (max_levels[game_version_index] <= game_version_max_level) and (DungeonTrackerHasRun( name ) == false) then
+			local j
+			for j = 1, #quests do
+				if C_QuestLog.IsQuestFlaggedCompleted(quests[j]) then
+					Hardcore:Debug("Found legacy quest " .. quests[j])
+					dungeon_done = true
+					break
 				end
 			end
 			if dungeon_done == true then
@@ -444,6 +445,8 @@ local function DungeonTrackerUpdateInfractions()
 end
 
 local function DungeonTrackerWarnInfraction()
+
+	local message
 
 	-- We only warn if there is still chance to get out in time
 	local time_left = DT_INSIDE_MAX_TIME - Hardcore_Character.dt.current.time_inside
@@ -1268,7 +1271,7 @@ local function GetCryptoHash(str)
 	local dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /:"
 
 	for i = 1, #str do
-		x, y = string.find(dictionary, str:sub(i, i), 1, true)
+		local x, y = string.find(dictionary, str:sub(i, i), 1, true)
 		if x == nil then
 			x = #dictionary
 		end
