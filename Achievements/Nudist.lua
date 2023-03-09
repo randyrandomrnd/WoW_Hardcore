@@ -17,6 +17,7 @@ function nudist_achievement:Register(fail_function_executor)
 	nudist_achievement:RegisterEvent("PLAYER_LEVEL_UP")
 	nudist_achievement:RegisterEvent("PLAYER_ENTER_COMBAT")
 	nudist_achievement:RegisterEvent("PLAYER_ENTERING_WORLD")
+	nudist_achievement:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 	nudist_achievement.fail_function_executor = fail_function_executor
 end
 
@@ -25,6 +26,7 @@ function nudist_achievement:Unregister()
 	nudist_achievement:UnregisterEvent("PLAYER_LEVEL_UP")
 	nudist_achievement:UnregisterEvent("PLAYER_ENTER_COMBAT")
 	nudist_achievement:UnregisterEvent("PLAYER_ENTERING_WORLD")
+	nudist_achievement:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end
 
 -- Register Definitions
@@ -38,7 +40,7 @@ nudist_achievement:SetScript("OnEvent", function(self, event, ...)
 				TimedNudistFailure()
 			end
 		end
-	elseif event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTER_COMBAT" then
+	elseif event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTER_COMBAT" or event == "UNIT_SPELLCAST_SUCCEEDED" then
 		-- Instant when it can affect actual gameplay
 		CheckNudistFailure()
 	elseif event == "PLAYER_ENTERING_WORLD" then
