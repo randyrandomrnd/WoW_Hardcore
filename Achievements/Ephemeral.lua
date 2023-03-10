@@ -35,11 +35,9 @@ end
 ephemeral_achievement:SetScript("OnEvent", function(self, event, ...)
 	local arg = { ... }
 	if event == "MERCHANT_SHOW" or event == "MERCHANT_UPDATE" then
-		C_Timer.After(0, function() HideRepair() end)
+		C_Timer.After(0, function()
+			MerchantRepairAllButton:Hide()
+			MerchantRepairItemButton:Hide()
+		end)
 	end
 end)
-
-function HideRepair()
-	MerchantRepairAllButton:Hide()
-	MerchantRepairItemButton:Hide()
-end
