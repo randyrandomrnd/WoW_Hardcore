@@ -15,6 +15,7 @@ ephemeral_achievement.description =
 -- Registers
 function ephemeral_achievement:Register(fail_function_executor)
 	ephemeral_achievement:RegisterEvent("MERCHANT_SHOW")
+	ephemeral_achievement:RegisterEvent("MERCHANT_UPDATE")
 	MerchantRepairAllButton:SetScript("OnClick", function()
 		ephemeral_achievement.fail_function_executor.Fail(ephemeral_achievement.name)
 	end)
@@ -33,8 +34,10 @@ end
 -- Register Definitions
 ephemeral_achievement:SetScript("OnEvent", function(self, event, ...)
 	local arg = { ... }
-	if event == "MERCHANT_SHOW" then
-		MerchantRepairAllButton:Hide()
-		MerchantRepairItemButton:Hide()
+	if event == "MERCHANT_SHOW" or event == "MERCHANT_UPDATE" then
+		C_Timer.After(0, function()
+			MerchantRepairAllButton:Hide()
+			MerchantRepairItemButton:Hide()
+		end)
 	end
 end)
