@@ -9,7 +9,7 @@ local DT_OUTSIDE_MAX_REAL_TIME = 1800 			-- If seen outside, how many seconds si
 local DT_OUTSIDE_MAX_RUN_TIME = 21600 			-- If seen outside, how many seconds since start of run before finalization (21600 = 6 hrs)
 local DT_TIME_STEP = 1 							-- Dungeon code called every 1 second
 local DT_GROUP_PULSE = 30 						-- Send group pulse every 30 seconds
-local DT_VERSION = 3 							-- Increasing this will trigger a full rebuild of the dungeon tracker info
+local DT_VERSION = 4 							-- Increasing this will trigger a full rebuild of the dungeon tracker info
 
 -- Some local variables defined in Hardcore.lua -- Make sure these are the same as in Hardcore.lua!!
 local CTL = _G.ChatThrottleLib
@@ -19,6 +19,8 @@ local COMM_FIELD_DELIM = "|" 					-- Overwritten in DungeonTrackerInitiate()
 local DT_PULSE_COMMAND = "DTPULSE" 				-- Overwritten in DungeonTrackerInitiate()
 
 local combat_log_frame = nil
+
+local dt_checked_for_missing_runs = false		-- Did we check for missing runs in this session already?
 
 -- dt_db ( = dungeon tracker database )
 --
@@ -49,7 +51,7 @@ local dt_db = {
 	},
 	{ 48, 719, "Blackfathom Deeps", "D", 5, 1, { 32, 28 }, 
 				{ 971, 1198, 1199, 1275, 6565, 6921, 1200, 6561, 6922 },
-				{{"Aku'mai",4829}, {"Ghamoo-ra",4887}, {"Lady Sarevess",4831}, {"Gelihast",6243}, {"Lorgus Jett",12902}, {"Baron Aquanis",12876}, {"Twilight Lord Kelris",4832}, {"Old Serra'kis",4830}}
+				{{"Aku'mai",4829}, {"Ghamoo-ra",4887}, {"Lady Sarevess",4831}, {"Gelihast",6243}, {"Lorgus Jett",12902}, {"Twilight Lord Kelris",4832}, {"Old Serra'kis",4830}}
 	},				
 	{ 34, 717, "The Stockade", "D", 5, 1, { 32, 29 }, 
 				{ 387, 386, 378, 388, 377, 391 },
@@ -103,14 +105,40 @@ local dt_db = {
 				{ 3528, 3446, 3447, 3373 },  										-- 1475, 4143, 4146, removed: tablets and haze drop outside
 				{{"Shade of Eranikus",5709}, {"Atal'alarion",8580}, {"Dreamscythe",5721}, {"Weaver",5720}, {"Jammal'an the Prophet",5710}, {"Ogom the Wretched",5711}, {"Morphaz",5719}, {"Hazzas",5722}, {"Avatar of Hakkar",8443}}
 	},
-	{ 229, 1583, "Blackrock Spire",	"D", 10, 1, { 60, 62 },	{ 4701, 5001, 4724, 4982, 4903, 4862, 4729, 4788, 4768, 4974, 4764, 5102, 6821, 7761 } }, -- UBRS and LBRS are one instance
-	{ 230, 1584, "Blackrock Depths", "D", 5, 1, { 60, 60 }, { 4136, 4123, 4286, 4126, 4081, 4134 } },
+	{ 229, 1583, "Blackrock Spire",	"D", 10, 1, { 60, 62 },	
+				{ 4701, 5001, 4724, 4982, 4903, 4862, 4729, 4788, 4768, 4974, 4764, 5102, 6821, 7761 },
+				{{"General Drakkisath",10363}, {"Highlord Omokk",9196}, {"Shadow Hunter Vosh'gajin",9236}, {"War Master Voone",9237}, {"Mor Grayhoof",16080}, {"Mother Smolderweb",10596},
+						{"Urok Doomhowl",10584}, {"Quartermaster Zigris",9736}, {"Halycon",10220}, {"Gizrul the Slavener",10268},{"Overlord Wyrmthalak",9537},
+						{"Pyroguard Emberseer",9816}, {"Solakar Flamewreath",10264}, {"Goraluk Anvilcrack",10899}, {"Warchief Rend Blackhand",10429}, {"Gyth",10339}, {"The Beast",10430} 
+				}
+	}, -- UBRS and LBRS are one instance
+	{ 230, 1584, "Blackrock Depths", "D", 5, 1, { 60, 60 }, 
+				{ 4136, 4123, 4286, 4126, 4081, 4134 },
+				{{"Emperor Dagran Thaurissan",9019}, {"Lord Roccor",9025}, {"Bael'Gar",9016}, {"Houndmaster Grebmar",9319}, {"High Interrogator Gerstahn",9018}, {"High Justice Grimstone",10096}, 
+						{"Pyromancer Loregrain",9024}, {"General Angerforge",9033}, {"Golem Lord Argelmach",8983}, 
+						{"Ribbly Screwspigot",9543}, {"Hurley Blackbreath",9537}, {"Plugger Spazzring",9499}, {"Phalanx",9502}, 
+						{"Lord Incendius",9017}, {"Fineous Darkvire",9056}, {"Warder Stilgiss",9041}, {"Ambassador Flamelash",9156}, {"Magmus",9938}, 
+						{"Princess Moira Bronzebeard",8929}}
+	},
 	{ 289, 2057, "Scholomance", "D", 5, 1, { 60, 62 }, 
 				{ 5529, 5582, 5382, 5384, 5466, 5343, 5341 },
 				{{"Darkmaster Gandling",1853}, {"Kirtonos the Herald",10506}, {"Jandice Barov",10503}, {"Rattlegore",11622}, {"Marduk Blackpool",10433}, {"Vectus",10432}, {"Ras Frostwhisper",10508}, {"Instructor Malicia",10505}, {"Doctor Theolin Krastinov",11261}, {"Lorekeeper Polkelt",10901}, {"The Ravenian",10507}, {"Lord Alexei Barov",10504}, {"Lady Ilucia Barov",10502}}
 	},
-	{ 429, 2557, "Dire Maul", "D", 5, 1, { 60, 62 }, { 7488, 7489, 7441, 7461, 7462, 7703, 5526 } },
-	{ 329, 2017, "Stratholme", "D",	5, 1, { 60, 62 },{ 5282, 5214, 5251, 5262, 5848, 5122, 5212, 5263, 5243, 5122, 6163, 5463, 8945 } }, -- Undead / Live parts are one instance
+	{ 429, 2557, "Dire Maul", "D", 5, 1, { 60, 62 }, 
+				{ 7488, 7489, 7441, 7461, 7462, 7703, 5526 },
+				{ {"King Gordok",11501},{"Pusillin",14354},{"Lethendris",14327}, {"Hydrospawn",13280}, {"Zevrim Thornhoof",11490},{"Alzzin the Wildshaper",11492},
+					{"Guard Mol'dar",14326},{"Stomper Kreeg",14322},{"Guard Fengus",14321},{"Guard Slip'kik",14323},{"Captain Kromcrush",14325},{"Cho'Rush the Observer",14324},
+					{"Tendris Warpwood",11489},{"Magister Kalendris",11487},{"Tsu'zee",11467},{"Illyanna Ravenoak",11488},{"Immol'thar",11496},{"Prince Tortheldrin",11486},
+				}
+	},
+	{ 329, 2017, "Stratholme", "D",	5, 1, { 60, 62 },
+				{ 5282, 5214, 5251, 5262, 5848, 5122, 5212, 5263, 5243, 5122, 6163, 5463, 8945 },
+				{ {"Baron Rivendare",10440},
+					{"Fras Siabi",11058}, {"The Unforgiven",10516}, {"Postmaster Malown",11143},{"Timmy the Cruel",10808},
+					{"Malor the Zealous",11032},{"Cannon Master Willey",10997}, {"Crimson Hammersmith",11120}, {"Archivist Galford",10811},{"Balnazzar",10813},
+					{"Magistrate Barthilas",10435},{"Nerub'enkan",10437}, {"Baroness Anastari",10436}, {"Maleki the Pallid",10438},{"Ramstein the Gorger",10439}
+				}
+	}, -- Undead / Live parts are one instance
 	-- Era Raids
 	{ 249, 2159, "Onyxia's Lair", "R", 40, 1000, { 1000, 1000 }, {} },
 	{ 309, 1977, "Zul'Gurub", "R", 20, 1000, { 1000, 1000 }, {} },
@@ -183,8 +211,8 @@ local dt_db = {
 	{ 628, 4710, "Isle of Conquest", "B", 40, 1000, { 1000, 1000 }, {} },
 
 	-- Other
-	{ 449, "Champion's Hall", 1000, 1000, { 1000, 1000 }, {} },
-	{ 450, "Hall of Legends", 1000, 1000, { 1000, 1000 }, {} },
+	--{ 449, "Champion's Hall", 1000, 1000, { 1000, 1000 }, {} },
+	--{ 450, "Hall of Legends", 1000, 1000, { 1000, 1000 }, {} },
 	--{ , "Borean Tundra", },					-- TO BE DONE, maybe
 	--{ , "Strand of the Ancients", },			-- TO BE DONE, maybe
 }
@@ -275,37 +303,88 @@ function DungeonTrackerGetAllDungeonMaxLevels()
 		if v[4] == "D" then
 			local max_era_level = v[7][1]
 			if max_era_level == 1000 then
-				max_era_level = "--"
+				table.insert(the_table, { v[3], "--", v[7][2] })
+			else
+				table.insert(the_table, { v[3], max_era_level, v[7][2] })
 			end
-			table.insert(the_table, { v[3], max_era_level, v[7][2] })
 		end
 	end
 
 	return the_table
 end
 
-local function DungeonTrackerPopulateFromQuests()
-	-- Try to guess the dungeon history prior to tracking by looking at the dungeon quests that have been
-	-- finished. Only use the ones that can ONLY be done inside the dungeon! (So for instance, not
-	-- WC/Serpentbloom or SM/Hearts of Zeal)
+-- DungeonTrackerHasRun( name )
+--
+-- Returns true if a dungeon with the given name was found in any of .runs[], .pending[] or .current,
+-- or false otherwise
 
-	-- Double check that we haven't JUST been reset by an appeal command (this command is on a timer)
-	if Hardcore_Character.dt == nil then
+local function DungeonTrackerHasRun( name )
+
+	if Hardcore_Character.dt.runs ~= nil then
+		for i, v in ipairs(Hardcore_Character.dt.runs) do
+			if v.name == name then
+				return true
+			end
+		end
+	end
+	
+	if Hardcore_Character.dt.pending ~= nil then
+		for i, v in ipairs(Hardcore_Character.dt.pending) do
+			if v.name == name then
+				return true
+			end
+		end
+	end
+	
+	if Hardcore_Character.dt.current ~= nil then
+		if Hardcore_Character.dt.current.name == name then
+			return true
+		end
+	end
+	
+	return false
+
+end
+
+
+
+-- DungeonTrackerFindMissingRunsFromQuests()
+--
+-- Finds any dungeons that have the flagging quests, but do not have an associated run
+-- (for whatever reason, such as weird update problems).
+
+local function DungeonTrackerFindMissingRunsFromQuests()
+
+	local game_version_index = 1
+	local game_version_max_level = 60
+
+	-- Double check inputs
+	if Hardcore_Character.dt == nil or Hardcore_Character.dt.runs == nil then
 		return
 	end
 
-	-- Only run this when we have no other dungeon info, to prevent mix-ups between legacy and current dungeons
-	if next(Hardcore_Character.dt.runs) then
+	-- For Era/SoM, we only look at the quests for dungeons with a max level of 60
+	if Hardcore_Character.game_version == "Era" or Hardcore_Character.game_version == "SoM" then
+		game_version_index = 1
+		game_version_max_level = 60
+	elseif Hardcore_Character.game_version == "WotLK" then
+		game_version_index = 2
+		game_version_max_level = 80
+	else
 		return
 	end
 
-	Hardcore:Debug("Logging legacy runs..")
+	Hardcore:Debug("Looking for missing runs...")
 
 	-- Go through the list and log a run for each dungeon for which one or more quests are flagged as completed
 	for i, v in pairs(dt_db) do
 		local dungeon_done = false
 		local quests = v[8]
-		if quests ~= nil then
+		local name = v[3]
+		local map_id = v[1]
+		local max_levels = v[7]
+		
+		if (quests ~= nil) and (max_levels ~= nil) and (max_levels[game_version_index] <= game_version_max_level) and (DungeonTrackerHasRun( name ) == false) then
 			local j
 			for j = 1, #quests do
 				if C_QuestLog.IsQuestFlaggedCompleted(quests[j]) then
@@ -314,20 +393,21 @@ local function DungeonTrackerPopulateFromQuests()
 					break
 				end
 			end
-		end
-		if dungeon_done == true then
-			DUNGEON_RUN = {}
-			DUNGEON_RUN.name = v[3]
-			DUNGEON_RUN.id = v[1]
-			DUNGEON_RUN.date = "(legacy)"
-			DUNGEON_RUN.time_inside = 0
-			DUNGEON_RUN.level = 0
-			DUNGEON_RUN.quest_id = quests[j]
-			Hardcore:Print("Logging legacy run in " .. DUNGEON_RUN.name)
-			table.insert(Hardcore_Character.dt.runs, DUNGEON_RUN)
+			if dungeon_done == true then
+				DUNGEON_RUN = {}
+				DUNGEON_RUN.name = name
+				DUNGEON_RUN.id = map_id
+				DUNGEON_RUN.date = "(legacy)"
+				DUNGEON_RUN.time_inside = 0
+				DUNGEON_RUN.level = 0
+				DUNGEON_RUN.quest_id = quests[j]
+				Hardcore:Debug("Logging missing run in " .. DUNGEON_RUN.name)
+				table.insert(Hardcore_Character.dt.runs, DUNGEON_RUN)
+			end
 		end
 	end
 end
+
 
 local function DungeonTrackerIsRepeatedRun(run1, run2)
 	-- If one of the runs is for an unknown SM wing, we don't count this as repeated
@@ -384,6 +464,8 @@ local function DungeonTrackerUpdateInfractions()
 end
 
 local function DungeonTrackerWarnInfraction()
+
+	local message
 
 	-- We only warn if there is still chance to get out in time
 	local time_left = DT_INSIDE_MAX_TIME - Hardcore_Character.dt.current.time_inside
@@ -485,7 +567,7 @@ local function DungeonTrackerLogRun(run)
 
 	-- We don't log this run if no instance ID was found (indicating that no mobs were attacked)
 	if run.iid == nil then
-		Hardcore:Print("Not logging run without instanceID in " .. run.name)
+		Hardcore:Debug("Not logging run without instanceID in " .. run.name)
 		return
 	end
 
@@ -533,7 +615,7 @@ local function DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
 	-- If this is SM (=189), and we don't know the wing yet, we try to find it
 	if map_id == 189 and Hardcore_Character.dt.current.name == SM then
 	
-		local wing_spaws = {
+		local wing_spawns = {
 			{4293, "Scarlet Scryer", "GY"},
 			{4306, "Scarlet Torturer", "GY"},
 			{4287, "Scarlet Gallant", "Lib"},
@@ -561,7 +643,7 @@ local function DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
 		}
 		
 		-- See if any of the listed mobs is recognised
-		for i, v in ipairs( wing_spaws ) do
+		for i, v in ipairs( wing_spawns ) do
 			if mob_type_id == v[1] then
 				Hardcore_Character.dt.current.name = SM .. " (" .. v[3] .. ")"
 				Hardcore:Debug( "Identified SM wing " .. v[3] .. " from " .. v[2] )
@@ -799,17 +881,13 @@ local function DungeonTrackerLogKill( mob_type_id )
 			Hardcore:Debug( "Warning -- repeated boss kill ignored" )
 			Hardcore_Character.dt.current.repeated_boss_kill = true
 		end
-	else
-		-- Add it to the list of NPCs we've killed
-		if Hardcore_Character.dt.current.kills == nil then
-			Hardcore_Character.dt.current.kills = {}
-		end
-		if Hardcore_Character.dt.current.kills[ mob_type_id ] == nil then
-			Hardcore_Character.dt.current.kills[ mob_type_id ] = 1
-		else
-			Hardcore_Character.dt.current.kills[ mob_type_id ] = Hardcore_Character.dt.current.kills[ mob_type_id ] + 1
-		end
 	end
+	
+	-- Add it to the list of NPCs we've killed
+	if Hardcore_Character.dt.current.num_kills == nil then
+		Hardcore_Character.dt.current.num_kills = 0
+	end
+	Hardcore_Character.dt.current.num_kills = Hardcore_Character.dt.current.num_kills + 1
 
 end
 
@@ -933,6 +1011,58 @@ function DungeonTrackerGetBossKillDataForRun( run )
 
 end
 
+-- DungeonTrackerUpgradeLogVersion3()
+-- 
+-- Upgrades and cleans up the dungeon log from a version 3 client
+
+local function DungeonTrackerUpgradeLogVersion3()
+
+	-- Fix up pending runs without an instance ID, or they will get dropped
+	-- Also get rid of the unnecessary non-boss kills info list, replace it with just total number
+	if Hardcore_Character.dt.pending ~= nil then
+		for i, v in ipairs( Hardcore_Character.dt.pending ) do
+			if v.iid == nil and v.time_inside >= DT_INSIDE_MAX_TIME then
+				v.iid = 0
+			end					
+			if v.kills ~= nil then
+				v.num_kills = 0
+				for j, w in pairs( v.kills ) do
+					v.num_kills = v.num_kills + w
+				end
+				v.kills = nil
+			end
+			v.log_now = true
+		end
+	end
+	if Hardcore_Character.dt.runs ~= nil then
+		for i, v in ipairs( Hardcore_Character.dt.runs ) do
+			if v.kills ~= nil then
+				v.num_kills = 0
+				for j, w in pairs( v.kills ) do
+					v.num_kills = v.num_kills + w
+				end
+				v.kills = nil
+			end
+		end
+	end
+	if Hardcore_Character.dt.current ~= nil and next(Hardcore_Character.dt.current) then
+		if Hardcore_Character.dt.current.iid == nil and Hardcore_Character.dt.current.time_inside >= DT_INSIDE_MAX_TIME then
+			Hardcore_Character.dt.current.iid = 0			-- Will probably be overwritten by a later kill, but if not, then user can't reconnect later. So be it.
+		end					
+		if Hardcore_Character.dt.current.kills ~= nil then
+			Hardcore_Character.dt.current.num_kills = 0
+			for j, w in pairs( Hardcore_Character.dt.current.kills ) do
+				Hardcore_Character.dt.current.num_kills = Hardcore_Character.dt.current.num_kills + w
+			end
+			Hardcore_Character.dt.current.kills = nil
+		end
+	end
+
+	-- Get rid of some old data associated with the old way of doing legacy quest identification
+	Hardcore_Character.dt.legacy_runs_imported = nil
+
+end
+
 
 -- DungeonTracker
 --
@@ -948,7 +1078,8 @@ local function DungeonTracker()
 	-- Handle invalid or legacy data files, or version upgrade (triggers full rebuild of dungeon database)
 	if (Hardcore_Character.dt == nil) 						-- no DT yet
 		or (Hardcore_Character.dt.version == nil) 			-- initial DT version without a version number
-		or (Hardcore_Character.dt.version ~= DT_VERSION)	-- older version (with a version number)
+		or (Hardcore_Character.dt.version == 1)				-- older version, needs rebuild
+		or (Hardcore_Character.dt.version == 2)				-- older version, needs rebuild
 	then 
 		Hardcore_Character.dt = {}
 	end
@@ -958,20 +1089,23 @@ local function DungeonTracker()
 		Hardcore_Character.dt.pending = {}
 		Hardcore_Character.dt.repeated_runs = 0
 		Hardcore_Character.dt.overleveled_runs = 0
-		Hardcore_Character.dt.legacy_runs_imported = false
 		Hardcore_Character.dt.warn_infractions = true
 		Hardcore_Character.dt.version = DT_VERSION
 		Hardcore_Character.dt.sent_pulse = 0 -- Never sent out a pulse (yet)
 	end
+	if Hardcore_Character.dt.version ~= nil and Hardcore_Character.dt.version == 3 then
+		Hardcore_Character.dt.version = DT_VERSION
+		DungeonTrackerUpgradeLogVersion3()
+	end
 
-	-- If there are no logged runs yet, we try to figure out which dungeons were already done from the completed quests.
-	-- For some weird reason, this doesn't always work if you just came into an instance or back into the world, so
-	-- we do this on a timer. We only do this once, ever.
-	if Hardcore_Character.dt.legacy_runs_imported == false then
+	-- Sometimes, runs don't get logged correctly, like when they are pending and the addon is updated to a version
+	-- with a different format or when runs are deleted through appeal commands. In those cases, runs might disappear
+	-- entirely, while they should be there. We check for any missing runs exactly once per session. 
+	if dt_checked_for_missing_runs == false then
+		dt_checked_for_missing_runs = true
 		C_Timer.After(5, function()
-			DungeonTrackerPopulateFromQuests()
+			DungeonTrackerFindMissingRunsFromQuests()
 		end)
-		Hardcore_Character.dt.legacy_runs_imported = true
 	end
 
 	-- Quick check to see if there is no work to be done (i.e. we are outside and there are no pending or current runs)
@@ -1020,8 +1154,9 @@ local function DungeonTracker()
 		local idle_time_left = min(DT_OUTSIDE_MAX_REAL_TIME - Hardcore_Character.dt.pending[i].idle, 
 						DT_OUTSIDE_MAX_RUN_TIME - (now - Hardcore_Character.dt.pending[i].start))
 
-		-- Log it if it expired
-		if idle_time_left <= 0 then
+		-- Log it if it expired, or if it was flagged by the log version upgrade code
+		if idle_time_left <= 0 or Hardcore_Character.dt.pending[i].log_now ~= nil then
+			Hardcore_Character.dt.pending[i].log_now = nil			-- clean up
 			DungeonTrackerLogRun(Hardcore_Character.dt.pending[i])
 			table.remove(Hardcore_Character.dt.pending, i)
 		end
@@ -1155,7 +1290,7 @@ local function GetCryptoHash(str)
 	local dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /:"
 
 	for i = 1, #str do
-		x, y = string.find(dictionary, str:sub(i, i), 1, true)
+		local x, y = string.find(dictionary, str:sub(i, i), 1, true)
 		if x == nil then
 			x = #dictionary
 		end
@@ -1224,9 +1359,7 @@ function DungeonTrackerHandleAppealCode(args)
 
 	if cmd == "delete" then
 		if #quoted_args < 2 then
-			Hardcore:Print(
-				"Wrong syntax: delete cmd should be followed by dungeon name and date string (both in quotes)"
-			)
+			Hardcore:Print("Wrong syntax: delete cmd should be followed by dungeon name and date string (both in quotes)")
 			Hardcore:Print(usage1)
 			return
 		else
