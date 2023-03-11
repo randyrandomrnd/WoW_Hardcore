@@ -51,7 +51,7 @@ local dt_db = {
 	},
 	{ 48, 719, "Blackfathom Deeps", "D", 5, 1, { 32, 28 }, 
 				{ 971, 1198, 1199, 1275, 6565, 6921, 1200, 6561, 6922 },
-				{{"Aku'mai",4829}, {"Ghamoo-ra",4887}, {"Lady Sarevess",4831}, {"Gelihast",6243}, {"Lorgus Jett",12902}, {"Baron Aquanis",12876}, {"Twilight Lord Kelris",4832}, {"Old Serra'kis",4830}}
+				{{"Aku'mai",4829}, {"Ghamoo-ra",4887}, {"Lady Sarevess",4831}, {"Gelihast",6243}, {"Lorgus Jett",12902}, {"Twilight Lord Kelris",4832}, {"Old Serra'kis",4830}}
 	},				
 	{ 34, 717, "The Stockade", "D", 5, 1, { 32, 29 }, 
 				{ 387, 386, 378, 388, 377, 391 },
@@ -105,21 +105,40 @@ local dt_db = {
 				{ 3528, 3446, 3447, 3373 },  										-- 1475, 4143, 4146, removed: tablets and haze drop outside
 				{{"Shade of Eranikus",5709}, {"Atal'alarion",8580}, {"Dreamscythe",5721}, {"Weaver",5720}, {"Jammal'an the Prophet",5710}, {"Ogom the Wretched",5711}, {"Morphaz",5719}, {"Hazzas",5722}, {"Avatar of Hakkar",8443}}
 	},
-	{ 229, 1583, "Blackrock Spire",	"D", 10, 1, { 60, 62 },	{ 4701, 5001, 4724, 4982, 4903, 4862, 4729, 4788, 4768, 4974, 4764, 5102, 6821, 7761 } }, -- UBRS and LBRS are one instance
-	{ 230, 1584, "Blackrock Depths", "D", 5, 1, { 60, 60 }, { 4136, 4123, 4286, 4126, 4081, 4134 } },
+	{ 229, 1583, "Blackrock Spire",	"D", 10, 1, { 60, 62 },	
+				{ 4701, 5001, 4724, 4982, 4903, 4862, 4729, 4788, 4768, 4974, 4764, 5102, 6821, 7761 },
+				{{"General Drakkisath",10363}, {"Highlord Omokk",9196}, {"Shadow Hunter Vosh'gajin",9236}, {"War Master Voone",9237}, {"Mor Grayhoof",16080}, {"Mother Smolderweb",10596},
+						{"Urok Doomhowl",10584}, {"Quartermaster Zigris",9736}, {"Halycon",10220}, {"Gizrul the Slavener",10268},{"Overlord Wyrmthalak",9537},
+						{"Pyroguard Emberseer",9816}, {"Solakar Flamewreath",10264}, {"Goraluk Anvilcrack",10899}, {"Warchief Rend Blackhand",10429}, {"Gyth",10339}, {"The Beast",10430} 
+				}
+	}, -- UBRS and LBRS are one instance
+	{ 230, 1584, "Blackrock Depths", "D", 5, 1, { 60, 60 }, 
+				{ 4136, 4123, 4286, 4126, 4081, 4134 },
+				{{"Emperor Dagran Thaurissan",9019}, {"Lord Roccor",9025}, {"Bael'Gar",9016}, {"Houndmaster Grebmar",9319}, {"High Interrogator Gerstahn",9018}, {"High Justice Grimstone",10096}, 
+						{"Pyromancer Loregrain",9024}, {"General Angerforge",9033}, {"Golem Lord Argelmach",8983}, 
+						{"Ribbly Screwspigot",9543}, {"Hurley Blackbreath",9537}, {"Plugger Spazzring",9499}, {"Phalanx",9502}, 
+						{"Lord Incendius",9017}, {"Fineous Darkvire",9056}, {"Warder Stilgiss",9041}, {"Ambassador Flamelash",9156}, {"Magmus",9938}, 
+						{"Princess Moira Bronzebeard",8929}}
+	},
 	{ 289, 2057, "Scholomance", "D", 5, 1, { 60, 62 }, 
 				{ 5529, 5582, 5382, 5384, 5466, 5343, 5341 },
 				{{"Darkmaster Gandling",1853}, {"Kirtonos the Herald",10506}, {"Jandice Barov",10503}, {"Rattlegore",11622}, {"Marduk Blackpool",10433}, {"Vectus",10432}, {"Ras Frostwhisper",10508}, {"Instructor Malicia",10505}, {"Doctor Theolin Krastinov",11261}, {"Lorekeeper Polkelt",10901}, {"The Ravenian",10507}, {"Lord Alexei Barov",10504}, {"Lady Ilucia Barov",10502}}
 	},
 	{ 429, 2557, "Dire Maul", "D", 5, 1, { 60, 62 }, 
 				{ 7488, 7489, 7441, 7461, 7462, 7703, 5526 },
-				{ {"King Gordok",11501}, 
-					{"Pusillin",14354},{"Lethendris",14327}, {"Hydrospawn",13280}, {"Zevrim Thornhoof",11490},{"Alzzin the Wildshaper",11492},
+				{ {"King Gordok",11501},{"Pusillin",14354},{"Lethendris",14327}, {"Hydrospawn",13280}, {"Zevrim Thornhoof",11490},{"Alzzin the Wildshaper",11492},
 					{"Guard Mol'dar",14326},{"Stomper Kreeg",14322},{"Guard Fengus",14321},{"Guard Slip'kik",14323},{"Captain Kromcrush",14325},{"Cho'Rush the Observer",14324},
 					{"Tendris Warpwood",11489},{"Magister Kalendris",11487},{"Tsu'zee",11467},{"Illyanna Ravenoak",11488},{"Immol'thar",11496},{"Prince Tortheldrin",11486},
 				}
 	},
-	{ 329, 2017, "Stratholme", "D",	5, 1, { 60, 62 },{ 5282, 5214, 5251, 5262, 5848, 5122, 5212, 5263, 5243, 5122, 6163, 5463, 8945 } }, -- Undead / Live parts are one instance
+	{ 329, 2017, "Stratholme", "D",	5, 1, { 60, 62 },
+				{ 5282, 5214, 5251, 5262, 5848, 5122, 5212, 5263, 5243, 5122, 6163, 5463, 8945 },
+				{ {"Baron Rivendare",10440},
+					{"Fras Siabi",11058}, {"The Unforgiven",10516}, {"Postmaster Malown",11143},{"Timmy the Cruel",10808},
+					{"Malor the Zealous",11032},{"Cannon Master Willey",10997}, {"Crimson Hammersmith",11120}, {"Archivist Galford",10811},{"Balnazzar",10813},
+					{"Magistrate Barthilas",10435},{"Nerub'enkan",10437}, {"Baroness Anastari",10436}, {"Maleki the Pallid",10438},{"Ramstein the Gorger",10439}
+				}
+	}, -- Undead / Live parts are one instance
 	-- Era Raids
 	{ 249, 2159, "Onyxia's Lair", "R", 40, 1000, { 1000, 1000 }, {} },
 	{ 309, 1977, "Zul'Gurub", "R", 20, 1000, { 1000, 1000 }, {} },
