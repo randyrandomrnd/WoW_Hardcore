@@ -183,6 +183,8 @@ end
 Hooks
 --]] -----------------------------------------------------------------------
 function GreenWall_ParseText(chat, send)
+    _G.hardcore_disable_greenwall = true -- Disable greenwall
+    if _G.hardcore_disable_greenwall then return end
     if (send == 1) then
         local chatType = chat:GetAttribute('chatType')
         local message = chat:GetText()
