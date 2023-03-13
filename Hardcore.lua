@@ -21,6 +21,7 @@ along with the Hardcore AddOn. If not, see <http://www.gnu.org/licenses/>.
 --
 StaticPopupDialogs["CHAT_CHANNEL_PASSWORD"] = nil
 --CHAT_WRONG_PASSWORD_NOTICE = nil
+local DEATH_ALERT_COOLDOWN = 1800
 local GRIEF_WARNING_OFF = 0
 local GRIEF_WARNING_SAME_FACTION = 1
 local GRIEF_WARNING_ENEMY_FACTION = 2
@@ -186,6 +187,7 @@ local DEPRECATED_COMMANDS = {
 -- stuff
 hc_recent_level_up = nil -- KEEP GLOBAL
 hc_guild_rank_index = nil
+local recent_death_alert_sender = {}
 local PLAYER_NAME, _ = nil, nil
 local PLAYER_GUID = nil
 local PLAYER_FACTION = nil
@@ -2273,6 +2275,14 @@ end
 
 -- player name, level, zone, attack_source, class
 local function receiveDeathMsg(data, sender, command)
+	if recent_death_alert_sender[sender] ~= nil then return end
+	recent_death_alert_sender[sender] = 1
+
+	C_Timer.After(DEATH_ALERT_COOLDOWN, function()
+	  recent_death_alert_sender[sender] = nil
+	end)
+
+
 	if Hardcore_Settings.ignore_xguild_alerts ~= nil and Hardcore_Settings.ignore_xguild_alerts == true then
 		return
 	end
@@ -2343,10 +2353,20 @@ function Hardcore:CHAT_MSG_ADDON(prefix, datastr, scope, sender)
 		end
 
 		if command == COMM_COMMANDS[10] then -- Received request for guild members
-			-- receiveDeathMsg(data, sender, command) would duplicate for sender
-			local commMessage = COMM_COMMANDS[11] .. COMM_COMMAND_DELIM .. data
-			CTL:SendAddonMessage("ALERT", COMM_NAME, commMessage, "GUILD")
-			return
+			local other_player_name = ""
+			local level = 0
+			local zone = ""
+			local attack_source = ""
+			local class = ""
+			if data then
+				other_player_name, level, zone, attack_source, class = string.split("^", data)
+				if other_player_name and other_player_name ~= sender then return end
+				-- Other validity checks here
+
+				local commMessage = COMM_COMMANDS[11] .. COMM_COMMAND_DELIM .. data
+				CTL:SendAddonMessage("ALERT", COMM_NAME, commMessage, "GUILD")
+				return
+			end
 		end
 		if command == COMM_COMMANDS[11] then -- Received request for guild members
 			receiveDeathMsg(data, sender, command)
@@ -2673,6 +2693,10 @@ function Hardcore:Add(data, sender, command)
 			for i = 1, GetNumGuildMembers() do
 				local name, _, _, guildLevel, _, zone, _, _, _, _, class = GetGuildRosterInfo(i)
 				if name == sender then
+
+					C_Timer.After(DEATH_ALERT_COOLDOWN, function()
+					  recent_death_alert_sender[sender] = nil
+					end)
 					if mapID then
 						local mapData = C_Map.GetMapInfo(mapID) -- In case some idiot sends an invalid map ID, it won't cause mass lua errors.
 						zone = mapData and mapData.name or zone -- If player is in an instance, will have to get zone from guild roster.
