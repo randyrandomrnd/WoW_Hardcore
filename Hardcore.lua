@@ -2283,7 +2283,7 @@ local function receiveXGuildChat(data, sender, command)
 		return
 	end
 	last_received_xguild_chat = data
-	Hardcore:FakeGuildMsg(data)
+	-- Hardcore:FakeGuildMsg("< " .. sender .. "> " .. data)
 end
 
 -- player name, level, zone, attack_source, class
@@ -2387,9 +2387,9 @@ function Hardcore:CHAT_MSG_ADDON(prefix, datastr, scope, sender)
 			return
 		end
 		if command == COMM_COMMANDS[12] then -- Send guild chat to other guilds
-			-- receiveXGuildChat(data, sender, command) would duplicate for sender
-			local commMessage = COMM_COMMANDS[13] .. COMM_COMMAND_DELIM .. data
-			CTL:SendAddonMessage("ALERT", COMM_NAME, commMessage, "GUILD")
+			-- Disabled for the time being
+			-- local commMessage = COMM_COMMANDS[13] .. COMM_COMMAND_DELIM .. data
+			-- CTL:SendAddonMessage("ALERT", COMM_NAME, commMessage, "GUILD")
 			return
 		end
 		if command == COMM_COMMANDS[13] then -- Send guild chat from another guild to this guild
