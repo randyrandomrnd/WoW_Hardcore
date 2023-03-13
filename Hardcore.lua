@@ -40,6 +40,19 @@ local CLASSES = {
 	[11] = "Druid",
 }
 
+local CLASS_DICT = {
+  ["Warrior"] = 1,
+  ["Paladin"] = 1,
+  ["Hunter"] = 1,
+  ["Rogue"] = 1,
+  ["Priest"] = 1,
+  ["Death Knight"] = 1,
+  ["Shaman"] = 1,
+  ["Mage"] = 1,
+  ["Warlock"] = 1,
+  ["Druid"] = 1,
+}
+
 --[[ Global saved variables ]]
 --
 Hardcore_Settings = {
@@ -2297,7 +2310,7 @@ local function receiveDeathMsg(data, sender, command)
 		else
 			return -- Failed to parse
 		end
-		local alert_msg = other_player_name .. " the " .. class .. " has died at level " .. level .. " in " .. zone
+		local alert_msg = other_player_name .. " the " .. class .. " has died at level " .. level .. "."
 
 		local min_level = tonumber(Hardcore_Settings.minimum_show_death_alert_lvl) or 0
 		if tonumber(level) < tonumber(min_level) then
@@ -2361,7 +2374,8 @@ function Hardcore:CHAT_MSG_ADDON(prefix, datastr, scope, sender)
 			if data then
 				other_player_name, level, zone, attack_source, class = string.split("^", data)
 				if other_player_name and other_player_name ~= sender then return end
-				-- Other validity checks here
+				if level == nil or tonumber(level) == nil or tonumber(level) < 1 or tonumber(level) > 80 then return end
+				if class == nil or CLASS_DICT[class] == nil then return end
 
 				local commMessage = COMM_COMMANDS[11] .. COMM_COMMAND_DELIM .. data
 				CTL:SendAddonMessage("ALERT", COMM_NAME, commMessage, "GUILD")
