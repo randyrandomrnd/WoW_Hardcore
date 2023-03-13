@@ -2617,7 +2617,8 @@ end
 --[[ Utility Methods ]]
 --
 function Hardcore:Notify(msg)
-	print("|cffed9121Hardcore Notification: " .. (msg or "") .. "|r")
+	-- print("|cffed9121Hardcore Notification: " .. (msg or "") .. "|r")
+	-- Disable greenwall
 end
 
 function Hardcore:Print(msg)
@@ -2625,7 +2626,8 @@ function Hardcore:Print(msg)
 end
 
 function Hardcore:FakeGuildMsg(msg)
-	print("|cff00FF00" .. msg .. "|r ")
+	-- print("|cff00FF00" .. msg .. "|r ")
+	-- Disable greenwall
 end
 
 function Hardcore:Debug(msg)
