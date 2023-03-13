@@ -2383,7 +2383,7 @@ function Hardcore:CHAT_MSG_ADDON(prefix, datastr, scope, sender)
 			end
 		end
 		if command == COMM_COMMANDS[11] then -- Received request for guild members
-			receiveDeathMsg(data, sender, command)
+			-- receiveDeathMsg(data, sender, command) -- Disable greenwall
 			return
 		end
 		if command == COMM_COMMANDS[12] then -- Send guild chat to other guilds
@@ -2393,7 +2393,7 @@ function Hardcore:CHAT_MSG_ADDON(prefix, datastr, scope, sender)
 			return
 		end
 		if command == COMM_COMMANDS[13] then -- Send guild chat from another guild to this guild
-			receiveXGuildChat(data, sender, command)
+			-- receiveXGuildChat(data, sender, command) -- Disable greenwall
 			return
 		end
 		if command == COMM_COMMANDS[7] then -- Received request for party change
