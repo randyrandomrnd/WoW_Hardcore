@@ -2707,7 +2707,8 @@ function Hardcore:Add(data, sender, command)
 			for i = 1, GetNumGuildMembers() do
 				local name, _, _, guildLevel, _, zone, _, _, _, _, class = GetGuildRosterInfo(i)
 				if name == sender then
-
+				  	if recent_death_alert_sender[sender] ~= nil then return end
+				 	recent_death_alert_sender[sender] = 1
 					C_Timer.After(DEATH_ALERT_COOLDOWN, function()
 					  recent_death_alert_sender[sender] = nil
 					end)
