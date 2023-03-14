@@ -62,7 +62,7 @@ local dt_db = {
 				{{"Charlga Razorflank",4421}, {"Roogug",6168}, {"Aggem Thorncurse",4424}, {"Death Speaker Jargba",4428}, {"Overlord Ramtusk",4420}, {"Agathelos the Raging",4422}}
 	},
 	{ 90, 721, "Gnomeregan", "D", 5, 1, { 38, 32 }, 
-				{ 2904, 2951, 2945, 2922, 2928, 2924, 2930, 2929, 2841 },
+				{ 2904, 2951, 2945, 2928, 2924, 2930, 2929, 2841 },
 				{{"Mekgineer Thermaplugg",7800}, {"Grubbis ",7361}, {"Viscous Fallout",7079}, {"Electrocutioner 6000",6235}, {"Crowd Pummeler 9-60",6229}}
 	},
 	{ 129, 722, "Razorfen Downs", "D", 5, 1, { 46, 41 }, 
