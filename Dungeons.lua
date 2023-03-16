@@ -90,7 +90,7 @@ local dt_db = {
 				{ {"Herod", 3975} } 
 	},
 	{ 70, 1137, "Uldaman", "D", 5, 1, { 51, 44 }, 
-				{ 1360, 2240, 1139, 2204, 2278 },
+				{ 2240, 1139, 2204, 2278 },
 				{{"Archaedas",2748}, {"Revelosh",6910}, {"Baelog",6906}, {"Ironaya",7228}, {"Obsidian Sentinel",7023}, {"Ancient Stone Keeper",7206}, {"Galgann Firehammer",7291}, {"Grimlok",4854}}
 	},
 	{ 209, 1176, "Zul'Farrak", "D", 5, 1, { 54, 50 }, 
