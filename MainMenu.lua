@@ -312,24 +312,14 @@ local function DrawGeneralTab(container)
 
 	---
 
-	-- local changelog_title = AceGUI:Create("Label")
-	-- changelog_title:SetWidth(500)
-	-- changelog_title:SetText("11.16")
-	-- changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	-- scroll_frame:AddChild(changelog_title)
+	
 
 	CreateHeadingLabel("11.16", scroll_frame)
 
 	
 
-	-- local changelog_description = AceGUI:Create("Label")
-	-- changelog_description:SetWidth(_menu_width)
-	-- changelog_description:SetText(
-	-- 	"- Disable greenwall\n"
-	-- )
-	-- changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	-- scroll_frame:AddChild(changelog_description)
-	CreateDescriptionLabel("- Disable greenwall*\n", scroll_frame)
+	
+	CreateDescriptionLabel("- Disable greenwall\n", scroll_frame)
 
 
 	---
