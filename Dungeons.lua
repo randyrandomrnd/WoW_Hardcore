@@ -50,7 +50,7 @@ local dt_db = {
 				{{"Archmage Arugal",4275}, {"Rethilgore",3914}, {"Razorclaw the Butcher",3886}, {"Baron Silverlaine",3887}, {"Commander Springvale",4278}, {"Odo the Blindwatcher",4279}, {"Fenrus the Devourer",4274}, {"Wolf Master Nandos",3927}}
 	},
 	{ 48, 719, "Blackfathom Deeps", "D", 5, 1, { 32, 28 }, 
-				{ 971, 1198, 1199, 1275, 6565, 6921, 1200, 6561, 6922 },
+				{ 971, 1198, 1199, 6565, 6921, 1200, 6561, 6922 },
 				{{"Aku'mai",4829}, {"Ghamoo-ra",4887}, {"Lady Sarevess",4831}, {"Gelihast",6243}, {"Lorgus Jett",12902}, {"Twilight Lord Kelris",4832}, {"Old Serra'kis",4830}}
 	},				
 	{ 34, 717, "The Stockade", "D", 5, 1, { 32, 29 }, 
