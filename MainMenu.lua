@@ -260,6 +260,22 @@ local function spairs(t, order)
 		end
 	end
 end
+local function CreateHeadingLabel (title, frame)
+	local label = AceGUI:Create("Label")
+	label:SetWidth(500)
+	label:SetText(title)
+	label:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	frame:AddChild(label)
+	
+end
+local function CreateDescriptionLabel (text, frame)
+	local label = AceGUI:Create("Label")
+	label:SetWidth(900)
+	label:SetText(text) 
+	label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	frame:AddChild(label)
+end
+
 
 local function DrawGeneralTab(container)
 	local scroll_container = AceGUI:Create("SimpleGroup")
@@ -296,28 +312,29 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.16")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	-- local changelog_title = AceGUI:Create("Label")
+	-- changelog_title:SetWidth(500)
+	-- changelog_title:SetText("11.16")
+	-- changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	-- scroll_frame:AddChild(changelog_title)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Disable greenwall\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	CreateHeadingLabel("11.16", scroll_frame)
+
+	
+
+	-- local changelog_description = AceGUI:Create("Label")
+	-- changelog_description:SetWidth(_menu_width)
+	-- changelog_description:SetText(
+	-- 	"- Disable greenwall\n"
+	-- )
+	-- changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	-- scroll_frame:AddChild(changelog_description)
+	CreateDescriptionLabel("- Disable greenwall*\n", scroll_frame)
+
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.15")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
+	CreateHeadingLabel("11.15", scroll_frame)
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
 	changelog_description:SetText(
@@ -332,11 +349,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.14")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.14", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -348,11 +361,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.13")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.13", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -376,11 +385,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.12")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.12", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -397,11 +402,7 @@ local function DrawGeneralTab(container)
 	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(changelog_description)
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.10")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.10", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -413,11 +414,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.9")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.9", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -427,11 +424,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.8")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.8", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -443,11 +436,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.7")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.7", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -459,11 +448,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.6")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.6", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -473,11 +458,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.5")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.5", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -487,11 +468,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.4")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.4", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -503,11 +480,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.3")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.3", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -519,11 +492,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.2")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.2", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -535,11 +504,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.1")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.1", scroll_frame)
 
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
@@ -551,12 +516,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.0")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
+	CreateHeadingLabel("11.0", scroll_frame)
 	local changelog_description = AceGUI:Create("Label")
 	changelog_description:SetWidth(_menu_width)
 	changelog_description:SetText(
@@ -567,151 +527,7 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.5")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added timer on shivved, sword and board, and berserker which gives the player a minute to unequip.\n- Fixed appeal code\n- Fixed shivved failing on skinning knife\n- Added DuoMade and TrioMade\n- Fixed minor menu crash\n- Added <MOD> tags\n- Added trade appeals"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	---
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.4")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Passive Achievements added (Disabled).\n- Removed speedrunner until alignment is reached.\n- Fixed appeal code for long names\n- removed spam from failed channel connects\n- Fixed scavenger achievement failing when creating items while merchant window is open.\n- Automatically hide talent frame when trying to open it with Not So Talented enabled."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	---
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.3")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Add Speedrunner back as an achievement! New formula for tracking time is being used.\n- Update descriptions for Stadic's challenge and speedrun when mousing over icon\n- Made it more convenient to appeal achievements."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	---
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.2")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added options to ignore cross-guild chat and alerts (in interface options->Hardcore (not Hardcore:Greenwall!) \n- Fixed fishing poles failing Hammertime, pacifist, and shivved. \n- Fixed alert message which showed a |c before class names. \n -Stadic's challenge now requires 30,000 gained reputation (not total).\n- No longer tells user to ping mod for time gaps under level 20.\n- Updated DUO/TRIO rules"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.1")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added support for automatic guild notifications across guilds (level up and deaths)\n- Fixed self-made bug."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.0")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added Greenwall (cross-guild chat) integration\n- Added Stadics Challenge (1hp). Stadics Challenge will alert guild members when a point of damage is taken.\n- No Health Achievement bug fixed; Now the player should be able to make potions without failing the challenge.\n- Self-made bug fixed where the player couldn't equip a fishing rode without failing."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.5")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Verification string in new menu ui fixed\n- Teleport moonglade fixed (again) for Druid of the Claw\n- Optimizations for level list.  Level list is now paginated and should no longer cause long freezes.\n- Optimizations for accountability tab.  Accountability tab now loads more quickly up on clicking `inspect all`.  Accountability tab no longer causes a stutter every 7 seconds.\n- HC main menu added to UI special frames; Escape key can be used to exit the menu.\n- Dungeon list updated to include BFD and WotLK dungeons\n- Currency tab is now handled correctly.  Previously, the HC tab would overlap with the currency tab, and the currency panel/ hc panel would still be drawn when switching between the two.\n- Self-made achievement updates.  Self-made no longer fails you for equipping tabards or gear with stat bonuses.  Starting gear list of items updated as well.\n- Self-made no longer allows equipping quest items."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.4")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Inspect Players in main menu's accountability tab\n- Moonglade correctly detected for duo/trio partners\n- Defaults to modern menu for hardcore show.  To use the old menu again, go to interface options and uncheck the checkbox."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.3")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Fixed issue where trade partner verification check was being recorded for duo/trio partner trades\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.2")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Shivved updated to allow fishing poles\n- Hammertime updated to allow fishing poles\n- Self-made fixed and updated to allow fishing poles and starting gear\n- Force initialize and bound hardcore_settings to fix some lingering with settings\n- Remove character frame taint; Players can now open character frame during combat but not the HC tab\n- Add ability for mods to appeal achievements in-game\n- Added beta modern menu which replaces /hardcore show\n- Minor verbage changes in rules in beta menu\n- Dungeon levels added to rules in beta menu\n- Achievements added to beta menu\n- Formatting fixes for level list and accountability in beta menu\n- Druid of the claw fixed issue where moonglade wasn't allowed\n- Scavenger fixed issue where other addons could buy from merchants\n - Bandaid fix for other addons removing inspect frame"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	
 end
 
 local function DrawRulesTab(container)
