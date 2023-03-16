@@ -265,6 +265,7 @@ local KNOWN_GRIEFERS = {
 	["Gazelle"] = 1,
 	["Notveryhc"] = 1,
 	["Whyyouhitcat"] = 1,
+	["Milfmuncher"] = 1,
 }
 
 -- frame display
