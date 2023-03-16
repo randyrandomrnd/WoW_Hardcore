@@ -335,37 +335,28 @@ local function DrawGeneralTab(container)
 	---
 
 	CreateHeadingLabel("11.15", scroll_frame)
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Dungeon tracker improvements\n"
 			.. "- HC Defense fix; resurrecting no longer causes alert\n"
 			.. "- LF mode fixes; no longer crashes for lower version players.\n"
 			.. "- Disable automatic recovery methods\n"
 			.. "- Removed summon mounts from failing Imp Master\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 	---
 
 	CreateHeadingLabel("11.14", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fix minor crash on quest turn in\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.13", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fix guild chat crash in WotLK\n"
 			.. "- Ammend Griefer list\n"
 			.. "- LF mode in greenwall\n"
@@ -378,18 +369,15 @@ local function DrawGeneralTab(container)
 			.. "- Automatic server/name change recovery\n"
 			.. "- Fixed Kill the Betrayer achievement\n"
 			.. "- Fixed achievements from not showing up in accountability tab\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 
 	---
 
 	CreateHeadingLabel("11.12", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Improved anti-grief security\n"
 			.. "- Updated Hardcore Contract\n"
 			.. "- Dungeon Tracker localization\n"
@@ -398,133 +386,91 @@ local function DrawGeneralTab(container)
 			.. "- Option to block death messages from levels/guilds\n"
 			.. "- Fix Thunderstruck achievement\n"
 			.. "- Fix Against Lord Shalzaru achievement\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 	CreateHeadingLabel("11.10", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Various wording changes\n- Added more quests to pvp flag warning\n- Added banned guilds in greenwall\n- Fix to <MOD>\n- Felfire skull fix\n- Dungeon tracker improvements"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 	---
 
 	CreateHeadingLabel("11.9", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText("- Added `Hardcore contract` to intro splash")
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	CreateDescriptionLabel("- Added `Hardcore contract` to intro splash", scroll_frame)
+	
 
 	---
 
 	CreateHeadingLabel("11.8", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Small trio fix where countdown would immediately fail\n- Fixed minor crash for achievements\n- Fixed earthen arise, Goggeroc kills not registering\n- Player pronouns added\n- auto appeal griefing for under 40 characters.\n- Fixed bug where 60 characters can get achievements intended for non-60s"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.7", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed Deep in the Ban'ethil Barrow Den from missing Rageclaw kill\n- Fixed kill target for Death to Goggeroc\n- Made profession achievements more reliable and check on reload\n- Fixed minor crash on forced achievement selection\n- Removed checks for duo/trios when 60+"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.6", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText("- Better WoTLK patch compatibility (Overhauled AceGUI)")
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	CreateDescriptionLabel("- Better WoTLK patch compatibility (Overhauled AceGUI)", scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.5", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText("-WoTLK patch compatibility")
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	CreateDescriptionLabel("-WoTLK patch compatibility", scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.4", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed stinkys escape for Alliance\n- Fixed the crown of will showing for horde\n- Fixed Kromgrul from not showing up in achievement list\n- Added new achievement `Serum to the Forsaken`."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.3", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed burning shadow specific bug\n- Tuned achievement animation\n- Dungeon tracking fixes"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.2", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Made a variety of new achievements more robust\n- duo/trio will no longer fail at lvl 1\n- <MOD> tag no longer applied to say\n- Added legacy support for duo/trio trades"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 	---
 
 	CreateHeadingLabel("11.1", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed bug with Stadics' challenge\n- Added Achievement Animation (see interface addons menu to test with `show`\n- Fixed bug with PartnerUp! which failed when players had class achievements\n- Dungeon tracking additions; removed infractions for lvl 60's, added appeals\n- Fixed some spelling and grammar for new achievements\n- Fixed bug where quests which have a level requirement would not award achievement if turning in quest leveled up the character."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
 	CreateHeadingLabel("11.0", scroll_frame)
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Added a dungeon tab for tracking dungeon stats and completion.\n- Changes to actively prevent illegal trades (addon will block trades from non-trade partners unless you are lvl 60).\n- Increased rep. requirement for Stadic's to 45,000\n- Added 50+ new achievements.  New achievements do not need to be selected at level 1.  See the Achievements tab for more information.\n- Added Duo/Trio appeal codes"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
 	
