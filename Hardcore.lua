@@ -262,6 +262,9 @@ local KNOWN_GRIEFERS = {
 	["Kargozhc"] = 1,
 	["Kargozttvhc"] = 1,
 	["Kârgðzhc"] = 1,
+	["Gazelle"] = 1,
+	["Notveryhc"] = 1,
+	["Whyyouhitcat"] = 1,
 }
 
 -- frame display
