@@ -38,7 +38,7 @@ local dt_db = {
 				{{"Bazzalan",11519}, {"Taramagan the Hungerer",11520}, {"Oggleflint",11517}, {"Jergosh the Invoker",11518}}
 	},
 	{ 36, 1581, "The Deadmines", "D", 5, 1, { 26, 24 }, 
-				{ 2040, 166, 214, 373 }, 					-- Underground Assault, The Defias Brotherhood, Red Silk Bandanas, The Unsent Letter
+				{ 2040, 166, 373 }, 					-- Underground Assault, The Defias Brotherhood, The Unsent Letter
 				{{"Edwin VanCleef",639}, {"Rhahk'Zor",644}, {"Sneed's Shredder",642}, {"Gilnid",1763}, {"Mr. Smite",646}, {"Captain Greenskin",647}, {"Cookie",645}}
 	},
 	{ 43, 718, "Wailing Caverns", "D", 5, 1, { 24, 24 }, 
