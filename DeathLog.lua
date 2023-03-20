@@ -1,4 +1,15 @@
 local AceGUI = LibStub("AceGUI-3.0")
+local CTL = _G.ChatThrottleLib
+local COMM_NAME = "HCDeathAlerts"
+local COMM_COMMANDS = {
+  ["BROADCAST_DEATH_PING"] = "1",
+  ["BROADCAST_DEATH_PING_CHECKSUM"] = "2",
+}
+local COMM_COMMAND_DELIM = "$"
+local COMM_FIELD_DELIM = "~"
+
+local death_alerts_channel = "hcdeathalertschannel"
+local death_alerts_channel_pw = "hcdeathalertschannelpw"
 
 local race_to_id = {
 }
@@ -10,10 +21,55 @@ local class_to_id = {
 local id_to_class = {
 }
 
+local function PlayerData(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos, date, last_words)
+  return {
+    ["name"] = name,
+    ["guild"] = guild,
+    ["source_id"] = source_id,
+    ["race_id"] = race_id,
+    ["class_id"] = class_id,
+    ["level"] = level,
+    ["instance_id"] = instance_id,
+    ["map_id"] = map_id,
+    ["map_pos"] = map_pos,
+    ["date"] = date,
+    ["last_words"] = last_words,
+  }
+end
+
+-- Message: name, guild,
+local function encodeMessage(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos)
+  local loc_str = ""
+  if map_pos then
+    loc_str = string.format("%.4f,%.4f", map_pos.x, map_pos.y)
+  end
+  local comm_message = name .. COMM_FIELD_DELIM .. (guild or "") .. COMM_FIELD_DELIM .. source_id .. COMM_FIELD_DELIM .. race_id .. COMM_FIELD_DELIM .. class_id .. COMM_FIELD_DELIM .. level .. COMM_FIELD_DELIM .. (instance_id or "")  .. COMM_FIELD_DELIM .. (map_id or "") .. COMM_FIELD_DELIM .. loc_str .. COMM_FIELD_DELIM
+  return comm_message
+end
+
+local function decodeMessage(msg)
+  local values = {}
+  for w in msg:gmatch("(.-)~") do table.insert(values, w) end
+  local date = nil
+  local last_words = nil
+  local name = values[1]
+  local guild = values[2]
+  local source_id = tonumber(values[3])
+  local race_id = tonumber(values[4])
+  local class_id = tonumber(values[5])
+  local level = tonumber(values[6])
+  local instance_id = tonumber(values[7])
+  local map_id = tonumber(values[8])
+  local map_pos = values[9]
+  local player_data = PlayerData(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos, date, last_words)
+  return player_data
+end
+
 -- [checksum -> {name, guild, source, race, class, level, F's, location, last_words, location}]
 local death_ping_lru_cache_tbl = {}
 local death_ping_lru_cache_ll = {}
 local broadcast_death_ping_queue = {}
+local death_alert_out_queue = {}
 local f_log = {}
 
 local function fletcher16(_player_data)
@@ -139,7 +195,7 @@ end
 
 
 local i = 0
-C_Timer.NewTicker(.5, function()
+C_Timer.NewTicker(5, function()
 local player_data = {
   ["name"] = "Yazpads",
   ["guild"] = "HC Elite",
@@ -177,69 +233,118 @@ local function createEntry(checksum)
       end
     end
   end
-  setEntry(death_ping_lru_cache_tbl["player_data"], row[20])
+  setEntry(death_ping_lru_cache_tbl[checksum]["player_data"], row_entry[20])
+  death_ping_lru_cache_tbl[checksum]["committed"] = 1
 end
 
 
 local function shouldCreateEntry(checksum)
-  if death_ping_lru_cache_tbl[checksum] == nil then return end
-  if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
-  if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
-  return false
+  return true
+  -- if death_ping_lru_cache_tbl[checksum] == nil then return end
+  -- if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
+  -- if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
+  -- return false
 end
 
-function deathlogReceiveGuildMessage(sender, data)
-  local name, guild, race, class, level, location = decodeDeathData(data)
-  if sender ~= name then return end
+function selfDeathAlert(death_source_str)
+	local map = C_Map.GetBestMapForUnit("player")
+	local instance_id = nil
+	local position = nil
+	if map then 
+		position = C_Map.GetPlayerMapPosition(map, "player")
+		local continentID, worldPosition = C_Map.GetWorldPosFromMapPos(map, position)
+		print(map, position.x)
+	else
+	  local _, _, _, _, _, _, _, _instance_id, _, _ = GetInstanceInfo()
+	  instance_id = _instance_id
+	end
 
-  local player_data = {
-    ["name"] = name,
-    ["guild"] = guild,
-    ["race"] = race,
-    ["class"] = class,
-    ["level"] = level,
-    ["location"] = location,
-  }
-  
-  local checksum = fletcher16(player_data)
+	local guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+	local _, _, race_id = UnitRace("player")
+	local _, _, class_id = UnitClass("player")
+	local death_source = "-1"
+	if DeathLog_Last_Attack_Source then
+	  death_source = npc_to_id[death_source_str]
+	end
+
+	msg = encodeMessage(UnitName("player"), guildName, death_source, race_id, class_id, UnitLevel("player"), instance_id, map, position)
+	local commMessage = COMM_COMMANDS["BROADCAST_DEATH_PING"] .. COMM_COMMAND_DELIM .. msg
+	local channel_num = GetChannelName(death_alerts_channel)
+
+	table.insert(death_alert_out_queue, msg)
+end
+
+-- Receive a guild message. Need to send ack
+function deathlogReceiveGuildMessage(sender, data)
+  local decoded_player_data = decodeMessage(data)
+  if sender ~= decoded_player_data["name"] then return end
+  if decoded_player_data["source_id"] == nil then return end
+  if decoded_player_data["race_id"] == nil then return end
+  if decoded_player_data["class_id"] == nil then return end
+  if decoded_player_data["level"] == nil or decoded_player_data["level"] < 0 or decoded_player_data["level"] > 80 then return end
+  if decoded_player_data["instance_id"] == nil and decoded_player_data["map_id"] == nil then return end
+
+  local valid = false
+  for i = 1, GetNumGuildMembers() do
+	  local name, _, _, level, class_str, _, _, _, _, _, class = GetGuildRosterInfo(i)
+	  if name == sender and level == decoded_player_data["level"] then
+	    valid = true
+	  end
+  end
+  if valid == false then return end
+
+  local checksum = fletcher16(decoded_player_data)
+
   if death_ping_lru_cache_tbl[checksum] == nil then
     death_ping_lru_cache_tbl[checksum] = {
       ["player_data"] = player_data,
     }
   end
+
+  if death_ping_lru_cache_tbl[checksum]["committed"] then return end
+
   death_ping_lru_cache_tbl[checksum]["self_report"] = 1
   death_ping_lru_cache_tbl[checksum]["in_guild"] = 1
-  table.insert(broadcast_death_ping_queue, checksum)
+  table.insert(broadcast_death_ping_queue, checksum) -- Must be added to queue to be broadcasted to network
   if shouldCreateEntry(checksum) then
     createEntry(checksum)
   end
 end
 
-function deathlogReceiveChannelMessage(sender, data)
-  local name, guild, race, class, level, location = decodeDeathData(data)
-
-  local player_data = {
-    ["name"] = name,
-    ["guild"] = guild,
-    ["race"] = race,
-    ["class"] = class,
-    ["level"] = level,
-    ["location"] = location,
-  }
-  
-  local checksum = fletcher16(player_data)
+local function deathlogReceiveChannelMessageChecksum(sender, checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then
-    death_ping_lru_cache_tbl[checksum] = {
-      ["player_data"] = player_data,
-      ["peer_report"] = 0,
-    }
+    death_ping_lru_cache_tbl[checksum] = {}
   end
 
-  if sender == name then 
-    death_ping_lru_cache_tbl[checksum]["self_report"] = 1
-  else
-    death_ping_lru_cache_tbl[checksum]["peer_report"] = death_ping_lru_cache_tbl[checksum]["peer_report"] + 1
+  if death_ping_lru_cache_tbl[checksum]["peer_report"] == nil then
+    death_ping_lru_cache_tbl[checksum]["peer_report"] = 0
   end
+
+  death_ping_lru_cache_tbl[checksum]["peer_report"] = death_ping_lru_cache_tbl[checksum]["peer_report"] + 1
+end
+
+local function deathlogReceiveChannelMessage(sender, data)
+  local decoded_player_data = decodeMessage(data)
+  if sender ~= decoded_player_data["name"] then return end
+  if decoded_player_data["source_id"] == nil then return end
+  if decoded_player_data["race_id"] == nil then return end
+  if decoded_player_data["class_id"] == nil then return end
+  if decoded_player_data["level"] == nil or decoded_player_data["level"] < 0 or decoded_player_data["level"] > 80 then return end
+  if decoded_player_data["instance_id"] == nil and decoded_player_data["map_id"] == nil then return end
+
+  local checksum = fletcher16(decoded_player_data)
+
+  if death_ping_lru_cache_tbl[checksum] == nil then
+    death_ping_lru_cache_tbl[checksum] = {}
+  end
+
+  if death_ping_lru_cache_tbl[checksum]["player_data"] == nil then
+      death_ping_lru_cache_tbl[checksum]["player_data"] = decoded_player_data
+  end
+
+  if death_ping_lru_cache_tbl[checksum]["committed"] then return end
+
+  death_ping_lru_cache_tbl[checksum]["self_report"] = 1
   if shouldCreateEntry(checksum) then
     createEntry(checksum)
   end
@@ -259,14 +364,66 @@ function deathlogReceiveF(sender, data)
   end
 end
 
+function deathlogJoinChannel()
+        JoinChannelByName(death_alerts_channel, death_alerts_channel_pw)
+	local channel_num = GetChannelName(death_alerts_channel)
+        if channel_num == 0 then
+	  print("Failed to join death alerts channel")
+	else
+	  print("Successfully joined deathlog channel.")
+	end
+
+	for i = 1, 10 do
+	  if _G['ChatFrame'..i] then
+	    ChatFrame_RemoveChannel(_G['ChatFrame'..i], death_alerts_channel)
+	  end
+	end
+end
+
 WorldFrame:HookScript("OnMouseDown", function(self, button)
-	print("hook")
-	if #broadcast_death_ping_queue < 1 then return end
-	print(broadcast_death_ping_queue[1]) -- TODO broadcast
-	-- encode checksum
-	-- ctl send
-	table.remove(broadcast_death_ping_queue, 1)
+	if #broadcast_death_ping_queue > 0 then 
+		local channel_num = GetChannelName(death_alerts_channel)
+		if channel_num == 0 then
+		  deathlogJoinChannel()
+		  return
+		end
+
+		local commMessage = COMM_COMMANDS["BROADCAST_DEATH_PING_CHECKSUM"] .. COMM_COMMAND_DELIM .. broadcast_death_ping_queue[1]
+		CTL:SendChatMessage("BULK", COMM_NAME, commMessage, "CHANNEL", nil, channel_num)
+		table.remove(broadcast_death_ping_queue, 1)
+	end
+
+	if #death_alert_out_queue > 0 then 
+		local channel_num = GetChannelName(death_alerts_channel)
+		if channel_num == 0 then
+		  deathlogJoinChannel()
+		  return
+		end
+		local commMessage = COMM_COMMANDS["BROADCAST_DEATH_PING"] .. COMM_COMMAND_DELIM .. death_alert_out_queue[1]
+		CTL:SendChatMessage("BULK", COMM_NAME, commMessage, "CHANNEL", nil, channel_num)
+		table.remove(death_alert_out_queue, 1)
+	end
 end)
 
+local death_log_handler = CreateFrame("Frame")
+death_log_handler:RegisterEvent("CHAT_MSG_CHANNEL")
+death_log_handler:SetScript("OnEvent", function(self, event, ...)
+  local arg = { ... }
+  if event == "CHAT_MSG_CHANNEL" then
+    local command, msg = string.split(COMM_COMMAND_DELIM, arg[1])
+    if command == COMM_COMMANDS["BROADCAST_DEATH_PING_CHECKSUM"] then
+      deathlogReceiveChannelMessageChecksum(sender, checksum)
+      return
+    end
+
+    if command == COMM_COMMANDS["BROADCAST_DEATH_PING"] then
+      local player_name_short, _ = string.split("-", arg[2])
+      print(msg)
+      deathlogReceiveChannelMessage(player_name_short, msg)
+      return
+    end
+  end
+end)
 
 -- Todo; need a ticker for updating F's
+--

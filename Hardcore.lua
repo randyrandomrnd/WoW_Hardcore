@@ -209,6 +209,7 @@ local GENDER_POSSESSIVE_PRONOUN = { "Their", "His", "Her" }
 local recent_levelup = nil
 local recent_msg = {}
 local Last_Attack_Source = nil
+DeathLog_Last_Attack_Source = nil
 local PICTURE_DELAY = 0.65
 local HIDE_RTP_CHAT_MSG_BUFFER = 0 -- number of messages in queue
 local HIDE_RTP_CHAT_MSG_BUFFER_MAX = 2 -- number of maximum messages to wait for
@@ -1665,6 +1666,7 @@ function Hardcore:PLAYER_ENTERING_WORLD()
 	if not C_ChatInfo.IsAddonMessagePrefixRegistered(COMM_NAME) then
 		C_ChatInfo.RegisterAddonMessagePrefix(COMM_NAME)
 	end
+	deathlogJoinChannel()
 end
 
 function Hardcore:PLAYER_ALIVE()
@@ -2535,6 +2537,7 @@ function Hardcore:COMBAT_LOG_EVENT_UNFILTERED(...)
 		if not (source_name == nil) then
 			if string.find(ev, "DAMAGE") ~= nil then
 				Last_Attack_Source = source_name
+				DeathLog_Last_Attack_Source = source_name
 			end
 		end
 	end
@@ -2739,6 +2742,8 @@ function Hardcore:Add(data, sender, command)
 						level,
 						zone
 					)
+
+					selfDeathAlert(DeathLog_Last_Attack_Source)
 
 					-- If player is in a raid, then only show alerts for other players in the same raid
 					if UnitInRaid("player") == nil or UnitInRaid(name:gsub("%-.*", "")) then
