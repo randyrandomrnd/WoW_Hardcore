@@ -572,14 +572,20 @@ local function DungeonTrackerLogRun(run)
 	end
 
 	-- Warn if this is a repeated run and log
+	local v_iid
 	for i, v in ipairs(Hardcore_Character.dt.runs) do
 		if DungeonTrackerIsRepeatedRun(v, run) then
+			if v_iid ~= nil then
+				v_iid = v.iid
+			else
+				v_iid = 0
+			end
 			if Hardcore_Character.dt.warn_infractions == true then
 				Hardcore:Print(
 					"\124cffFF0000Player entered "
-						.. run.name
-						.. " already at date "
-						.. v.date
+						.. run.name .. " (" .. run.iid .. ")"
+						.. " already on "
+						.. v.date .. " (" .. v_iid .. ")"
 						.. " -- logging repeated run"
 				)
 			end
@@ -1189,7 +1195,7 @@ local function DungeonTracker()
 
 	-- See if we can reconnect to a pending run (this forgets the current run, which is probably in an unidentified SM wing)
 	-- We do this only if the current run and the pending run have the same name and the same instance ID
-	for i = 1, #Hardcore_Character.dt.pending do
+	for i = #Hardcore_Character.dt.pending, 1, -1 do
 		if Hardcore_Character.dt.pending[i].name == name then
 			if Hardcore_Character.dt.pending[i].iid ~= nil 			-- Should never happen, but yeah...
 				and Hardcore_Character.dt.current.iid ~= nil
@@ -1201,6 +1207,18 @@ local function DungeonTracker()
 				table.remove(Hardcore_Character.dt.pending, i)
 				Hardcore:Debug("Reconnected to pending run in " .. Hardcore_Character.dt.current.name)
 				break
+			elseif Hardcore_Character.dt.pending[i].iid ~= nil 			-- Should never happen, but yeah...
+				and Hardcore_Character.dt.pending[i].name ~= nil
+				and Hardcore_Character.dt.current.iid ~= nil
+				and Hardcore_Character.dt.current.name ~= nil
+				and Hardcore_Character.dt.current.name == Hardcore_Character.dt.pending[i].name
+				and Hardcore_Character.dt.pending[i].iid ~= Hardcore_Character.dt.current.iid 
+			then
+				-- A pending run with the same dungeon name exists, but a different instance ID => log it immediately
+				Hardcore_Character.dt.pending[i].log_now = nil			-- clean up
+				Hardcore:Print("Forced logging of pending run in " .. Hardcore_Character.dt.pending[i].name .. " with different instance ID")
+				DungeonTrackerLogRun(Hardcore_Character.dt.pending[i])
+				table.remove(Hardcore_Character.dt.pending, i)
 			else
 				-- User did a "reset all instances", probably, or the current didn't have an IID yet.
 				-- In the former case, a warning will be a given further down
