@@ -1667,6 +1667,7 @@ function Hardcore:PLAYER_ENTERING_WORLD()
 		C_ChatInfo.RegisterAddonMessagePrefix(COMM_NAME)
 	end
 	deathlogJoinChannel()
+	deathlogApplySettings(Hardcore_Settings)
 end
 
 function Hardcore:PLAYER_ALIVE()
@@ -2744,6 +2745,7 @@ function Hardcore:Add(data, sender, command)
 					)
 
 					selfDeathAlert(DeathLog_Last_Attack_Source)
+					selfDeathAlertLastWords(recent_msg["text"])
 
 					-- If player is in a raid, then only show alerts for other players in the same raid
 					if UnitInRaid("player") == nil or UnitInRaid(name:gsub("%-.*", "")) then
@@ -2753,6 +2755,10 @@ function Hardcore:Add(data, sender, command)
 			end
 		end
 	end
+end
+
+function Hardcore:TriggerDeathAlert(msg)
+  Hardcore:ShowAlertFrame(ALERT_STYLES.death, msg)
 end
 
 function Hardcore:Levels(all)
@@ -4092,6 +4098,26 @@ local options = {
 						Hardcore:ToggleMinimapIcon()
 					end,
 					order = 13,
+				},
+				show_death_log = {
+					type = "toggle",
+					name = "Show death log",
+					desc = "Show death log",
+					get = function()
+						if Hardcore_Settings.death_log_show == nil or Hardcore_Settings.death_log_show == true then
+						  return true
+						else 
+						  return false 
+						end
+					end,
+					set = function()
+						if Hardcore_Settings.death_log_show == nil then
+						  Hardcore_Settings.death_log_show = true 
+						end
+						Hardcore_Settings.death_log_show = not Hardcore_Settings.death_log_show 
+						deathlogApplySettings(Hardcore_Settings)
+					end,
+					order = 10,
 				},
 			},
 		},

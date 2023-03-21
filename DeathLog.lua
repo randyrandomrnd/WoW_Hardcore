@@ -4,6 +4,7 @@ local COMM_NAME = "HCDeathAlerts"
 local COMM_COMMANDS = {
   ["BROADCAST_DEATH_PING"] = "1",
   ["BROADCAST_DEATH_PING_CHECKSUM"] = "2",
+  ["LAST_WORDS"] = "3",
 }
 local COMM_COMMAND_DELIM = "$"
 local COMM_FIELD_DELIM = "~"
@@ -70,6 +71,7 @@ local death_ping_lru_cache_tbl = {}
 local death_ping_lru_cache_ll = {}
 local broadcast_death_ping_queue = {}
 local death_alert_out_queue = {}
+local last_words_queue = {}
 local f_log = {}
 
 local function fletcher16(_player_data)
@@ -98,9 +100,40 @@ local scroll_frame = AceGUI:Create("ScrollFrame")
 scroll_frame:SetLayout("List")
 death_log_frame:AddChild(scroll_frame)
 
+hardcore_settings = {}
+function deathlogApplySettings(_settings)
+    hardcore_settings = _settings
+
+    if hardcore_settings["death_log_show"] == nil or hardcore_settings["death_log_show"] == true then
+      death_log_frame.frame:Show()
+    else
+      death_log_frame.frame:Hide()
+    end
+
+    if hardcore_settings["death_log_pos"] then
+      death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", hardcore_settings["death_log_pos"]['x'], hardcore_settings["death_log_pos"]['y'])
+    else
+      death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", 670, -200)
+    end
+end
+
+
 local selected = nil
 local row_entry = {}
 local column_offset = 17
+ function WPDropDownDemo_Menu(frame, level, menuList)
+  local info = UIDropDownMenu_CreateInfo()
+
+  local function openWorldMap()
+   WorldMapFrame:SetShown(not WorldMapFrame:IsShown())
+  end
+  
+ 
+  if level == 1 then
+   info.text, info.hasArrow, info.func = "Show death location", false, openWorldMap
+   UIDropDownMenu_AddButton(info)
+  end
+ end
 
 for i=1,20 do
 	row_entry[i] = AceGUI:Create("InteractiveLabel")
@@ -151,7 +184,10 @@ for i=1,20 do
 		  if selected then row_entry[selected]:deselect() end
 		  _entry:select()
 		elseif click_type == "RightButton" then
-		  print("open dropdown options")
+		   -- local dropDown = CreateFrame("Frame", "WPDemoContextMenu", UIParent, "UIDropDownMenuTemplate")
+		   -- -- Bind an initializer function to the dropdown; see previous sections for initializer function examples.
+		   -- UIDropDownMenu_Initialize(dropDown, WPDropDownDemo_Menu, "MENU")
+		   -- ToggleDropDownMenu(1, nil, dropDown, "cursor", 3, -3)
 		end
 	end)
 
@@ -235,15 +271,51 @@ local function createEntry(checksum)
   end
   setEntry(death_ping_lru_cache_tbl[checksum]["player_data"], row_entry[20])
   death_ping_lru_cache_tbl[checksum]["committed"] = 1
+
+  -- Save in-guilds for next part of migration
+  if death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] then return end
+  alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
 end
 
+local function alertIfValid(_player_data)
+  local race_info = C_CreatureInfo.GetRaceInfo(_player_data["race_id"])
+  local race_str = race_info.raceName
+  local class_str, _, _ = GetClassInfo(_player_data["class_id"])
+  local level_str = tostring(_player_data["level"])
+  local map_info = C_Map.GetMapInfo(_player_data["map_id"])
+  local map_name = "?"
+  if map_info then
+    map_name = map_info.name
+  end
+  local msg = _player_data["name"] .. " the " .. race_str .. " " .. class_str .. " has died at level " .. level_str .. " in " .. map_name
+
+  Hardcore:TriggerDeathAlert(msg)
+
+end
 
 local function shouldCreateEntry(checksum)
-  return true
-  -- if death_ping_lru_cache_tbl[checksum] == nil then return end
-  -- if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
-  -- if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
-  -- return false
+  if death_ping_lru_cache_tbl[checksum] == nil then return false end
+  if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
+  if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
+  return false
+end
+
+function selfDeathAlertLastWords(last_words)
+	if last_words == nil then return end
+	local _, _, race_id = UnitRace("player")
+	local _, _, class_id = UnitClass("player")
+	local guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+	if guildName == nil then guildName = "" end
+	local death_source = "-1"
+	if DeathLog_Last_Attack_Source then
+	  death_source = npc_to_id[death_source_str]
+	end
+
+	local player_data = PlayerData(UnitName("player"), guildName, nil, nil, nil, UnitLevel("player"), nil, nil, nil, nil, nil)
+	local checksum = fletcher16(player_data)
+	local msg = checksum .. COMM_FIELD_DELIM .. last_words
+
+	table.insert(last_words_queue, msg)
 end
 
 function selfDeathAlert(death_source_str)
@@ -275,6 +347,24 @@ function selfDeathAlert(death_source_str)
 end
 
 -- Receive a guild message. Need to send ack
+function deathlogReceiveLastWords(sender, data)
+  local values = {}
+  for w in msg:gmatch("(.-)~") do table.insert(values, w) end
+  local checksum = values[1]
+  local msg = values[2]
+  if checksum == nil or msg == nil then return end
+
+  if death_ping_lru_cache_tbl[checksum] == nil then
+    death_ping_lru_cache_tbl[checksum] = {}
+  end
+  if death_ping_lru_cache_tbl[checksum]["player_data"] ~= nil then
+    death_ping_lru_cache_tbl[checksum]["player_data"]["last_words"] = msg
+  else
+    death_ping_lru_cache_tbl[checksum]["last_words"] = msg
+  end
+end
+
+-- Receive a guild message. Need to send ack
 function deathlogReceiveGuildMessage(sender, data)
   local decoded_player_data = decodeMessage(data)
   if sender ~= decoded_player_data["name"] then return end
@@ -299,6 +389,10 @@ function deathlogReceiveGuildMessage(sender, data)
     death_ping_lru_cache_tbl[checksum] = {
       ["player_data"] = player_data,
     }
+  end
+
+  if death_ping_lru_cache_tbl[checksum]["last_words"] ~= nil then
+    death_ping_lru_cache_tbl[checksum]["player_data"]["last_words"] = death_ping_lru_cache_tbl[checksum]["last_words"]
   end
 
   if death_ping_lru_cache_tbl[checksum]["committed"] then return end
@@ -403,6 +497,63 @@ WorldFrame:HookScript("OnMouseDown", function(self, button)
 		CTL:SendChatMessage("BULK", COMM_NAME, commMessage, "CHANNEL", nil, channel_num)
 		table.remove(death_alert_out_queue, 1)
 	end
+
+	if #last_words_queue > 0 then 
+		local channel_num = GetChannelName(death_alerts_channel)
+		if channel_num == 0 then
+		  deathlogJoinChannel()
+		  return
+		end
+		local commMessage = COMM_COMMANDS["LAST_WORDS"] .. COMM_COMMAND_DELIM .. last_words_queue[1]
+		CTL:SendChatMessage("BULK", COMM_NAME, commMessage, "CHANNEL", nil, channel_num)
+		table.remove(last_words_queue, 1)
+	end
+end)
+
+death_log_frame.frame:RegisterForDrag("LeftButton")
+death_log_frame.frame:SetScript("OnDragStart", function(self, button)
+	local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+	self:StartMoving()
+	local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+	local x,y = self:GetCenter()
+	local px,py = self:GetParent():GetCenter();
+	if hardcore_settings['death_log_pos'] == nil then
+	  hardcore_settings['death_log_pos'] = {}
+	end
+	hardcore_settings['death_log_pos']['x'] = x - px
+	hardcore_settings['death_log_pos']['y'] = y - py
+end)
+death_log_frame.frame:SetScript("OnDragStop", function(self)
+	self:StopMovingOrSizing()
+	local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+	local x,y = self:GetCenter()
+	local px,py = self:GetParent():GetCenter();
+	if hardcore_settings['death_log_pos'] == nil then
+	  hardcore_settings['death_log_pos'] = {}
+	end
+	hardcore_settings['death_log_pos']['x'] = x - px
+	hardcore_settings['death_log_pos']['y'] = y - py
+end)
+
+ function DeathFrameDropdown(frame, level, menuList)
+  local info = UIDropDownMenu_CreateInfo()
+
+  local function hide()
+   death_log_frame.frame:Hide()
+  end
+  if level == 1 then
+   info.text, info.hasArrow, info.func = "Hide", false, hide
+   hardcore_settings["death_log_show"] = false
+   UIDropDownMenu_AddButton(info)
+  end
+ end
+
+death_log_frame.frame:SetScript("OnMouseDown", function (self, button)
+    if button=='RightButton' then 
+	   local dropDown = CreateFrame("Frame", "death_frame_dropdown_menu", UIParent, "UIDropDownMenuTemplate")
+	   UIDropDownMenu_Initialize(dropDown, DeathFrameDropdown, "MENU")
+	   ToggleDropDownMenu(1, nil, dropDown, "cursor", 3, -3)
+    end
 end)
 
 local death_log_handler = CreateFrame("Frame")
@@ -418,12 +569,18 @@ death_log_handler:SetScript("OnEvent", function(self, event, ...)
 
     if command == COMM_COMMANDS["BROADCAST_DEATH_PING"] then
       local player_name_short, _ = string.split("-", arg[2])
-      print(msg)
       deathlogReceiveChannelMessage(player_name_short, msg)
+      return
+    end
+
+    if command == COMM_COMMANDS["LAST_WORDS"] then
+      local player_name_short, _ = string.split("-", arg[2])
+      deathlogReceiveLastWords(player_name_short, msg)
       return
     end
   end
 end)
 
--- Todo; need a ticker for updating F's
+-- Todo; F's
+-- Todo; instance ID to instance name
 --
