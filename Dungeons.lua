@@ -913,6 +913,11 @@ local function CombatLogEventHandler( self, event )
 	-- Get the combat log data
 	local time_stamp, subevent, _, src_guid, src_name, _, _, dst_guid, dst_name = CombatLogGetCurrentEventInfo()
 
+	-- We don't want to accidentally identify anything from previous runs (SM wings), like dots and debuffs timing out
+	if subevent == "SPELL_AURA_REMOVED" or subevent == "SPELL_AURA_REMOVED_DOSE" then
+		return
+	end
+
 	-- Combat events have a source and a destination (doing and getting the damage). We don't care which one is the NPC.
 	-- If it's an NPC, we'll take it.
 	local mob_guid = nil
