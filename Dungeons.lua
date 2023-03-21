@@ -522,10 +522,18 @@ local function DungeonTrackerWarnInfraction()
 	for i, v in ipairs(Hardcore_Character.dt.runs) do
 		if DungeonTrackerIsRepeatedRun(v, Hardcore_Character.dt.current) then
 			Hardcore_Character.dt.current.last_warn = Hardcore_Character.dt.current.time_inside
-			message = "\124cffFF0000You entered "
+			local instance_info1 = ""
+			local instance_info2 = ""
+			if v.iid ~= nil and Hardcore_Character.dt.current.iid ~= nil and v.iid ~= Hardcore_Character.dt.current.iid then
+				instance_info1 = " (ID:" .. Hardcore_Character.dt.current.iid .. ")"
+				instance_info2 = " (ID:" .. v.iid .. ")"
+			end
+			message = "\124cffFF0000You entered " 
 				.. v.name
+				.. instance_info1
 				.. " already at date "
 				.. v.date
+				.. instance_info2
 				.. " -- leave the dungeon within "
 				.. time_left
 				.. " seconds!"
@@ -534,6 +542,8 @@ local function DungeonTrackerWarnInfraction()
 		end
 	end
 
+	-- The following code probably can't ever be called, since pending runs with different instance IDs are automatically
+	-- logged upon entry. But let's keep it here for now. Better warned twice, than never.
 	-- See if this dungeon was already in the list of pending runs (but with a different instanceID), and warn every so many seconds if that is so
 	for i, v in ipairs(Hardcore_Character.dt.pending) do
 		-- We never warn about pending runs without an instanceID, they may or may not be the same as the current
@@ -572,20 +582,18 @@ local function DungeonTrackerLogRun(run)
 	end
 
 	-- Warn if this is a repeated run and log
-	local v_iid
 	for i, v in ipairs(Hardcore_Character.dt.runs) do
 		if DungeonTrackerIsRepeatedRun(v, run) then
-			if v_iid ~= nil then
-				v_iid = v.iid
-			else
-				v_iid = 0
+			local instance_info = ""
+			if v.iid ~= nil then
+				instance_info = " (ID:" .. v.iid ..  ")"
 			end
 			if Hardcore_Character.dt.warn_infractions == true then
 				Hardcore:Print(
-					"\124cffFF0000Player entered "
-						.. run.name .. " (" .. run.iid .. ")"
+					"\124cffFF0000You entered "
+						.. run.name .. " (ID:" .. run.iid .. ")"
 						.. " already on "
-						.. v.date .. " (" .. v_iid .. ")"
+						.. v.date .. instance_info
 						.. " -- logging repeated run"
 				)
 			end
@@ -597,7 +605,7 @@ local function DungeonTrackerLogRun(run)
 	local max_level = DungeonTrackerGetDungeonMaxLevel(run.name)
 	if run.level > max_level then
 		if Hardcore_Character.dt.warn_infractions == true then
-			Hardcore:Print("\124cffFF0000Player was overleveled for " .. run.name .. " -- logging overleveled run")
+			Hardcore:Print("\124cffFF0000You were overleveled for " .. run.name .. " -- logging overleveled run")
 		end
 	end
 
@@ -1221,7 +1229,7 @@ local function DungeonTracker()
 			then
 				-- A pending run with the same dungeon name exists, but a different instance ID => log it immediately
 				Hardcore_Character.dt.pending[i].log_now = nil			-- clean up
-				Hardcore:Print("Forced logging of pending run in " .. Hardcore_Character.dt.pending[i].name .. " with different instance ID")
+				Hardcore:Debug("Forced logging of pending run in " .. Hardcore_Character.dt.pending[i].name .. " with different instance ID")
 				DungeonTrackerLogRun(Hardcore_Character.dt.pending[i])
 				table.remove(Hardcore_Character.dt.pending, i)
 			else

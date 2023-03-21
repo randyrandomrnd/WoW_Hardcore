@@ -1304,12 +1304,19 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			end
 		end
 
+		local function GetInstanceIDString(run)
+			if run.iid ~= nil then
+				return " [" .. run.iid .. "]"
+			end
+			return ""
+		end
+
 		local now = GetServerTime()
 
 		-- Go through the complete, idle and active runs
 		local num_lines = 0
 		for i, v in pairs(_dt_runs) do
-			name_str = name_str .. v.name .. "\n"
+			name_str = name_str .. v.name .. GetInstanceIDString(v) .. "\n"
 			if v.level > 0 then
 				level_str = level_str .. v.level .. "\n"
 			else
@@ -1325,7 +1332,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			num_lines = num_lines + 1
 		end
 		for i, v in pairs(_dt_pending) do
-			name_str = name_str .. "|c00FFFF00" .. v.name .. " (idle, " .. SecondsToTime(v.idle) .. ")\n"
+			name_str = name_str .. "|c00FFFF00" .. v.name .. GetInstanceIDString(v) .. " (idle, " .. SecondsToTime(v.idle) .. ")\n"
 			level_str = level_str .. v.level .. "\n"
 			played_str = played_str .. SecondsToTime(v.time_inside) .. "\n"
 			date_str = date_str .. v.date .. "\n"
@@ -1333,7 +1340,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			num_lines = num_lines + 1
 		end
 		if next(_dt_current) then
-			name_str = name_str .. "|c0000FF00" .. _dt_current.name .. " (active)\n"
+			name_str = name_str .. "|c0000FF00" .. _dt_current.name .. GetInstanceIDString(_dt_current) .. " (active)\n"
 			level_str = level_str .. _dt_current.level .. "\n"
 			played_str = played_str .. SecondsToTime(_dt_current.time_inside) .. "\n"
 			date_str = date_str .. _dt_current.date .. "\n"
