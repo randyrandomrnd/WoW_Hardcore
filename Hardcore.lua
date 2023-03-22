@@ -209,6 +209,7 @@ local GENDER_POSSESSIVE_PRONOUN = { "Their", "His", "Her" }
 local recent_levelup = nil
 local recent_msg = {}
 local Last_Attack_Source = nil
+DeathLog_Last_Attack_Source = nil
 local PICTURE_DELAY = 0.65
 local HIDE_RTP_CHAT_MSG_BUFFER = 0 -- number of messages in queue
 local HIDE_RTP_CHAT_MSG_BUFFER_MAX = 2 -- number of maximum messages to wait for
@@ -1665,6 +1666,8 @@ function Hardcore:PLAYER_ENTERING_WORLD()
 	if not C_ChatInfo.IsAddonMessagePrefixRegistered(COMM_NAME) then
 		C_ChatInfo.RegisterAddonMessagePrefix(COMM_NAME)
 	end
+	deathlogJoinChannel()
+	deathlogApplySettings(Hardcore_Settings)
 end
 
 function Hardcore:PLAYER_ALIVE()
@@ -2535,6 +2538,7 @@ function Hardcore:COMBAT_LOG_EVENT_UNFILTERED(...)
 		if not (source_name == nil) then
 			if string.find(ev, "DAMAGE") ~= nil then
 				Last_Attack_Source = source_name
+				DeathLog_Last_Attack_Source = source_name
 			end
 		end
 	end
@@ -2740,6 +2744,9 @@ function Hardcore:Add(data, sender, command)
 						zone
 					)
 
+					selfDeathAlert(DeathLog_Last_Attack_Source)
+					selfDeathAlertLastWords(recent_msg["text"])
+
 					-- If player is in a raid, then only show alerts for other players in the same raid
 					if UnitInRaid("player") == nil or UnitInRaid(name:gsub("%-.*", "")) then
 						Hardcore:ShowAlertFrame(ALERT_STYLES.death, messageString)
@@ -2748,6 +2755,10 @@ function Hardcore:Add(data, sender, command)
 			end
 		end
 	end
+end
+
+function Hardcore:TriggerDeathAlert(msg)
+  Hardcore:ShowAlertFrame(ALERT_STYLES.death, msg)
 end
 
 function Hardcore:Levels(all)
@@ -3776,22 +3787,70 @@ local options = {
 			order = 1,
 			inline = true,
 			args = {
+				show_death_log = {
+					type = "toggle",
+					name = "Show death log",
+					desc = "Show death log",
+					get = function()
+						if Hardcore_Settings.death_log_show == nil or Hardcore_Settings.death_log_show == true then
+						  return true
+						else 
+						  return false 
+						end
+					end,
+					set = function()
+						if Hardcore_Settings.death_log_show == nil then
+						  Hardcore_Settings.death_log_show = true 
+						end
+						Hardcore_Settings.death_log_show = not Hardcore_Settings.death_log_show 
+						deathlogApplySettings(Hardcore_Settings)
+					end,
+					order = 1,
+				},
+				death_log_types = {
+					type = "select",
+					name = "Death log entries",
+					desc = "Type of death alerts.",
+					values = {
+						guild_only = "guild only",
+						faction_wide = "faction wide",
+					},
+					get = function()
+						if Hardcore_Settings.death_log_types == nil then
+						  Hardcore_Settings.death_log_types = "faction_wide"
+						end
+						return Hardcore_Settings.death_log_types
+					end,
+					set = function(info, value)
+						Hardcore_Settings.death_log_types = value
+					end,
+					order = 2,
+				},
 				death_alerts = {
 					type = "select",
 					name = "Death alerts",
 					desc = "Type of death alerts.",
 					values = {
 						off = "off",
-						on = "on",
+						guild_only = "guild only",
+						faction_wide = "faction wide",
 					},
 					get = function()
 						if Hardcore_Settings.notify then
-							return "on"
+						  if Hardcore_Settings.alert_subset then
+						    return Hardcore_Settings.alert_subset
+						  end
+						  return "guild_only"
 						end
 						return "off"
 					end,
 					set = function(info, value)
-						Hardcore_Settings.notify = (value == "on")
+						if value == off then
+						  Hardcore_Settings.notify = false
+						  return
+						end
+						Hardcore_Settings.alert_subset = value
+						Hardcore_Settings.notify = true
 					end,
 					order = 2,
 				},
