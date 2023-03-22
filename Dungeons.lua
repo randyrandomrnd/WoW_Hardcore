@@ -22,6 +22,8 @@ local combat_log_frame = nil
 
 local dt_checked_for_missing_runs = false		-- Did we check for missing runs in this session already?
 
+local dt_party_member_addon_version = {}
+
 -- dt_db ( = dungeon tracker database )
 --
 -- Contains all the info for the dungeons:
@@ -751,6 +753,9 @@ function DungeonTrackerReceivePulse(data, sender)
 			.. iid
 	)
 
+	-- Save the addon version for this player
+	dt_party_member_addon_version[ short_name ] = version
+
 	-- Check for errors, dt might not be set right now (if it just got reset for some weird reason)
 	if (Hardcore_Character.dt == nil) or (not next(Hardcore_Character.dt)) or (not next(Hardcore_Character.dt.pending)) then
 		return
@@ -817,12 +822,14 @@ local function DungeonTrackerSendPulse(now)
 			.. COMM_FIELD_DELIM
 			.. iid
 		local comm_msg = DT_PULSE_COMMAND .. COMM_COMMAND_DELIM .. data
-		Hardcore:Debug("Sending dungeon group pulse: " .. comm_msg)
 		CTL:SendAddonMessage("NORMAL", COMM_NAME, comm_msg, "PARTY")
+		Hardcore:Debug("Sending dungeon group pulse: " .. string.gsub( comm_msg, COMM_FIELD_DELIM, "/" ))
 
 		-- For debug purposes, set this to true to simulate a send
 		if false then
-			DungeonTrackerReceivePulse(data, name .. "-TestServer")
+			DungeonTrackerReceivePulse("John|0.11.15|1234324|Ragefire Chasm|189|1111", "John-TestServer")
+			DungeonTrackerReceivePulse("Peter|0.11.13|1244334|Ragefire Chasm|189|1111", "Peter-TestServer")
+			DungeonTrackerReceivePulse("Jack|0.11.16|1244334|Ragefire Chasm|189|1111", "Jack-TestServer")
 		end
 	end
 end
@@ -969,6 +976,9 @@ local function CombatLogEventHandler( self, event )
 
 	-- Store the instanceID (the dynamic one)
 	-- To be thread-safe and fast, the reconnecting happens in the main timer routine
+	if Hardcore_Character.dt.current.iid == nil then
+		Hardcore:Debug( "Found instanceID " .. instance_id .. " from " .. subevent .. " " .. mob_guid )
+	end
 	Hardcore_Character.dt.current.iid = instance_id
 		
 	-- Pass this mob to the SM wing identifier. This will update dt.current.name if possible. 
@@ -1029,6 +1039,39 @@ function DungeonTrackerGetBossKillDataForRun( run )
 	return num_bosses, max_bosses, main_boss_time
 
 end
+
+-- DungeonTrackerCheckVersions()
+-- Prints a list of detected addon versions for the group members
+
+local function DungeonTrackerCheckVersions()
+
+	if next(Hardcore_Character.dt.current) and Hardcore_Character.dt.current.party ~= nil then
+		
+		local party = { string.split(",", Hardcore_Character.dt.current.party ) }
+
+		if #party > 1 then
+			local message = "Addon version check: "
+			for i,v in ipairs( party ) do
+				if v == UnitName("player") then
+					message = message .. v .. ":" .. GetAddOnMetadata("Hardcore", "Version")
+				else
+					message = message .. v .. ":"
+					if dt_party_member_addon_version[ v ] ~= nil then
+						message = message .. dt_party_member_addon_version[ v ]
+					else
+						message = message .. "?"
+					end
+				end
+				if i < #party then
+					message = message .. ", "
+				end
+			end
+			Hardcore:Print(message)
+		end
+	end
+end
+
+
 
 -- DungeonTrackerUpgradeLogVersion3()
 -- 
@@ -1266,6 +1309,10 @@ local function DungeonTracker()
 		
 		Hardcore_Character.dt.current = DUNGEON_RUN
 		Hardcore:Debug("Starting new run in " .. Hardcore_Character.dt.current.name)
+
+		C_Timer.After( 45, function()
+			DungeonTrackerCheckVersions()
+		end)
 	end
 
 	-- Extend the current run (reconnected or new) by another time step and update the last_seen time
