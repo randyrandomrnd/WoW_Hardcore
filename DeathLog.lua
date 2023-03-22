@@ -88,7 +88,18 @@ local death_log_cache = {}
 
 local death_log_frame = AceGUI:Create("Deathlog")
 death_log_frame:SetTitle("Hardcore Death Log")
-local subtitle_data = {{"name", 17}, {"guild", 100}, {"level", 160}, {"F's", 200}}
+local subtitle_data = {
+  {"Name", 70, function(_entry) return _entry.player_data["name"] or "" end},
+  {"Class", 60, function(_entry)
+    local class_str, _, _ = GetClassInfo(_entry.player_data["class_id"])
+    return class_str or ""
+  end},
+  {"Race", 60, function(_entry)
+    local race_info = C_CreatureInfo.GetRaceInfo(_entry.player_data["race_id"]) 
+    return race_info.raceName or ""
+  end},
+  {"Lvl", 30, function(_entry) return _entry.player_data["level"] or "" end},
+}
 death_log_frame:SetSubTitle(subtitle_data)
 death_log_frame:SetLayout("Fill")
 death_log_frame:SetHeight(125)
@@ -119,7 +130,6 @@ end
 
 local selected = nil
 local row_entry = {}
-local column_offset = 17
  function WPDropDownDemo_Menu(frame, level, menuList)
   local info = UIDropDownMenu_CreateInfo()
 
@@ -129,24 +139,31 @@ local column_offset = 17
   
  
   if level == 1 then
-   info.text, info.hasArrow, info.func = "Show death location", false, openWorldMap
+   info.text, info.hasArrow, info.func, info.disabled = "Show death location (WIP)", false, openWorldMap, true
+   UIDropDownMenu_AddButton(info)
+   info.text, info.hasArrow, info.func, info.disabled = "Block user", false, openWorldMap, true
+   UIDropDownMenu_AddButton(info)
+   info.text, info.hasArrow, info.func, info.disabled = "Block user's guild", false, openWorldMap, true
    UIDropDownMenu_AddButton(info)
   end
  end
 
 for i=1,20 do
-	row_entry[i] = AceGUI:Create("InteractiveLabel")
-	local _entry = row_entry[i]
+	local idx = 21 - i
+	row_entry[idx] = AceGUI:Create("InteractiveLabel")
+	local _entry = row_entry[idx]
 	_entry:SetHighlight("Interface\\Glues\\CharacterSelect\\Glues-CharacterSelect-Highlight")
 	_entry.font_strings = {}
 	local next_x = 0
+	local current_column_offset = 0
 	for idx,v in ipairs(subtitle_data) do 
 	  _entry.font_strings[v[1]] = _entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	  _entry.font_strings[v[1]]:SetPoint("LEFT", _entry.frame, "LEFT", v[2] - column_offset, 0)
+	  _entry.font_strings[v[1]]:SetPoint("LEFT", _entry.frame, "LEFT", current_column_offset, 0)
+	  current_column_offset = current_column_offset + v[2]
 	  _entry.font_strings[v[1]]:SetJustifyH("LEFT")
 
 	  if idx + 1 <= #subtitle_data then
-	    _entry.font_strings[v[1]]:SetWidth(subtitle_data[idx + 1][2] - v[2])
+	    _entry.font_strings[v[1]]:SetWidth(v[2])
 	  end
 	  _entry.font_strings[v[1]]:SetTextColor(1,1,1)
 	end
@@ -164,7 +181,7 @@ for i=1,20 do
 	end
 
 	function _entry:select()
-	    selected = i
+	    selected = idx 
 	    for _,v in pairs(_entry.font_strings) do
 	      v:SetTextColor(1,1,0)
 	    end
@@ -183,10 +200,10 @@ for i=1,20 do
 		  if selected then row_entry[selected]:deselect() end
 		  _entry:select()
 		elseif click_type == "RightButton" then
-		   -- local dropDown = CreateFrame("Frame", "WPDemoContextMenu", UIParent, "UIDropDownMenuTemplate")
-		   -- -- Bind an initializer function to the dropdown; see previous sections for initializer function examples.
-		   -- UIDropDownMenu_Initialize(dropDown, WPDropDownDemo_Menu, "MENU")
-		   -- ToggleDropDownMenu(1, nil, dropDown, "cursor", 3, -3)
+		   local dropDown = CreateFrame("Frame", "WPDemoContextMenu", UIParent, "UIDropDownMenuTemplate")
+		   -- Bind an initializer function to the dropdown; see previous sections for initializer function examples.
+		   UIDropDownMenu_Initialize(dropDown, WPDropDownDemo_Menu, "MENU")
+		   ToggleDropDownMenu(1, nil, dropDown, "cursor", 3, -3)
 		end
 	end)
 
@@ -237,7 +254,7 @@ for i=1,20 do
 		GameTooltip:Show()
 	end)
 
-	scroll_frame:SetScroll(1000000)
+	scroll_frame:SetScroll(0)
 	scroll_frame.scrollbar:Hide()
 	scroll_frame:AddChild(_entry)
 end
@@ -245,7 +262,7 @@ end
 local function setEntry(player_data, _entry)
 	_entry.player_data = player_data
 	for _,v in ipairs(subtitle_data) do 
-	  _entry.font_strings[v[1]]:SetText(_entry.player_data[v[1]])
+	  _entry.font_strings[v[1]]:SetText(v[3](_entry))
 	end
 end
 
@@ -284,12 +301,14 @@ local function createEntry(checksum)
 
   -- Save in-guilds for next part of migration
   if death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] then return end
-  alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
+  if hardcore_settings.alert_subset ~= nil and hardcore_settings.alert_subset == "faction_wide" then
+    alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
+  end
 end
 
 local function shouldCreateEntry(checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then return false end
-  if true then return true end -- TODO
+  if hardcore_settings.death_log_types == nil or hardcore_settings.death_log_types == "faction_wide" then return true end
   if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
   if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
   return false
@@ -441,6 +460,14 @@ local function deathlogReceiveChannelMessage(sender, data)
 
   if death_ping_lru_cache_tbl[checksum]["committed"] then return end
 
+  for i = 1, GetNumGuildMembers() do
+	  local name, _, _, level, class_str, _, _, _, _, _, class = GetGuildRosterInfo(i)
+	  if name == sender and level == decoded_player_data["level"] then
+	    death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] = 1
+	    break
+	  end
+  end
+
   death_ping_lru_cache_tbl[checksum]["self_report"] = 1
   if shouldCreateEntry(checksum) then
     createEntry(checksum)
@@ -477,6 +504,7 @@ function deathlogJoinChannel()
 	end
 end
 
+-- Note: We can only send at most 1 message per click, otherwise we get a taint
 WorldFrame:HookScript("OnMouseDown", function(self, button)
 	if #broadcast_death_ping_queue > 0 then 
 		local channel_num = GetChannelName(death_alerts_channel)
@@ -488,6 +516,7 @@ WorldFrame:HookScript("OnMouseDown", function(self, button)
 		local commMessage = COMM_COMMANDS["BROADCAST_DEATH_PING_CHECKSUM"] .. COMM_COMMAND_DELIM .. broadcast_death_ping_queue[1]
 		CTL:SendChatMessage("BULK", COMM_NAME, commMessage, "CHANNEL", nil, channel_num)
 		table.remove(broadcast_death_ping_queue, 1)
+		return
 	end
 
 	if #death_alert_out_queue > 0 then 
@@ -499,6 +528,7 @@ WorldFrame:HookScript("OnMouseDown", function(self, button)
 		local commMessage = COMM_COMMANDS["BROADCAST_DEATH_PING"] .. COMM_COMMAND_DELIM .. death_alert_out_queue[1]
 		CTL:SendChatMessage("BULK", COMM_NAME, commMessage, "CHANNEL", nil, channel_num)
 		table.remove(death_alert_out_queue, 1)
+		return
 	end
 
 	if #last_words_queue > 0 then 
@@ -510,6 +540,7 @@ WorldFrame:HookScript("OnMouseDown", function(self, button)
 		local commMessage = COMM_COMMANDS["LAST_WORDS"] .. COMM_COMMAND_DELIM .. last_words_queue[1]
 		CTL:SendChatMessage("BULK", COMM_NAME, commMessage, "CHANNEL", nil, channel_num)
 		table.remove(last_words_queue, 1)
+		return
 	end
 end)
 
@@ -543,10 +574,19 @@ end)
 
   local function hide()
    death_log_frame.frame:Hide()
-  end
-  if level == 1 then
-   info.text, info.hasArrow, info.func = "Hide", false, hide
    hardcore_settings["death_log_show"] = false
+  end
+
+  local function openSettings()
+    InterfaceOptionsFrame_Show()
+    InterfaceOptionsFrame_OpenToCategory("Hardcore")
+  end
+
+  if level == 1 then
+   info.text, info.hasArrow, info.func = "Settings", false, openSettings 
+   UIDropDownMenu_AddButton(info)
+
+   info.text, info.hasArrow, info.func = "Hide", false, hide
    UIDropDownMenu_AddButton(info)
   end
  end
@@ -614,3 +654,8 @@ local function handleEvent(self, event, ...)
 end
 
 death_log_handler:SetScript("OnEvent", handleEvent)
+
+-- This function is for testing; only sends to self
+function fakeDeathAlert(event, msg, sender)
+	handleEvent(death_log_handler, event, msg, sender)
+end

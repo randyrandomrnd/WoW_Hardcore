@@ -120,10 +120,12 @@ local methods = {
 	end,
 
 	["SetSubTitle"] = function (self, subtitle_data)
+		local column_offset = 17
 		if subtitle_data == nil then return end
 		for _,v in ipairs(subtitle_data) do
 			self.subtitletext_tbl[v[1]]:SetText(v[1])
-			self.subtitletext_tbl[v[1]]:SetPoint("LEFT", self.frame, "TOPLEFT", v[2], -26)
+			self.subtitletext_tbl[v[1]]:SetPoint("LEFT", self.frame, "TOPLEFT", column_offset, -26)
+			column_offset = column_offset + v[2]
 		end
 	end,
 
@@ -275,7 +277,7 @@ local function Constructor()
 	titletext:SetFont("Fonts\\FRIZQT__.TTF", 13, "")
 	titletext:SetPoint("LEFT", frame, "TOPLEFT", 25, -10)
 
-	local column_types = {"name", "guild", "level", "F's"}
+	local column_types = {"Name", "Guild", "Lvl", "F's", "Race", "Class"}
 	local subtitletext_tbl = {} 
 	for _,v in ipairs(column_types) do
 		subtitletext_tbl[v] = title:CreateFontString(nil, "OVERLAY", "GameFontNormal")
