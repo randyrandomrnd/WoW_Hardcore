@@ -122,7 +122,6 @@ local methods = {
 	["SetSubTitle"] = function (self, subtitle_data)
 		if subtitle_data == nil then return end
 		for _,v in ipairs(subtitle_data) do
-			print(v[2])
 			self.subtitletext_tbl[v[1]]:SetText(v[1])
 			self.subtitletext_tbl[v[1]]:SetPoint("LEFT", self.frame, "TOPLEFT", v[2], -26)
 		end

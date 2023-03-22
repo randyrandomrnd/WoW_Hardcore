@@ -1,4 +1,5 @@
 local AceGUI = LibStub("AceGUI-3.0")
+local debug = false
 local CTL = _G.ChatThrottleLib
 local COMM_NAME = "HCDeathAlerts"
 local COMM_COMMANDS = {
@@ -12,15 +13,8 @@ local COMM_FIELD_DELIM = "~"
 local death_alerts_channel = "hcdeathalertschannel"
 local death_alerts_channel_pw = "hcdeathalertschannelpw"
 
-local race_to_id = {
-}
-local id_to_race = {
-}
-
-local class_to_id = {
-}
-local id_to_class = {
-}
+local throttle_player = {}
+local shadowbanned = {}
 
 local function PlayerData(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos, date, last_words)
   return {
@@ -38,8 +32,13 @@ local function PlayerData(name, guild, source_id, race_id, class_id, level, inst
   }
 end
 
--- Message: name, guild,
 local function encodeMessage(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos)
+  if name == nil then return end
+  -- if guild == nil then return end -- TODO 
+  if tonumber(source_id) == nil then return end
+  if tonumber(race_id) == nil then return end
+  if tonumber(level) == nil then return end
+
   local loc_str = ""
   if map_pos then
     loc_str = string.format("%.4f,%.4f", map_pos.x, map_pos.y)
@@ -203,13 +202,38 @@ for i=1,20 do
 		end
 		GameTooltip:AddLine("Name: " .. _entry.player_data["name"],1,1,1)
 		GameTooltip:AddLine("Guild: " .. _entry.player_data["guild"],1,1,1)
-		GameTooltip:AddLine("Race: " .. _entry.player_data["race"],1,1,1)
-		GameTooltip:AddLine("Class: " .. _entry.player_data["class"],1,1,1)
-		GameTooltip:AddLine("Killed by: " .. "?", 1, 1, 1, true)
-		GameTooltip:AddLine("Zone: " .. _entry.player_data["zone"], 1, 1, 1, true)
-		GameTooltip:AddLine("Loc: " .. _entry.player_data["location"][1] .. ", " .. _entry.player_data["location"][1], 1, 1, 1, true)
-		GameTooltip:AddLine("Date: " .. _entry.player_data["date"], 1, 1, 1, true)
-		GameTooltip:AddLine("Last words: " .. _entry.player_data["last_words"],1,1,1,true)
+
+		local race_info = C_CreatureInfo.GetRaceInfo(_entry.player_data["race_id"]) 
+		if race_info then GameTooltip:AddLine("Race: " .. race_info.raceName,1,1,1) end
+
+		if _entry.player_data["class_id"] then
+		  local class_str, _, _ = GetClassInfo(_entry.player_data["class_id"])
+		  if class_str then GameTooltip:AddLine("Class: " .. class_str,1,1,1) end
+		end
+
+		if _entry.player_data["source_id"] then
+		  local source_id = id_to_npc[_entry.player_data["source_id"]]
+		  if source_id then GameTooltip:AddLine("Killed by: " .. source_id, 1, 1, 1, true) end
+		end
+
+		if race_name then GameTooltip:AddLine("Race: " .. race_name,1,1,1) end
+
+		if _entry.player_data["map_id"] then
+		  local map_info = C_Map.GetMapInfo(_entry.player_data["map_id"])
+		  if map_info then GameTooltip:AddLine("Zone: " .. map_info.name, 1, 1, 1, true) end
+		end
+
+		if _entry.player_data["map_pos"] then
+		  GameTooltip:AddLine("Loc: " .. _entry.player_data["map_pos"], 1, 1, 1, true)
+		end
+
+		if _entry.player_data["date"] then
+		  GameTooltip:AddLine("Date: " .. _entry.player_data["date"], 1, 1, 1, true)
+		end
+
+		if _entry.player_data["last_words"] then
+		  GameTooltip:AddLine("Last words: " .. _entry.player_data["last_words"],1,1,0,true)
+		end
 		GameTooltip:Show()
 	end)
 
@@ -229,35 +253,20 @@ local function shiftEntry(_entry_from, _entry_to)
   setEntry(_entry_from.player_data, _entry_to)
 end
 
-
-local i = 0
-C_Timer.NewTicker(5, function()
-local player_data = {
-  ["name"] = "Yazpads",
-  ["guild"] = "HC Elite",
-  ["race"] = "Gnome",
-  ["class"] = "Warlock",
-  ["level"] = 12,
-  ["last_words"] = '|cffdaa520"some last words,some last words,some last words,some last words,some last words,"|r',
-  ["F's"] = 15,
-  ["location"] = {14312.12, 1213.12},
-  ["zone"] = "Elywynn Forest",
-  ["date"] = date(),
-}
-  player_data["name"] = player_data["name"] .. i
-  i = i + 1
-
-  for i=1,19 do 
-    if row_entry[i+1].player_data ~= nil then
-      shiftEntry(row_entry[i+1], row_entry[i])
-      if selected and selected == i+1 then
-	row_entry[i+1]:deselect()
-	row_entry[i]:select()
-      end
-    end
+local function alertIfValid(_player_data)
+  local race_info = C_CreatureInfo.GetRaceInfo(_player_data["race_id"])
+  local race_str = race_info.raceName
+  local class_str, _, _ = GetClassInfo(_player_data["class_id"])
+  local level_str = tostring(_player_data["level"])
+  local map_info = C_Map.GetMapInfo(_player_data["map_id"])
+  local map_name = "?"
+  if map_info then
+    map_name = map_info.name
   end
-  setEntry(player_data, row_entry[20])
-end)
+
+  local msg = _player_data["name"] .. " the " .. race_str .. " "  .. class_str .. " has died at level " .. level_str .. " in " .. map_name
+  Hardcore:TriggerDeathAlert(msg)
+end
 
 local function createEntry(checksum)
   for i=1,19 do 
@@ -269,6 +278,7 @@ local function createEntry(checksum)
       end
     end
   end
+  death_ping_lru_cache_tbl[checksum]["player_data"]["date"] = date()
   setEntry(death_ping_lru_cache_tbl[checksum]["player_data"], row_entry[20])
   death_ping_lru_cache_tbl[checksum]["committed"] = 1
 
@@ -277,24 +287,9 @@ local function createEntry(checksum)
   alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
 end
 
-local function alertIfValid(_player_data)
-  local race_info = C_CreatureInfo.GetRaceInfo(_player_data["race_id"])
-  local race_str = race_info.raceName
-  local class_str, _, _ = GetClassInfo(_player_data["class_id"])
-  local level_str = tostring(_player_data["level"])
-  local map_info = C_Map.GetMapInfo(_player_data["map_id"])
-  local map_name = "?"
-  if map_info then
-    map_name = map_info.name
-  end
-  local msg = _player_data["name"] .. " the " .. race_str .. " " .. class_str .. " has died at level " .. level_str .. " in " .. map_name
-
-  Hardcore:TriggerDeathAlert(msg)
-
-end
-
 local function shouldCreateEntry(checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then return false end
+  if true then return true end -- TODO
   if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
   if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
   return false
@@ -313,7 +308,7 @@ function selfDeathAlertLastWords(last_words)
 
 	local player_data = PlayerData(UnitName("player"), guildName, nil, nil, nil, UnitLevel("player"), nil, nil, nil, nil, nil)
 	local checksum = fletcher16(player_data)
-	local msg = checksum .. COMM_FIELD_DELIM .. last_words
+	local msg = checksum .. COMM_FIELD_DELIM .. last_words .. COMM_FIELD_DELIM
 
 	table.insert(last_words_queue, msg)
 end
@@ -325,7 +320,6 @@ function selfDeathAlert(death_source_str)
 	if map then 
 		position = C_Map.GetPlayerMapPosition(map, "player")
 		local continentID, worldPosition = C_Map.GetWorldPosFromMapPos(map, position)
-		print(map, position.x)
 	else
 	  local _, _, _, _, _, _, _, _instance_id, _, _ = GetInstanceInfo()
 	  instance_id = _instance_id
@@ -340,7 +334,7 @@ function selfDeathAlert(death_source_str)
 	end
 
 	msg = encodeMessage(UnitName("player"), guildName, death_source, race_id, class_id, UnitLevel("player"), instance_id, map, position)
-	local commMessage = COMM_COMMANDS["BROADCAST_DEATH_PING"] .. COMM_COMMAND_DELIM .. msg
+	if msg == nil then return end
 	local channel_num = GetChannelName(death_alerts_channel)
 
 	table.insert(death_alert_out_queue, msg)
@@ -349,9 +343,10 @@ end
 -- Receive a guild message. Need to send ack
 function deathlogReceiveLastWords(sender, data)
   local values = {}
-  for w in msg:gmatch("(.-)~") do table.insert(values, w) end
+  for w in data:gmatch("(.-)~") do table.insert(values, w) end
   local checksum = values[1]
   local msg = values[2]
+
   if checksum == nil or msg == nil then return end
 
   if death_ping_lru_cache_tbl[checksum] == nil then
@@ -359,6 +354,13 @@ function deathlogReceiveLastWords(sender, data)
   end
   if death_ping_lru_cache_tbl[checksum]["player_data"] ~= nil then
     death_ping_lru_cache_tbl[checksum]["player_data"]["last_words"] = msg
+    for i=1,20 do 
+      if row_entry[i].player_data ~= nil then
+	if row_entry[i].player_data["name"] == sender then
+	  row_entry[i].player_data["last_words"] = msg
+	end
+      end
+    end
   else
     death_ping_lru_cache_tbl[checksum]["last_words"] = msg
   end
@@ -406,6 +408,7 @@ function deathlogReceiveGuildMessage(sender, data)
 end
 
 local function deathlogReceiveChannelMessageChecksum(sender, checksum)
+  if checksum == nil then return end
   if death_ping_lru_cache_tbl[checksum] == nil then
     death_ping_lru_cache_tbl[checksum] = {}
   end
@@ -558,29 +561,56 @@ end)
 
 local death_log_handler = CreateFrame("Frame")
 death_log_handler:RegisterEvent("CHAT_MSG_CHANNEL")
-death_log_handler:SetScript("OnEvent", function(self, event, ...)
+
+local function handleEvent(self, event, ...)
   local arg = { ... }
   if event == "CHAT_MSG_CHANNEL" then
     local command, msg = string.split(COMM_COMMAND_DELIM, arg[1])
     if command == COMM_COMMANDS["BROADCAST_DEATH_PING_CHECKSUM"] then
-      deathlogReceiveChannelMessageChecksum(sender, checksum)
+      local player_name_short, _ = string.split("-", arg[2])
+      if shadowbanned[player_name_short] then return end
+
+      if throttle_player[player_name_short] == nil then throttle_player[player_name_short] = 0 end
+      throttle_player[player_name_short] = throttle_player[player_name_short] + 1
+      if throttle_player[player_name_short] > 1000 then
+	shadowbanned[player_name_short] = 1
+      end
+
+      deathlogReceiveChannelMessageChecksum(player_name_short, msg)
+      if debug then print("checksum", msg) end
       return
     end
 
     if command == COMM_COMMANDS["BROADCAST_DEATH_PING"] then
       local player_name_short, _ = string.split("-", arg[2])
+      if shadowbanned[player_name_short] then return end
+
+      if throttle_player[player_name_short] == nil then throttle_player[player_name_short] = 0 end
+      throttle_player[player_name_short] = throttle_player[player_name_short] + 1
+      if throttle_player[player_name_short] > 1000 then
+	shadowbanned[player_name_short] = 1
+      end
+
       deathlogReceiveChannelMessage(player_name_short, msg)
+      if debug then print("death ping", msg) end
       return
     end
 
     if command == COMM_COMMANDS["LAST_WORDS"] then
       local player_name_short, _ = string.split("-", arg[2])
+      if shadowbanned[player_name_short] then return end
+
+      if throttle_player[player_name_short] == nil then throttle_player[player_name_short] = 0 end
+      throttle_player[player_name_short] = throttle_player[player_name_short] + 1
+      if throttle_player[player_name_short] > 1000 then
+	shadowbanned[player_name_short] = 1
+      end
+
       deathlogReceiveLastWords(player_name_short, msg)
+      if debug then print("last words" ,msg) end
       return
     end
   end
-end)
+end
 
--- Todo; F's
--- Todo; instance ID to instance name
---
+death_log_handler:SetScript("OnEvent", handleEvent)
