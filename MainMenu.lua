@@ -260,6 +260,22 @@ local function spairs(t, order)
 		end
 	end
 end
+local function CreateHeadingLabel (title, frame)
+	local label = AceGUI:Create("Label")
+	label:SetWidth(500)
+	label:SetText(title)
+	label:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	frame:AddChild(label)
+	
+end
+local function CreateDescriptionLabel (text, frame)
+	local label = AceGUI:Create("Label")
+	label:SetWidth(900)
+	label:SetText(text) 
+	label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	frame:AddChild(label)
+end
+
 
 local function DrawGeneralTab(container)
 	local scroll_container = AceGUI:Create("SimpleGroup")
@@ -296,67 +312,41 @@ local function DrawGeneralTab(container)
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.16")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Disable greenwall\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	CreateHeadingLabel("11.16", scroll_frame)
+
+	
+
+	
+	CreateDescriptionLabel("- Disable greenwall\n", scroll_frame)
+
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.15")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateHeadingLabel("11.15", scroll_frame)
+	CreateDescriptionLabel(
 		"- Dungeon tracker improvements\n"
 			.. "- HC Defense fix; resurrecting no longer causes alert\n"
 			.. "- LF mode fixes; no longer crashes for lower version players.\n"
 			.. "- Disable automatic recovery methods\n"
 			.. "- Removed summon mounts from failing Imp Master\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.14")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.14", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fix minor crash on quest turn in\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.13")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.13", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fix guild chat crash in WotLK\n"
 			.. "- Ammend Griefer list\n"
 			.. "- LF mode in greenwall\n"
@@ -369,22 +359,15 @@ local function DrawGeneralTab(container)
 			.. "- Automatic server/name change recovery\n"
 			.. "- Fixed Kill the Betrayer achievement\n"
 			.. "- Fixed achievements from not showing up in accountability tab\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.12")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.12", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Improved anti-grief security\n"
 			.. "- Updated Hardcore Contract\n"
 			.. "- Dungeon Tracker localization\n"
@@ -393,325 +376,94 @@ local function DrawGeneralTab(container)
 			.. "- Option to block death messages from levels/guilds\n"
 			.. "- Fix Thunderstruck achievement\n"
 			.. "- Fix Against Lord Shalzaru achievement\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.10")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.10", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Various wording changes\n- Added more quests to pvp flag warning\n- Added banned guilds in greenwall\n- Fix to <MOD>\n- Felfire skull fix\n- Dungeon tracker improvements"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.9")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.9", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText("- Added `Hardcore contract` to intro splash")
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	CreateDescriptionLabel("- Added `Hardcore contract` to intro splash", scroll_frame)
+	
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.8")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.8", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Small trio fix where countdown would immediately fail\n- Fixed minor crash for achievements\n- Fixed earthen arise, Goggeroc kills not registering\n- Player pronouns added\n- auto appeal griefing for under 40 characters.\n- Fixed bug where 60 characters can get achievements intended for non-60s"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.7")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.7", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed Deep in the Ban'ethil Barrow Den from missing Rageclaw kill\n- Fixed kill target for Death to Goggeroc\n- Made profession achievements more reliable and check on reload\n- Fixed minor crash on forced achievement selection\n- Removed checks for duo/trios when 60+"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.6")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.6", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText("- Better WoTLK patch compatibility (Overhauled AceGUI)")
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	CreateDescriptionLabel("- Better WoTLK patch compatibility (Overhauled AceGUI)", scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.5")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.5", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText("-WoTLK patch compatibility")
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	CreateDescriptionLabel("-WoTLK patch compatibility", scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.4")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.4", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed stinkys escape for Alliance\n- Fixed the crown of will showing for horde\n- Fixed Kromgrul from not showing up in achievement list\n- Added new achievement `Serum to the Forsaken`."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.3")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.3", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed burning shadow specific bug\n- Tuned achievement animation\n- Dungeon tracking fixes"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.2")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.2", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Made a variety of new achievements more robust\n- duo/trio will no longer fail at lvl 1\n- <MOD> tag no longer applied to say\n- Added legacy support for duo/trio trades"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	, scroll_frame)
+	
 
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.1")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
+	CreateHeadingLabel("11.1", scroll_frame)
 
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateDescriptionLabel(
 		"- Fixed bug with Stadics' challenge\n- Added Achievement Animation (see interface addons menu to test with `show`\n- Fixed bug with PartnerUp! which failed when players had class achievements\n- Dungeon tracking additions; removed infractions for lvl 60's, added appeals\n- Fixed some spelling and grammar for new achievements\n- Fixed bug where quests which have a level requirement would not award achievement if turning in quest leveled up the character."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("11.0")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
+	CreateHeadingLabel("11.0", scroll_frame)
+	CreateDescriptionLabel(
 		"- Added a dungeon tab for tracking dungeon stats and completion.\n- Changes to actively prevent illegal trades (addon will block trades from non-trade partners unless you are lvl 60).\n- Increased rep. requirement for Stadic's to 45,000\n- Added 50+ new achievements.  New achievements do not need to be selected at level 1.  See the Achievements tab for more information.\n- Added Duo/Trio appeal codes"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
+	, scroll_frame)
+	
 	---
 
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.5")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added timer on shivved, sword and board, and berserker which gives the player a minute to unequip.\n- Fixed appeal code\n- Fixed shivved failing on skinning knife\n- Added DuoMade and TrioMade\n- Fixed minor menu crash\n- Added <MOD> tags\n- Added trade appeals"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	---
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.4")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Passive Achievements added (Disabled).\n- Removed speedrunner until alignment is reached.\n- Fixed appeal code for long names\n- removed spam from failed channel connects\n- Fixed scavenger achievement failing when creating items while merchant window is open.\n- Automatically hide talent frame when trying to open it with Not So Talented enabled."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	---
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.3")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Add Speedrunner back as an achievement! New formula for tracking time is being used.\n- Update descriptions for Stadic's challenge and speedrun when mousing over icon\n- Made it more convenient to appeal achievements."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	---
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.2")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added options to ignore cross-guild chat and alerts (in interface options->Hardcore (not Hardcore:Greenwall!) \n- Fixed fishing poles failing Hammertime, pacifist, and shivved. \n- Fixed alert message which showed a |c before class names. \n -Stadic's challenge now requires 30,000 gained reputation (not total).\n- No longer tells user to ping mod for time gaps under level 20.\n- Updated DUO/TRIO rules"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.1")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added support for automatic guild notifications across guilds (level up and deaths)\n- Fixed self-made bug."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("10.0")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Added Greenwall (cross-guild chat) integration\n- Added Stadics Challenge (1hp). Stadics Challenge will alert guild members when a point of damage is taken.\n- No Health Achievement bug fixed; Now the player should be able to make potions without failing the challenge.\n- Self-made bug fixed where the player couldn't equip a fishing rode without failing."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.5")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Verification string in new menu ui fixed\n- Teleport moonglade fixed (again) for Druid of the Claw\n- Optimizations for level list.  Level list is now paginated and should no longer cause long freezes.\n- Optimizations for accountability tab.  Accountability tab now loads more quickly up on clicking `inspect all`.  Accountability tab no longer causes a stutter every 7 seconds.\n- HC main menu added to UI special frames; Escape key can be used to exit the menu.\n- Dungeon list updated to include BFD and WotLK dungeons\n- Currency tab is now handled correctly.  Previously, the HC tab would overlap with the currency tab, and the currency panel/ hc panel would still be drawn when switching between the two.\n- Self-made achievement updates.  Self-made no longer fails you for equipping tabards or gear with stat bonuses.  Starting gear list of items updated as well.\n- Self-made no longer allows equipping quest items."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.4")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Inspect Players in main menu's accountability tab\n- Moonglade correctly detected for duo/trio partners\n- Defaults to modern menu for hardcore show.  To use the old menu again, go to interface options and uncheck the checkbox."
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.3")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Fixed issue where trade partner verification check was being recorded for duo/trio partner trades\n"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
-
-	local changelog_title = AceGUI:Create("Label")
-	changelog_title:SetWidth(500)
-	changelog_title:SetText("9.2")
-	changelog_title:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
-	scroll_frame:AddChild(changelog_title)
-
-	local changelog_description = AceGUI:Create("Label")
-	changelog_description:SetWidth(_menu_width)
-	changelog_description:SetText(
-		"- Shivved updated to allow fishing poles\n- Hammertime updated to allow fishing poles\n- Self-made fixed and updated to allow fishing poles and starting gear\n- Force initialize and bound hardcore_settings to fix some lingering with settings\n- Remove character frame taint; Players can now open character frame during combat but not the HC tab\n- Add ability for mods to appeal achievements in-game\n- Added beta modern menu which replaces /hardcore show\n- Minor verbage changes in rules in beta menu\n- Dungeon levels added to rules in beta menu\n- Achievements added to beta menu\n- Formatting fixes for level list and accountability in beta menu\n- Druid of the claw fixed issue where moonglade wasn't allowed\n- Scavenger fixed issue where other addons could buy from merchants\n - Bandaid fix for other addons removing inspect frame"
-	)
-	changelog_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(changelog_description)
+	
 end
 
 local function DrawRulesTab(container)
