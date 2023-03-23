@@ -1275,6 +1275,7 @@ end
 
 local function DrawDungeonsTab(container, _hardcore_character)
 	local name_data
+	local id_data
 	local level_data
 	local played_data
 	local date_data
@@ -1284,6 +1285,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	local function UpdateDungeonsData(_dt_runs, _dt_pending, _dt_current)
 		-- Initialise data
 		local name_str = ""
+		local id_str = ""
 		local date_str = ""
 		local level_str = ""
 		local played_str = ""
@@ -1306,9 +1308,11 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 		local function GetInstanceIDString(run)
 			if run.iid ~= nil then
-				return " [" .. run.iid .. "]"
+				return "" .. run.iid
+			elseif run.quest_id ~= nil then
+				return "" .. run.quest_id
 			end
-			return ""
+			return "?"
 		end
 
 		local now = GetServerTime()
@@ -1316,7 +1320,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		-- Go through the complete, idle and active runs
 		local num_lines = 0
 		for i, v in pairs(_dt_runs) do
-			name_str = name_str .. v.name .. GetInstanceIDString(v) .. "\n"
+			name_str = name_str .. v.name .. "\n"
+			id_str = id_str .. GetInstanceIDString(v) .. "\n"
 			if v.level > 0 then
 				level_str = level_str .. v.level .. "\n"
 			else
@@ -1332,7 +1337,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			num_lines = num_lines + 1
 		end
 		for i, v in pairs(_dt_pending) do
-			name_str = name_str .. "|c00FFFF00" .. v.name .. GetInstanceIDString(v) .. " (idle, " .. SecondsToTime(v.idle) .. ")\n"
+			name_str = name_str .. "|c00FFFF00" .. v.name .. " (idle, " .. SecondsToTime(v.idle) .. ")\n"
+			id_str = id_str .. GetInstanceIDString(v) .. "\n"
 			level_str = level_str .. v.level .. "\n"
 			played_str = played_str .. SecondsToTime(v.time_inside) .. "\n"
 			date_str = date_str .. v.date .. "\n"
@@ -1340,7 +1346,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			num_lines = num_lines + 1
 		end
 		if next(_dt_current) then
-			name_str = name_str .. "|c0000FF00" .. _dt_current.name .. GetInstanceIDString(_dt_current) .. " (active)\n"
+			name_str = name_str .. "|c0000FF00" .. _dt_current.name .. " (active)\n"
+			id_str = id_str .. GetInstanceIDString(_dt_current) .. "\n"
 			level_str = level_str .. _dt_current.level .. "\n"
 			played_str = played_str .. SecondsToTime(_dt_current.time_inside) .. "\n"
 			date_str = date_str .. _dt_current.date .. "\n"
@@ -1352,6 +1359,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		num_lines = 10 - num_lines
 		for i = 1, num_lines do
 			name_str = name_str .. "\n"
+			id_str = id_str .. "\n"
 			level_str = level_str .. "\n"
 			played_str = played_str .. "\n"
 			date_str = date_str .. "\n"
@@ -1360,6 +1368,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 		-- Set the new info in the columns
 		name_data:SetText(name_str)
+		id_data:SetText(id_str)
 		date_data:SetText(date_str)
 		level_data:SetText(level_str)
 		played_data:SetText(played_str)
@@ -1408,13 +1417,19 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	scroll_frame:AddChild(row_header)
 	-- Name row header
 	local name_label = AceGUI:Create("Label")
-	name_label:SetWidth(375)
+	name_label:SetWidth(310)
 	name_label:SetText("|c00FFFF00Dungeon|r")
 	name_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	row_header:AddChild(name_label)
+	-- ID row header
+	local id_label = AceGUI:Create("Label")
+	id_label:SetWidth(55)
+	id_label:SetText("|c00FFFF00ID|r")
+	id_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	row_header:AddChild(id_label)
 	-- Date row header
 	local date_label = AceGUI:Create("Label")
-	date_label:SetWidth(125)
+	date_label:SetWidth(135)
 	date_label:SetText("|c00FFFF00Date|r")
 	date_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	row_header:AddChild(date_label)
@@ -1449,15 +1464,20 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	scroll_frame:AddChild(data_rows)
 
 	-- Name column
-	local entry -- Some container that we don't care about
 	name_data = AceGUI:Create("Label")
-	name_data:SetWidth(375)
+	name_data:SetWidth(310)
 	name_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(name_data)
 
+	-- ID column (quest or instance)
+	id_data = AceGUI:Create("Label")
+	id_data:SetWidth(55)
+	id_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	data_rows:AddChild(id_data)
+
 	-- Date column
 	date_data = AceGUI:Create("Label")
-	date_data:SetWidth(125)
+	date_data:SetWidth(135)
 	date_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(date_data)
 
