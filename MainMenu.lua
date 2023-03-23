@@ -313,12 +313,10 @@ local function DrawGeneralTab(container)
 	---
 
 	
+	CreateHeadingLabel("11.17b", scroll_frame)
+	CreateDescriptionLabel("- Enabled greenwall! Greenwall is back with limited support.  Death alerts, last words, and level up announcements shared via\n greenwall have been disabled. Death alerts and last words will be configurable via the death log.  Level up announcements will \nuse a similar interface.  \n - Death log added.  Death log keeps track of deaths that occur faction wide.  You can now enable death alerts faction wide (see\n interface options). Via the interface options you can also disable the death log frame.  You can open up interface options by \nright clicking the logo on the death log.", scroll_frame)
 
 	CreateHeadingLabel("11.16", scroll_frame)
-
-	
-
-	
 	CreateDescriptionLabel("- Disable greenwall\n", scroll_frame)
 
 
