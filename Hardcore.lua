@@ -2532,7 +2532,7 @@ end
 
 function Hardcore:COMBAT_LOG_EVENT_UNFILTERED(...)
 	-- local time, token, hidding, source_serial, source_name, caster_flags, caster_flags2, target_serial, target_name, target_flags, target_flags2, ability_id, ability_name, ability_type, extraSpellID, extraSpellName, extraSchool = CombatLogGetCurrentEventInfo()
-	local _, ev, _, _, source_name, _, _, _, _, _, _, environmental_type, _, _, _, _, _ = CombatLogGetCurrentEventInfo()
+	local _, ev, _, _, source_name, _, _, target_guid, _, _, _, environmental_type, _, _, _, _, _ = CombatLogGetCurrentEventInfo()
 
 	if not (source_name == PLAYER_NAME) then
 		if not (source_name == nil) then
@@ -2543,18 +2543,20 @@ function Hardcore:COMBAT_LOG_EVENT_UNFILTERED(...)
 		end
 	end
 	if ev == "ENVIRONMENTAL_DAMAGE" then
-	  if environmental_type == "Drowning" then
-	    DeathLog_Last_Attack_Source = -2
-	  elseif environmental_type == "Falling" then
-	    DeathLog_Last_Attack_Source = -3
-	  elseif environmental_type == "Fatigue" then
-	    DeathLog_Last_Attack_Source = -4
-	  elseif environmental_type == "Fire" then
-	    DeathLog_Last_Attack_Source = -5
-	  elseif environmental_type == "Lava" then
-	    DeathLog_Last_Attack_Source = -6
-	  elseif environmental_type == "Slime" then
-	    DeathLog_Last_Attack_Source = -7
+	  if target_guid == UnitGUID("player") then
+	    if environmental_type == "Drowning" then
+	      DeathLog_Last_Attack_Source = -2
+	    elseif environmental_type == "Falling" then
+	      DeathLog_Last_Attack_Source = -3
+	    elseif environmental_type == "Fatigue" then
+	      DeathLog_Last_Attack_Source = -4
+	    elseif environmental_type == "Fire" then
+	      DeathLog_Last_Attack_Source = -5
+	    elseif environmental_type == "Lava" then
+	      DeathLog_Last_Attack_Source = -6
+	    elseif environmental_type == "Slime" then
+	      DeathLog_Last_Attack_Source = -7
+	    end
 	  end
 	end
 end
