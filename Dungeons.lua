@@ -387,11 +387,12 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 		local max_levels = v[7]
 		
 		if (quests ~= nil) and (max_levels ~= nil) and (max_levels[game_version_index] <= game_version_max_level) and (DungeonTrackerHasRun( name ) == false) then
-			local j
+			local j, quest_num
 			for j = 1, #quests do
 				if C_QuestLog.IsQuestFlaggedCompleted(quests[j]) then
 					Hardcore:Debug("Found legacy quest " .. quests[j])
 					dungeon_done = true
+					quest_num = quests[j]
 					break
 				end
 			end
@@ -402,7 +403,7 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 				DUNGEON_RUN.date = "(legacy)"
 				DUNGEON_RUN.time_inside = 0
 				DUNGEON_RUN.level = 0
-				DUNGEON_RUN.quest_id = quests[j]
+				DUNGEON_RUN.quest_id = quest_num
 				Hardcore:Debug("Logging missing run in " .. DUNGEON_RUN.name)
 				table.insert(Hardcore_Character.dt.runs, DUNGEON_RUN)
 			end
