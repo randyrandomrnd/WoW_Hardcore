@@ -22,6 +22,8 @@ local combat_log_frame = nil
 
 local dt_checked_for_missing_runs = false		-- Did we check for missing runs in this session already?
 
+local dt_party_member_addon_version = {}
+
 -- dt_db ( = dungeon tracker database )
 --
 -- Contains all the info for the dungeons:
@@ -385,11 +387,12 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 		local max_levels = v[7]
 		
 		if (quests ~= nil) and (max_levels ~= nil) and (max_levels[game_version_index] <= game_version_max_level) and (DungeonTrackerHasRun( name ) == false) then
-			local j
+			local j, quest_num
 			for j = 1, #quests do
 				if C_QuestLog.IsQuestFlaggedCompleted(quests[j]) then
 					Hardcore:Debug("Found legacy quest " .. quests[j])
 					dungeon_done = true
+					quest_num = quests[j]
 					break
 				end
 			end
@@ -400,7 +403,7 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 				DUNGEON_RUN.date = "(legacy)"
 				DUNGEON_RUN.time_inside = 0
 				DUNGEON_RUN.level = 0
-				DUNGEON_RUN.quest_id = quests[j]
+				DUNGEON_RUN.quest_id = quest_num
 				Hardcore:Debug("Logging missing run in " .. DUNGEON_RUN.name)
 				table.insert(Hardcore_Character.dt.runs, DUNGEON_RUN)
 			end
@@ -522,10 +525,18 @@ local function DungeonTrackerWarnInfraction()
 	for i, v in ipairs(Hardcore_Character.dt.runs) do
 		if DungeonTrackerIsRepeatedRun(v, Hardcore_Character.dt.current) then
 			Hardcore_Character.dt.current.last_warn = Hardcore_Character.dt.current.time_inside
-			message = "\124cffFF0000You entered "
+			local instance_info1 = ""
+			local instance_info2 = ""
+			if v.iid ~= nil and Hardcore_Character.dt.current.iid ~= nil and v.iid ~= Hardcore_Character.dt.current.iid then
+				instance_info1 = " (ID:" .. Hardcore_Character.dt.current.iid .. ")"
+				instance_info2 = " (ID:" .. v.iid .. ")"
+			end
+			message = "\124cffFF0000You entered " 
 				.. v.name
+				.. instance_info1
 				.. " already at date "
 				.. v.date
+				.. instance_info2
 				.. " -- leave the dungeon within "
 				.. time_left
 				.. " seconds!"
@@ -534,6 +545,8 @@ local function DungeonTrackerWarnInfraction()
 		end
 	end
 
+	-- The following code probably can't ever be called, since pending runs with different instance IDs are automatically
+	-- logged upon entry. But let's keep it here for now. Better warned twice, than never.
 	-- See if this dungeon was already in the list of pending runs (but with a different instanceID), and warn every so many seconds if that is so
 	for i, v in ipairs(Hardcore_Character.dt.pending) do
 		-- We never warn about pending runs without an instanceID, they may or may not be the same as the current
@@ -574,12 +587,16 @@ local function DungeonTrackerLogRun(run)
 	-- Warn if this is a repeated run and log
 	for i, v in ipairs(Hardcore_Character.dt.runs) do
 		if DungeonTrackerIsRepeatedRun(v, run) then
+			local instance_info = ""
+			if v.iid ~= nil then
+				instance_info = " (ID:" .. v.iid ..  ")"
+			end
 			if Hardcore_Character.dt.warn_infractions == true then
 				Hardcore:Print(
-					"\124cffFF0000Player entered "
-						.. run.name
-						.. " already at date "
-						.. v.date
+					"\124cffFF0000You entered "
+						.. run.name .. " (ID:" .. run.iid .. ")"
+						.. " already on "
+						.. v.date .. instance_info
 						.. " -- logging repeated run"
 				)
 			end
@@ -591,7 +608,7 @@ local function DungeonTrackerLogRun(run)
 	local max_level = DungeonTrackerGetDungeonMaxLevel(run.name)
 	if run.level > max_level then
 		if Hardcore_Character.dt.warn_infractions == true then
-			Hardcore:Print("\124cffFF0000Player was overleveled for " .. run.name .. " -- logging overleveled run")
+			Hardcore:Print("\124cffFF0000You were overleveled for " .. run.name .. " -- logging overleveled run")
 		end
 	end
 
@@ -737,6 +754,9 @@ function DungeonTrackerReceivePulse(data, sender)
 			.. iid
 	)
 
+	-- Save the addon version for this player
+	dt_party_member_addon_version[ short_name ] = version
+
 	-- Check for errors, dt might not be set right now (if it just got reset for some weird reason)
 	if (Hardcore_Character.dt == nil) or (not next(Hardcore_Character.dt)) or (not next(Hardcore_Character.dt.pending)) then
 		return
@@ -803,12 +823,14 @@ local function DungeonTrackerSendPulse(now)
 			.. COMM_FIELD_DELIM
 			.. iid
 		local comm_msg = DT_PULSE_COMMAND .. COMM_COMMAND_DELIM .. data
-		Hardcore:Debug("Sending dungeon group pulse: " .. comm_msg)
 		CTL:SendAddonMessage("NORMAL", COMM_NAME, comm_msg, "PARTY")
+		Hardcore:Debug("Sending dungeon group pulse: " .. string.gsub( comm_msg, COMM_FIELD_DELIM, "/" ))
 
 		-- For debug purposes, set this to true to simulate a send
 		if false then
-			DungeonTrackerReceivePulse(data, name .. "-TestServer")
+			DungeonTrackerReceivePulse("John|0.11.15|1234324|Ragefire Chasm|189|1111", "John-TestServer")
+			DungeonTrackerReceivePulse("Peter|0.11.13|1244334|Ragefire Chasm|189|1111", "Peter-TestServer")
+			DungeonTrackerReceivePulse("Jack|0.11.16|1244334|Ragefire Chasm|189|1111", "Jack-TestServer")
 		end
 	end
 end
@@ -907,6 +929,11 @@ local function CombatLogEventHandler( self, event )
 	-- Get the combat log data
 	local time_stamp, subevent, _, src_guid, src_name, _, _, dst_guid, dst_name = CombatLogGetCurrentEventInfo()
 
+	-- We don't want to accidentally identify anything from previous runs (SM wings), like dots and debuffs timing out
+	if subevent == "SPELL_AURA_REMOVED" or subevent == "SPELL_AURA_REMOVED_DOSE" then
+		return
+	end
+
 	-- Combat events have a source and a destination (doing and getting the damage). We don't care which one is the NPC.
 	-- If it's an NPC, we'll take it.
 	local mob_guid = nil
@@ -950,6 +977,9 @@ local function CombatLogEventHandler( self, event )
 
 	-- Store the instanceID (the dynamic one)
 	-- To be thread-safe and fast, the reconnecting happens in the main timer routine
+	if Hardcore_Character.dt.current.iid == nil then
+		Hardcore:Debug( "Found instanceID " .. instance_id .. " from " .. subevent .. " " .. mob_guid )
+	end
 	Hardcore_Character.dt.current.iid = instance_id
 		
 	-- Pass this mob to the SM wing identifier. This will update dt.current.name if possible. 
@@ -1010,6 +1040,39 @@ function DungeonTrackerGetBossKillDataForRun( run )
 	return num_bosses, max_bosses, main_boss_time
 
 end
+
+-- DungeonTrackerCheckVersions()
+-- Prints a list of detected addon versions for the group members
+
+local function DungeonTrackerCheckVersions()
+
+	if next(Hardcore_Character.dt.current) and Hardcore_Character.dt.current.party ~= nil then
+		
+		local party = { string.split(",", Hardcore_Character.dt.current.party ) }
+
+		if #party > 1 then
+			local message = "Addon version check: "
+			for i,v in ipairs( party ) do
+				if v == UnitName("player") then
+					message = message .. v .. ":" .. GetAddOnMetadata("Hardcore", "Version")
+				else
+					message = message .. v .. ":"
+					if dt_party_member_addon_version[ v ] ~= nil then
+						message = message .. dt_party_member_addon_version[ v ]
+					else
+						message = message .. "?"
+					end
+				end
+				if i < #party then
+					message = message .. ", "
+				end
+			end
+			Hardcore:Print(message)
+		end
+	end
+end
+
+
 
 -- DungeonTrackerUpgradeLogVersion3()
 -- 
@@ -1189,7 +1252,7 @@ local function DungeonTracker()
 
 	-- See if we can reconnect to a pending run (this forgets the current run, which is probably in an unidentified SM wing)
 	-- We do this only if the current run and the pending run have the same name and the same instance ID
-	for i = 1, #Hardcore_Character.dt.pending do
+	for i = #Hardcore_Character.dt.pending, 1, -1 do
 		if Hardcore_Character.dt.pending[i].name == name then
 			if Hardcore_Character.dt.pending[i].iid ~= nil 			-- Should never happen, but yeah...
 				and Hardcore_Character.dt.current.iid ~= nil
@@ -1201,6 +1264,18 @@ local function DungeonTracker()
 				table.remove(Hardcore_Character.dt.pending, i)
 				Hardcore:Debug("Reconnected to pending run in " .. Hardcore_Character.dt.current.name)
 				break
+			elseif Hardcore_Character.dt.pending[i].iid ~= nil 			-- Should never happen, but yeah...
+				and Hardcore_Character.dt.pending[i].name ~= nil
+				and Hardcore_Character.dt.current.iid ~= nil
+				and Hardcore_Character.dt.current.name ~= nil
+				and Hardcore_Character.dt.current.name == Hardcore_Character.dt.pending[i].name
+				and Hardcore_Character.dt.pending[i].iid ~= Hardcore_Character.dt.current.iid 
+			then
+				-- A pending run with the same dungeon name exists, but a different instance ID => log it immediately
+				Hardcore_Character.dt.pending[i].log_now = nil			-- clean up
+				Hardcore:Debug("Forced logging of pending run in " .. Hardcore_Character.dt.pending[i].name .. " with different instance ID")
+				DungeonTrackerLogRun(Hardcore_Character.dt.pending[i])
+				table.remove(Hardcore_Character.dt.pending, i)
 			else
 				-- User did a "reset all instances", probably, or the current didn't have an IID yet.
 				-- In the former case, a warning will be a given further down
@@ -1235,6 +1310,10 @@ local function DungeonTracker()
 		
 		Hardcore_Character.dt.current = DUNGEON_RUN
 		Hardcore:Debug("Starting new run in " .. Hardcore_Character.dt.current.name)
+
+		C_Timer.After( 45, function()
+			DungeonTrackerCheckVersions()
+		end)
 	end
 
 	-- Extend the current run (reconnected or new) by another time step and update the last_seen time
