@@ -16,6 +16,15 @@ local death_alerts_channel_pw = "hcdeathalertschannelpw"
 local throttle_player = {}
 local shadowbanned = {}
 
+local environment_damage = {
+  [-2] = "Drowning",
+  [-3] = "Falling",
+  [-4] = "Fatigue",
+  [-5] = "Fire",
+  [-6] = "Lava",
+  [-7] = "Slime",
+}
+
 local function PlayerData(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos, date, last_words)
   return {
     ["name"] = name,
@@ -166,6 +175,7 @@ for i=1,20 do
 	    _entry.font_strings[v[1]]:SetWidth(v[2])
 	  end
 	  _entry.font_strings[v[1]]:SetTextColor(1,1,1)
+	  _entry.font_strings[v[1]]:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
 	end
 	-- _entry:SetFullWidth(true)
 	_entry:SetHeight(60)
@@ -230,7 +240,11 @@ for i=1,20 do
 
 		if _entry.player_data["source_id"] then
 		  local source_id = id_to_npc[_entry.player_data["source_id"]]
-		  if source_id then GameTooltip:AddLine("Killed by: " .. source_id, 1, 1, 1, true) end
+		  if source_id then 
+		    GameTooltip:AddLine("Killed by: " .. source_id, 1, 1, 1, true) 
+		  elseif environment_damage[_entry.player_data["source_id"]] then
+		    GameTooltip:AddLine("Died from: " .. environment_damage[_entry.player_data["source_id"]], 1, 1, 1, true) 
+		  end
 		end
 
 		if race_name then GameTooltip:AddLine("Race: " .. race_name,1,1,1) end
@@ -299,10 +313,15 @@ local function createEntry(checksum)
   setEntry(death_ping_lru_cache_tbl[checksum]["player_data"], row_entry[20])
   death_ping_lru_cache_tbl[checksum]["committed"] = 1
 
-  -- Save in-guilds for next part of migration
+  -- Save in-guilds for next part of migration TODO
   if death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] then return end
+  if hardcore_settings.alert_subset ~= nil and hardcore_settings.alert_subset == "greenwall_guilds_only" and death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then
+    alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
+    return
+  end
   if hardcore_settings.alert_subset ~= nil and hardcore_settings.alert_subset == "faction_wide" then
     alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
+    return
   end
 end
 

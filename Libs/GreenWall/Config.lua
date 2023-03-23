@@ -43,6 +43,7 @@ end
 gw_banned_tags = {}
 hc_self_block_flag = false -- Used to denote that this guild should not send death notifications
 hc_gw_lfgm_mode = false    -- Used to denote that this guild should only send and receive lfg/m messages 
+hc_peer_guilds = {}
 
 hc_mute_inguild = 0
 
@@ -203,6 +204,7 @@ function GwConfig:load()
                 elseif field[1] == 'p' then
                     -- Peer guild
                     local peer_name = gw.GlobalName(substitute(field[2], xlat))
+		    hc_peer_guilds[peer_name] = 1
                     local peer_id = substitute(field[3], xlat)
                     if gw.iCmp(guild_name, peer_name) then
                         self.guild_id = peer_id
