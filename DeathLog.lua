@@ -328,6 +328,7 @@ end
 local function shouldCreateEntry(checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then return false end
   if hardcore_settings.death_log_types == nil or hardcore_settings.death_log_types == "faction_wide" then return true end
+  if hardcore_settings.death_log_types ~= nil and hardcore_settings.death_log_types == "greenwall_guilds_only" and death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then return true end
   if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
   if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
   return false

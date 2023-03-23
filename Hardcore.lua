@@ -3851,6 +3851,7 @@ local options = {
 					values = {
 						off = "off",
 						guild_only = "guild only",
+						greenwall_guilds_only = "greenwall guilds only",
 						faction_wide = "faction wide",
 					},
 					get = function()
