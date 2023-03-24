@@ -903,9 +903,19 @@ local function DungeonTrackerLogKill( mob_type_id )
 			Hardcore:Debug( "Warning -- repeated boss kill ignored" )
 			Hardcore_Character.dt.current.repeated_boss_kill = true
 		end
+	else
+		-- Add it to the list of NPCs we've killed
+		if Hardcore_Character.dt.current.kills == nil then
+			Hardcore_Character.dt.current.kills = {}
+		end
+		if Hardcore_Character.dt.current.kills[ mob_type_id ] == nil then
+			Hardcore_Character.dt.current.kills[ mob_type_id ] = 1
+		else
+			Hardcore_Character.dt.current.kills[ mob_type_id ] = Hardcore_Character.dt.current.kills[ mob_type_id ] + 1
+		end
 	end
 	
-	-- Add it to the list of NPCs we've killed
+	-- Add it to the sum total of NPCs we've killed
 	if Hardcore_Character.dt.current.num_kills == nil then
 		Hardcore_Character.dt.current.num_kills = 0
 	end
