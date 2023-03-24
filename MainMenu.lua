@@ -1030,7 +1030,6 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	local played_data
 	local date_data
 	local boss_data
-	local show_boss_column = true -- For Zdeyn's boss kill time statistic, just set to true
 
 	local function UpdateDungeonsData(_dt_runs, _dt_pending, _dt_current)
 		-- Initialise data
@@ -1042,18 +1041,26 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		local boss_str = ""
 
 		local function GetBossTimeString(run)
+			local boss_kill_string
+			local total_kill_string
 			local num_bosses, max_bosses, main_boss_kill_time
+			if run.num_kills ~= nil and run.date ~= "(legacy)" then
+				total_kill_string = run.num_kills
+			else
+				total_kill_string = "?"
+			end
 			num_bosses, max_bosses, main_boss_kill_time = DungeonTrackerGetBossKillDataForRun( run )
 			if num_bosses >= 0 then
-				local num_max_bosses = num_bosses .. "/" .. max_bosses .. " "
+				boss_kill_string = num_bosses .. "/" .. max_bosses .. " "
 				if main_boss_kill_time > 0 then
-					return num_max_bosses .. "(" .. SecondsToTime(main_boss_kill_time) .. ")\n"
+					boss_kill_string = boss_kill_string .. "(" .. SecondsToTime(main_boss_kill_time) .. ")"
 				else
-					return num_max_bosses .. "(N/A)\n" 		-- Dungeon done, but end boss not killed
+					boss_kill_string = boss_kill_string .. "(N/A)" 		-- Dungeon done, but end boss not killed
 				end
 			else
-				return "?\n" -- No info
+				boss_kill_string = "?" -- No info
 			end
+			return total_kill_string .. "/" .. boss_kill_string .. "\n"
 		end
 
 		local function GetInstanceIDString(run)
@@ -1087,7 +1094,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			num_lines = num_lines + 1
 		end
 		for i, v in pairs(_dt_pending) do
-			name_str = name_str .. "|c00FFFF00" .. v.name .. " (idle, " .. SecondsToTime(v.idle) .. ")\n"
+			name_str = name_str .. "|c00FFFF00" .. v.name .. " (" .. SecondsToTime(v.idle) .. ")\n"
 			id_str = id_str .. GetInstanceIDString(v) .. "\n"
 			level_str = level_str .. v.level .. "\n"
 			played_str = played_str .. SecondsToTime(v.time_inside) .. "\n"
@@ -1106,7 +1113,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		end
 
 		-- Make sure we have at least 10 lines, or Ace moves our dungeons down a line
-		num_lines = 10 - num_lines
+		num_lines = 12 - num_lines
 		for i = 1, num_lines do
 			name_str = name_str .. "\n"
 			id_str = id_str .. "\n"
@@ -1122,26 +1129,26 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		date_data:SetText(date_str)
 		level_data:SetText(level_str)
 		played_data:SetText(played_str)
-		if show_boss_column then
-			boss_data:SetText(boss_str)
-		end
+		boss_data:SetText(boss_str)
 	end
 
 	-- Add the banner
 	local first_menu_description_title = AceGUI:Create("Label")
-	first_menu_description_title:SetFullWidth(500)
+	first_menu_description_title:SetFullWidth(true)
 	first_menu_description_title:SetText("Dungeon runs\n\n")
 	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
 	tabcontainer:AddChild(first_menu_description_title)
 
 	local first_menu_description_title = AceGUI:Create("Label")
-	first_menu_description_title:SetFullWidth(500)
+	first_menu_description_title:SetFullWidth(true)
 	first_menu_description_title:SetText(
-		"Dungeons marked with (legacy) are old dungeon runs derived "
-			.. "from completed quests.\nA run marked in white is finalised and the dungeon may not be entered again. "
+			   "Dungeons marked with (legacy) are old dungeon runs derived from completed quests. "
+			.. "A run marked in white is finalised and the dungeon may not be entered again. "
 			.. "A run marked in|c00FFFF00 yellow|c00FFFFFF is pending, and will be finalised after a time of inactivity. "
-			.. "A run marked in |c0000FF00 green|c00FFFFFF is the one you are currently on. "
-			.. "Note that the idle time is not a reliable indicator for the uniqueness of the dungeon ID!\n\n"
+			.. "Note that the indicated idle time is not a reliable indicator for the uniqueness of the dungeon ID! "
+			.. "A run marked in|c0000FF00 green|c00FFFFFF is the one you are currently on. "
+			.. "The ID column shows the instance ID or the quest ID for legacy runs. "
+			.. "The Kills column shows total kills, boss kills, max boss kills and end boss kill time.\n\n"
 	)
 	first_menu_description_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	tabcontainer:AddChild(first_menu_description_title)
@@ -1149,7 +1156,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	-- Start making the interface, start with a big frame to hold them all
 	local scroll_container = AceGUI:Create("SimpleGroup")
 	scroll_container:SetFullWidth(true)
-	scroll_container:SetHeight(393)
+	scroll_container:SetHeight(380)
 	scroll_container:SetLayout("Fill")
 	tabcontainer:AddChild(scroll_container)
 
@@ -1167,7 +1174,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	scroll_frame:AddChild(row_header)
 	-- Name row header
 	local name_label = AceGUI:Create("Label")
-	name_label:SetWidth(310)
+	name_label:SetWidth(280)
 	name_label:SetText("|c00FFFF00Dungeon|r")
 	name_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	row_header:AddChild(name_label)
@@ -1197,12 +1204,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	row_header:AddChild(played_time_label)
 	-- Boss time row header
 	local boss_time_label = AceGUI:Create("Label")
-	boss_time_label:SetWidth(155)
-	if show_boss_column then
-		boss_time_label:SetText("|c00FFFF00#Bosses (end time)|r")
-	else
-		boss_time_label:SetText("") --- Don't write it
-	end
+	boss_time_label:SetWidth(190)
+	boss_time_label:SetText("|c00FFFF00Kills|r")
 	boss_time_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	row_header:AddChild(boss_time_label)
 
@@ -1215,7 +1218,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 	-- Name column
 	name_data = AceGUI:Create("Label")
-	name_data:SetWidth(310)
+	name_data:SetWidth(280)
 	name_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(name_data)
 
@@ -1245,7 +1248,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 	-- Boss column
 	boss_data = AceGUI:Create("Label")
-	boss_data:SetWidth(155)
+	boss_data:SetWidth(190)
 	boss_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(boss_data)
 

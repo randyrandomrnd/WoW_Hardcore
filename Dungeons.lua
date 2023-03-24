@@ -1083,6 +1083,30 @@ local function DungeonTrackerCheckVersions()
 end
 
 
+-- DungeonTrackerCountTotalKills(run)
+--
+-- Counts the number of kills (normal + boss)
+
+local function DungeonTrackerCountTotalKills(run)
+
+	local num_kills = 0
+	if run ~= nil then
+		-- Count kills per mob_type
+		if run.kills ~= nil then
+			for _, w in pairs( run.kills ) do
+				num_kills = num_kills + w
+			end
+		end
+		-- Add bosses
+		if run.bosses ~= nil then
+			for _ in pairs( run.bosses ) do
+				num_kills = num_kills + 1
+			end
+		end
+	end
+	return num_kills
+end
+
 
 -- DungeonTrackerUpgradeLogVersion3()
 -- 
@@ -1091,44 +1115,28 @@ end
 local function DungeonTrackerUpgradeLogVersion3()
 
 	-- Fix up pending runs without an instance ID, or they will get dropped
-	-- Also get rid of the unnecessary non-boss kills info list, replace it with just total number
+	-- Also recount the number of total kills
 	if Hardcore_Character.dt.pending ~= nil then
 		for i, v in ipairs( Hardcore_Character.dt.pending ) do
 			if v.iid == nil and v.time_inside >= DT_INSIDE_MAX_TIME then
 				v.iid = 0
-			end					
-			if v.kills ~= nil then
-				v.num_kills = 0
-				for j, w in pairs( v.kills ) do
-					v.num_kills = v.num_kills + w
-				end
-				v.kills = nil
 			end
+			v.num_kills = DungeonTrackerCountTotalKills( v )
 			v.log_now = true
 		end
 	end
 	if Hardcore_Character.dt.runs ~= nil then
 		for i, v in ipairs( Hardcore_Character.dt.runs ) do
-			if v.kills ~= nil then
-				v.num_kills = 0
-				for j, w in pairs( v.kills ) do
-					v.num_kills = v.num_kills + w
-				end
-				v.kills = nil
+			if v.date ~= "(legacy)" then
+				v.num_kills = DungeonTrackerCountTotalKills( v )
 			end
 		end
 	end
 	if Hardcore_Character.dt.current ~= nil and next(Hardcore_Character.dt.current) then
 		if Hardcore_Character.dt.current.iid == nil and Hardcore_Character.dt.current.time_inside >= DT_INSIDE_MAX_TIME then
 			Hardcore_Character.dt.current.iid = 0			-- Will probably be overwritten by a later kill, but if not, then user can't reconnect later. So be it.
-		end					
-		if Hardcore_Character.dt.current.kills ~= nil then
-			Hardcore_Character.dt.current.num_kills = 0
-			for j, w in pairs( Hardcore_Character.dt.current.kills ) do
-				Hardcore_Character.dt.current.num_kills = Hardcore_Character.dt.current.num_kills + w
-			end
-			Hardcore_Character.dt.current.kills = nil
 		end
+		Hardcore_Character.dt.current.num_kills = DungeonTrackerCountTotalKills( Hardcore_Character.dt.current )
 	end
 
 	-- Get rid of some old data associated with the old way of doing legacy quest identification
@@ -1304,6 +1312,7 @@ local function DungeonTracker()
 		DUNGEON_RUN.last_seen = now
 		DUNGEON_RUN.idle = 0
 		DUNGEON_RUN.level = UnitLevel("player")
+		DUNGEON_RUN.num_kills = 0
 		local group_composition = UnitName("player")
 		if Hardcore_Character.dt.group_members ~= nil then
 			for index, player in ipairs(Hardcore_Character.dt.group_members) do
