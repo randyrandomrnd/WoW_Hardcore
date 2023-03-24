@@ -19,6 +19,7 @@ along with the Hardcore AddOn. If not, see <http://www.gnu.org/licenses/>.
 
 --[[ Const variables ]]
 --
+ERR_CHAT_PLAYER_NOT_FOUND_S = nil -- Disables warning when pinging non-hc player
 StaticPopupDialogs["CHAT_CHANNEL_PASSWORD"] = nil
 --CHAT_WRONG_PASSWORD_NOTICE = nil
 local DEATH_ALERT_COOLDOWN = 1800
