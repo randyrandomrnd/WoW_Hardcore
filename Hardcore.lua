@@ -1786,6 +1786,9 @@ function Hardcore:PLAYER_DEAD()
 	end
 
 	-- Send broadcast text messages to guild and greenwall
+	selfDeathAlert(DeathLog_Last_Attack_Source)
+	selfDeathAlertLastWords(recent_msg["text"])
+
 	SendChatMessage(messageString, "GUILD")
 	startXGuildChatMsgRelay(messageString)
 	startXGuildDeathMsgRelay()
@@ -2761,9 +2764,6 @@ function Hardcore:Add(data, sender, command)
 						level,
 						zone
 					)
-
-					selfDeathAlert(DeathLog_Last_Attack_Source)
-					selfDeathAlertLastWords(recent_msg["text"])
 
 					-- If player is in a raid, then only show alerts for other players in the same raid
 					if UnitInRaid("player") == nil or UnitInRaid(name:gsub("%-.*", "")) then
