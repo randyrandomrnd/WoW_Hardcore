@@ -141,7 +141,7 @@ function deathlogApplySettings(_settings)
       death_log_frame.frame:Hide()
     end
 
-    if hardcore_settings["death_log_pos"] then
+    if death_log_frame.frame and hardcore_settings["death_log_pos"] then
       death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", hardcore_settings["death_log_pos"]['x'], hardcore_settings["death_log_pos"]['y'])
     else
       death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", 670, -200)
