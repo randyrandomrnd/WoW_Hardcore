@@ -41,6 +41,18 @@ local function PlayerData(name, guild, source_id, race_id, class_id, level, inst
   }
 end
 
+local WorldMapButton = WorldMapFrame:GetCanvas()
+local death_tomb_frame = CreateFrame('frame', nil, WorldMapButton)
+death_tomb_frame:SetAllPoints()
+death_tomb_frame:SetFrameLevel(15000)
+
+local death_tomb_frame_tex = death_tomb_frame:CreateTexture(nil, 'OVERLAY')
+death_tomb_frame_tex:SetTexture("Interface\\Addons\\LogoutSkips\\Media\\icon_x.blp")
+death_tomb_frame_tex:SetDrawLayer("OVERLAY", 4)
+death_tomb_frame_tex:SetHeight(15)
+death_tomb_frame_tex:SetWidth(15)
+death_tomb_frame_tex:Hide()
+
 local function encodeMessage(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos)
   if name == nil then return end
   -- if guild == nil then return end -- TODO 
@@ -142,13 +154,26 @@ local row_entry = {}
  function WPDropDownDemo_Menu(frame, level, menuList)
   local info = UIDropDownMenu_CreateInfo()
 
+   if death_tomb_frame.map_id and death_tomb_frame.coordinates then
+   end
+
   local function openWorldMap()
+   if not (death_tomb_frame.map_id and death_tomb_frame.coordinates) then return end
+   if C_Map.GetMapInfo(death_tomb_frame["map_id"]) == nil then return end
+   if tonumber(death_tomb_frame.coordinates[1]) == nil or tonumber(death_tomb_frame.coordinates[2]) == nil then return end
+
    WorldMapFrame:SetShown(not WorldMapFrame:IsShown())
+   WorldMapFrame:SetMapID(death_tomb_frame.map_id)
+   WorldMapFrame:GetCanvas()
+   local mWidth, mHeight = WorldMapFrame:GetCanvas():GetSize()
+   death_tomb_frame_tex:SetPoint('CENTER', WorldMapButton, 'TOPLEFT', mWidth*death_tomb_frame.coordinates[1], -mHeight*death_tomb_frame.coordinates[2])
+   death_tomb_frame_tex:Show()
+   death_tomb_frame:Show()
   end
   
  
   if level == 1 then
-   info.text, info.hasArrow, info.func, info.disabled = "Show death location (WIP)", false, openWorldMap, true
+   info.text, info.hasArrow, info.func, info.disabled = "Show death location (WIP)", false, openWorldMap, false
    UIDropDownMenu_AddButton(info)
    info.text, info.hasArrow, info.func, info.disabled = "Block user", false, openWorldMap, true
    UIDropDownMenu_AddButton(info)
@@ -214,6 +239,11 @@ for i=1,20 do
 		   -- Bind an initializer function to the dropdown; see previous sections for initializer function examples.
 		   UIDropDownMenu_Initialize(dropDown, WPDropDownDemo_Menu, "MENU")
 		   ToggleDropDownMenu(1, nil, dropDown, "cursor", 3, -3)
+		   if _entry["player_data"]["map_id"] and _entry["player_data"]["map_pos"] then
+		     death_tomb_frame.map_id = _entry["player_data"]["map_id"] 
+		     local x, y = strsplit(",", _entry["player_data"]["map_pos"],2)
+		     death_tomb_frame.coordinates = {x,y}
+		   end
 		end
 	end)
 
@@ -289,6 +319,12 @@ local function alertIfValid(_player_data)
   local race_str = race_info.raceName
   local class_str, _, _ = GetClassInfo(_player_data["class_id"])
   local level_str = tostring(_player_data["level"])
+  local level_num = tonumber(_player_data["level"])
+  local min_level = tonumber(hardcore_settings.minimum_show_death_alert_lvl) or 0
+  if level_num < tonumber(min_level) then
+	  return
+  end
+
   local map_info = C_Map.GetMapInfo(_player_data["map_id"])
   local map_name = "?"
   if map_info then
