@@ -312,6 +312,8 @@ local function DrawGeneralTab(container)
 
 	---
 
+	CreateHeadingLabel("11.19", scroll_frame)
+	CreateDescriptionLabel("- Fixed minimum level alerts for faction-wide death alerts\n - Fixed issue where death alerts channel always takes the first channel spot\n - Fixed conflict with other addons where system messages wouldn't show up\n - Players can now see death locations by right clicking on death log entry and choosing the see death location item\n - Level filtering in LFG GW mode fixed", scroll_frame)
 	
 	CreateHeadingLabel("11.18", scroll_frame)
 	CreateDescriptionLabel("- Enabled greenwall! Greenwall is back with limited support.  Death alerts, last words, and level up announcements shared via\n greenwall have been disabled. Death alerts and last words will be configurable via the death log.  Level up announcements will \nuse a similar interface.  \n- Death log added.  Death log keeps track of deaths that occur faction wide.  You can now enable death alerts faction wide (see\n interface options). Via the interface options you can also disable the death log frame.  You can open up interface options by \nright clicking the logo on the death log. \n- Dungeon tracker improvements", scroll_frame)

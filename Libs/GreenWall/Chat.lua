@@ -117,6 +117,7 @@ function gw.ReplicateMessage(event, message, guild_id, arglist)
 				  return
 				end
 				local _level, filtered_message = strsplit("-", message, 2)
+				local _level = string.match(message, " (%d+)-")
 				if _level and filtered_message and tonumber(_level) then 
 				  if math.abs(tonumber(_level) - UnitLevel("player")) > 10 then
 				    return
