@@ -113,7 +113,7 @@ local subtitle_data = {
   {"Name", 70, function(_entry) return _entry.player_data["name"] or "" end},
   {"Class", 60, function(_entry)
     local class_str, _, _ = GetClassInfo(_entry.player_data["class_id"])
-    if RAID_CLASS_COLORS[class:upper()] then
+    if RAID_CLASS_COLORS[class_str:upper()] then
 	return "|c" .. RAID_CLASS_COLORS[class_str:upper()].colorStr .. class_str .. "|r"
     end
     return class_str or ""
@@ -320,6 +320,10 @@ local function alertIfValid(_player_data)
   local race_info = C_CreatureInfo.GetRaceInfo(_player_data["race_id"])
   local race_str = race_info.raceName
   local class_str, _, _ = GetClassInfo(_player_data["class_id"])
+  if RAID_CLASS_COLORS[class_str:upper()] then
+      class_str = "|c" .. RAID_CLASS_COLORS[class_str:upper()].colorStr .. class_str .. "|r"
+  end
+
   local level_str = tostring(_player_data["level"])
   local level_num = tonumber(_player_data["level"])
   local min_level = tonumber(hardcore_settings.minimum_show_death_alert_lvl) or 0
