@@ -47,10 +47,10 @@ death_tomb_frame:SetAllPoints()
 death_tomb_frame:SetFrameLevel(15000)
 
 local death_tomb_frame_tex = death_tomb_frame:CreateTexture(nil, 'OVERLAY')
-death_tomb_frame_tex:SetTexture("Interface\\Addons\\LogoutSkips\\Media\\icon_x.blp")
+death_tomb_frame_tex:SetTexture("Interface\\TARGETINGFRAME\\UI-TargetingFrame-Skull")
 death_tomb_frame_tex:SetDrawLayer("OVERLAY", 4)
-death_tomb_frame_tex:SetHeight(15)
-death_tomb_frame_tex:SetWidth(15)
+death_tomb_frame_tex:SetHeight(25)
+death_tomb_frame_tex:SetWidth(25)
 death_tomb_frame_tex:Hide()
 
 local function encodeMessage(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos)
