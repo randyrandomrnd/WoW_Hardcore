@@ -19,7 +19,7 @@ along with the Hardcore AddOn. If not, see <http://www.gnu.org/licenses/>.
 
 --[[ Const variables ]]
 --
-ERR_CHAT_PLAYER_NOT_FOUND_S = nil -- Disables warning when pinging non-hc player
+-- ERR_CHAT_PLAYER_NOT_FOUND_S = nil -- Disables warning when pinging non-hc player -- This clashes with other addons
 StaticPopupDialogs["CHAT_CHANNEL_PASSWORD"] = nil
 --CHAT_WRONG_PASSWORD_NOTICE = nil
 local DEATH_ALERT_COOLDOWN = 1800
@@ -1667,8 +1667,14 @@ function Hardcore:PLAYER_ENTERING_WORLD()
 	if not C_ChatInfo.IsAddonMessagePrefixRegistered(COMM_NAME) then
 		C_ChatInfo.RegisterAddonMessagePrefix(COMM_NAME)
 	end
-	deathlogJoinChannel()
-	deathlogApplySettings(Hardcore_Settings)
+
+	C_Timer.After(1.0, function()
+	  deathlogApplySettings(Hardcore_Settings)
+	end)
+
+	C_Timer.After(5.0, function()
+	  deathlogJoinChannel()
+	end)
 end
 
 function Hardcore:PLAYER_ALIVE()
@@ -3695,6 +3701,13 @@ ChatFrame_AddMessageEventFilter("CHAT_MSG_GUILD", function(frame, event, message
 	end
 	return false, message, sender, ... -- don't hide this message
 	-- note that you must return *all* of the values that were passed to your filter, even ones you didn't change
+end)
+
+ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", function(frame, event, message, sender, ...)
+	if message:match("No player named") and message:match("is currently playing") then
+	  return true, nil, sender, ... 
+	end
+	return false, message, sender, ... -- don't hide this message
 end)
 
 ChatFrame_AddMessageEventFilter("CHAT_MSG_CHANNEL", function(frame, event, message, sender, ...)

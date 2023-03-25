@@ -323,6 +323,12 @@ local function createEntry(checksum)
     alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
     return
   end
+
+  -- Override if players are in greenwall
+  if death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then
+    alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
+    return
+  end
 end
 
 local function shouldCreateEntry(checksum)
