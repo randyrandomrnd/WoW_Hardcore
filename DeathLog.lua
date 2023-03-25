@@ -113,6 +113,9 @@ local subtitle_data = {
   {"Name", 70, function(_entry) return _entry.player_data["name"] or "" end},
   {"Class", 60, function(_entry)
     local class_str, _, _ = GetClassInfo(_entry.player_data["class_id"])
+    if RAID_CLASS_COLORS[class:upper()] then
+	return "|c" .. RAID_CLASS_COLORS[class_str:upper()].colorStr .. class_str .. "|r"
+    end
     return class_str or ""
   end},
   {"Race", 60, function(_entry)
@@ -202,12 +205,11 @@ for i=1,20 do
 	  _entry.font_strings[v[1]]:SetTextColor(1,1,1)
 	  _entry.font_strings[v[1]]:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
 	end
-	-- _entry:SetFullWidth(true)
+
 	_entry:SetHeight(60)
 	_entry:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	_entry:SetColor(1,1,1)
 	_entry:SetText(" ")
-	-- _entry:SetWordWrap(false)
 
 	function _entry:deselect()
 	    for _,v in pairs(_entry.font_strings) do
@@ -325,8 +327,11 @@ local function alertIfValid(_player_data)
 	  return
   end
 
-  local map_info = C_Map.GetMapInfo(_player_data["map_id"])
+  local map_info = nil
   local map_name = "?"
+  if _player_data["map_id"] then
+   map_info = C_Map.GetMapInfo(_player_data["map_id"])
+  end
   if map_info then
     map_name = map_info.name
   end
