@@ -2282,7 +2282,7 @@ function Hardcore:DisplayPlaytimeWarning(level)
 		.. " Consider restoring from backups, and seek support from a mod or a technician in #addon-appeal"
 		
 	if level > 20 then
-		message = message .. "Continuing on means you risk your HC Verified Status."		
+		message = message .. ". Continuing on means you risk your HC Verified Status."		
 	end
 	Hardcore:Print(message)
 end
