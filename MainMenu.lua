@@ -1156,10 +1156,12 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		end
 	end
 
+	local version = GetAddOnMetadata("Hardcore", "Version")
+
 	-- Add the banner
 	local first_menu_description_title = AceGUI:Create("Label")
 	first_menu_description_title:SetFullWidth(500)
-	first_menu_description_title:SetText("Dungeon runs\n\n")
+	first_menu_description_title:SetText("Dungeon Runs - " .. version .. "\n\n")
 	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
 	tabcontainer:AddChild(first_menu_description_title)
 
