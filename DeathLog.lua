@@ -16,6 +16,34 @@ local death_alerts_channel_pw = "hcdeathalertschannelpw"
 local throttle_player = {}
 local shadowbanned = {}
 
+local death_log_icon_frame = CreateFrame("frame")
+death_log_icon_frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+death_log_icon_frame:SetSize(40,40)
+death_log_icon_frame:SetMovable(true)
+death_log_icon_frame:EnableMouse(true)
+death_log_icon_frame:Show()
+
+local black_round_tex = death_log_icon_frame:CreateTexture(nil, "OVERLAY")
+black_round_tex:SetPoint("CENTER", death_log_icon_frame, "CENTER", -5,4)
+black_round_tex:SetDrawLayer("OVERLAY",2)
+black_round_tex:SetHeight(40)
+black_round_tex:SetWidth(40)
+black_round_tex:SetTexture("Interface\\PVPFrame\\PVP-Separation-Circle-Cooldown-overlay")
+
+local hc_fire_tex = death_log_icon_frame:CreateTexture(nil, "OVERLAY")
+hc_fire_tex:SetPoint("CENTER", death_log_icon_frame, "CENTER", -6, 4)
+hc_fire_tex:SetDrawLayer("OVERLAY",3)
+hc_fire_tex:SetHeight(25)
+hc_fire_tex:SetWidth(25)
+hc_fire_tex:SetTexture("Interface\\AddOns\\Hardcore\\Media\\wowhc-emblem-white-red.blp")
+
+local gold_ring_tex = death_log_icon_frame:CreateTexture(nil, "OVERLAY")
+gold_ring_tex:SetPoint("CENTER", death_log_icon_frame, "CENTER", 0,0)
+gold_ring_tex:SetDrawLayer("OVERLAY",2)
+gold_ring_tex:SetHeight(50)
+gold_ring_tex:SetWidth(50)
+gold_ring_tex:SetTexture("Interface\\COMMON\\BlueMenuRing")
+
 local environment_damage = {
   [-2] = "Drowning",
   [-3] = "Falling",
@@ -126,8 +154,7 @@ local subtitle_data = {
 }
 death_log_frame:SetSubTitle(subtitle_data)
 death_log_frame:SetLayout("Fill")
-death_log_frame:SetHeight(125)
-death_log_frame:SetWidth(255)
+death_log_frame.frame:SetSize(255,125)
 death_log_frame:Show()
 
 local scroll_frame = AceGUI:Create("ScrollFrame")
@@ -144,11 +171,16 @@ function deathlogApplySettings(_settings)
       death_log_frame.frame:Hide()
     end
 
+    death_log_icon_frame:ClearAllPoints()
+    death_log_frame.frame:ClearAllPoints()
     if death_log_frame.frame and hardcore_settings["death_log_pos"] then
-      death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", hardcore_settings["death_log_pos"]['x'], hardcore_settings["death_log_pos"]['y'])
+      death_log_icon_frame:SetPoint("CENTER", UIParent, "CENTER", hardcore_settings["death_log_pos"]['x'], hardcore_settings["death_log_pos"]['y'])
     else
-      death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", 670, -200)
+      death_log_icon_frame:SetPoint("CENTER", UIParent, "CENTER", 670, -200)
     end
+    death_log_frame.frame:SetPoint("TOPLEFT", death_log_icon_frame, "TOPLEFT", 10, -10)
+    death_log_frame.frame:SetFrameStrata("BACKGROUND")
+    death_log_frame.frame:Lower()
 end
 
 
@@ -192,7 +224,7 @@ for i=1,20 do
 	_entry:SetHighlight("Interface\\Glues\\CharacterSelect\\Glues-CharacterSelect-Highlight")
 	_entry.font_strings = {}
 	local next_x = 0
-	local current_column_offset = 0
+	local current_column_offset = 15
 	for idx,v in ipairs(subtitle_data) do 
 	  _entry.font_strings[v[1]] = _entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	  _entry.font_strings[v[1]]:SetPoint("LEFT", _entry.frame, "LEFT", current_column_offset, 0)
@@ -206,8 +238,16 @@ for i=1,20 do
 	  _entry.font_strings[v[1]]:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
 	end
 
-	_entry:SetHeight(60)
-	_entry:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	_entry.background = _entry.frame:CreateTexture(nil, "OVERLAY")
+	_entry.background:SetPoint("CENTER", _entry.frame, "CENTER", 0,0)
+	_entry.background:SetDrawLayer("OVERLAY",2)
+	_entry.background:SetVertexColor(.5, .5, .5, (i%2)/10)
+	_entry.background:SetHeight(16)
+	_entry.background:SetWidth(500)
+	_entry.background:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+
+	_entry:SetHeight(40)
+	_entry:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
 	_entry:SetColor(1,1,1)
 	_entry:SetText(" ")
 
@@ -358,6 +398,17 @@ local function createEntry(checksum)
   setEntry(death_ping_lru_cache_tbl[checksum]["player_data"], row_entry[20])
   death_ping_lru_cache_tbl[checksum]["committed"] = 1
 
+  -- Record to hardcore_settings
+  if hardcore_settings["death_log_entries"] == nil then
+    hardcore_settings["death_log_entries"] = {}
+  end
+  table.insert(hardcore_settings["death_log_entries"], death_ping_lru_cache_tbl[checksum]["player_data"])
+
+  -- Cap list size, otherwise loading time will increase
+  if hardcore_settings["death_log_entries"] and #hardcore_settings["death_log_entries"] > 100 then -- TODO parameterize
+    table.remove(hardcore_settings["death_log_entries"],1)
+  end
+
   -- Save in-guilds for next part of migration TODO
   if death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] then return end
   if hardcore_settings.alert_subset ~= nil and hardcore_settings.alert_subset == "greenwall_guilds_only" and death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then
@@ -458,6 +509,7 @@ end
 
 -- Receive a guild message. Need to send ack
 function deathlogReceiveGuildMessage(sender, data)
+  if data == nil then return end
   local decoded_player_data = decodeMessage(data)
   if sender ~= decoded_player_data["name"] then return end
   if decoded_player_data["source_id"] == nil then return end
@@ -511,6 +563,7 @@ local function deathlogReceiveChannelMessageChecksum(sender, checksum)
 end
 
 local function deathlogReceiveChannelMessage(sender, data)
+  if data == nil then return end
   local decoded_player_data = decodeMessage(data)
   if sender ~= decoded_player_data["name"] then return end
   if decoded_player_data["source_id"] == nil then return end
@@ -615,24 +668,15 @@ WorldFrame:HookScript("OnMouseDown", function(self, button)
 	end
 end)
 
-death_log_frame.frame:RegisterForDrag("LeftButton")
-death_log_frame.frame:SetScript("OnDragStart", function(self, button)
-	local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+death_log_icon_frame:RegisterForDrag("LeftButton")
+death_log_icon_frame:SetScript("OnDragStart", function(self, button)
 	self:StartMoving()
-	local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
-	local x,y = self:GetCenter()
-	local px,py = self:GetParent():GetCenter();
-	if hardcore_settings['death_log_pos'] == nil then
-	  hardcore_settings['death_log_pos'] = {}
-	end
-	hardcore_settings['death_log_pos']['x'] = x - px
-	hardcore_settings['death_log_pos']['y'] = y - py
 end)
-death_log_frame.frame:SetScript("OnDragStop", function(self)
+death_log_icon_frame:SetScript("OnDragStop", function(self)
 	self:StopMovingOrSizing()
-	local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
 	local x,y = self:GetCenter()
-	local px,py = self:GetParent():GetCenter();
+	local px = (GetScreenWidth() * UIParent:GetEffectiveScale())/2
+	local py = (GetScreenHeight() * UIParent:GetEffectiveScale())/2
 	if hardcore_settings['death_log_pos'] == nil then
 	  hardcore_settings['death_log_pos'] = {}
 	end
@@ -642,6 +686,14 @@ end)
 
  function DeathFrameDropdown(frame, level, menuList)
   local info = UIDropDownMenu_CreateInfo()
+
+  local function minimize()
+   death_log_frame:Minimize()
+  end
+
+  local function maximize()
+   death_log_frame:Maximize()
+  end
 
   local function hide()
    death_log_frame.frame:Hide()
@@ -654,6 +706,14 @@ end)
   end
 
   if level == 1 then
+   if death_log_frame:IsMinimized() then
+     info.text, info.hasArrow, info.func = "Maximize", false, maximize 
+     UIDropDownMenu_AddButton(info)
+   else
+     info.text, info.hasArrow, info.func = "Minimize", false, minimize 
+     UIDropDownMenu_AddButton(info)
+   end
+
    info.text, info.hasArrow, info.func = "Settings", false, openSettings 
    UIDropDownMenu_AddButton(info)
 
@@ -662,7 +722,7 @@ end)
   end
  end
 
-death_log_frame.frame:SetScript("OnMouseDown", function (self, button)
+death_log_icon_frame:SetScript("OnMouseDown", function (self, button)
     if button=='RightButton' then 
 	   local dropDown = CreateFrame("Frame", "death_frame_dropdown_menu", UIParent, "UIDropDownMenuTemplate")
 	   UIDropDownMenu_Initialize(dropDown, DeathFrameDropdown, "MENU")
@@ -730,3 +790,7 @@ death_log_handler:SetScript("OnEvent", handleEvent)
 function fakeDeathAlert(event, msg, sender)
 	handleEvent(death_log_handler, event, msg, sender)
 end
+
+hooksecurefunc(WorldMapFrame, 'OnMapChanged', function()
+  death_tomb_frame:Hide()
+end)

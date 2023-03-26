@@ -408,6 +408,16 @@ local function startXGuildDeathMsgRelay()
 end
 
 function FailureFunction(achievement_name)
+	local max_level = 60
+	if
+		(Hardcore_Character.game_version ~= "")
+		and (Hardcore_Character.game_version ~= "Era")
+		and (Hardcore_Character.game_version ~= "SoM")
+	then
+		max_level = 80
+	end
+	if UnitLevel("player") == max_level then return end
+
 	for i, v in ipairs(Hardcore_Character.achievements) do
 		if v == achievement_name then
 			table.remove(Hardcore_Character.achievements, i)
@@ -1321,7 +1331,7 @@ function Hardcore:PLAYER_LOGIN()
 
 	-- different guid means new character with the same name
 	if Hardcore_Character.guid ~= PLAYER_GUID then
-		Hardcore:Print("New character detected.  Contact a mod if this is unexpected.")
+		Hardcore:Print("New character detected.  Contact a mod or technician in #addon-appeal if this is unexpected.")
 		Hardcore:ForceResetSavedVariables()
 	end
 
@@ -1424,7 +1434,7 @@ function Hardcore:PLAYER_LOGIN()
 	end
 	if Hardcore_Character.name_changed ~= nil then
 		Hardcore:Print(
-			"Your character has a recorded name change.  Contact a mod for approval and to remove this message."
+			"Your character has a recorded name change.  Contact a mod or technician in #addon-appeal for approval to continue or disk your HC status."
 		)
 	end
 end
@@ -2275,23 +2285,16 @@ function Hardcore:ShouldShowPlaytimeWarning(level, percentage)
 end
 
 function Hardcore:DisplayPlaytimeWarning(level)
-	local messageprefix = "\124cffFF0000"
-
-	if level <= 20 then
-		Hardcore:Print(
-			messageprefix
-				.. "Detected that the player's addon active time is much lower than played time. If you have just installed the addon, start a new character."
-		)
-	else
-		Hardcore:Print(
-			messageprefix
-				.. "Detected that the player's addon active time is much lower than played time. If you have just installed the addon: consider starting a new character. Continuing on means you risk your HC Verified Status."
-		)
-		Hardcore:Print(
-			messageprefix
-				.. "If you have had Hardcore 0.5.0 or greater installed since level 1, contact a mod and record the rest of your run."
-		)
+	local message = "\124cffFF0000"
+		.. "Detected that this character's addon active time is much lower than played time."
+		.. " If you have just installed the addon, start a new character."
+		.. " If this is not a new character, you have experienced data loss."
+		.. " Consider restoring from backups, and seek support from a mod or a technician in #addon-appeal"
+		
+	if level > 20 then
+		message = message .. ". Continuing on means you risk your HC Verified Status."		
 	end
+	Hardcore:Print(message)
 end
 
 -- player name, level, zone, attack_source, class
