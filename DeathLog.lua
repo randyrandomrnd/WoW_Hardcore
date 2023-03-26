@@ -223,7 +223,7 @@ for i=1,20 do
 	_entry:SetHighlight("Interface\\Glues\\CharacterSelect\\Glues-CharacterSelect-Highlight")
 	_entry.font_strings = {}
 	local next_x = 0
-	local current_column_offset = 0
+	local current_column_offset = 15
 	for idx,v in ipairs(subtitle_data) do 
 	  _entry.font_strings[v[1]] = _entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	  _entry.font_strings[v[1]]:SetPoint("LEFT", _entry.frame, "LEFT", current_column_offset, 0)
@@ -237,7 +237,15 @@ for i=1,20 do
 	  _entry.font_strings[v[1]]:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
 	end
 
-	_entry:SetHeight(60)
+	_entry.background = _entry.frame:CreateTexture(nil, "OVERLAY")
+	_entry.background:SetPoint("CENTER", _entry.frame, "CENTER", 0,0)
+	_entry.background:SetDrawLayer("OVERLAY",2)
+	_entry.background:SetVertexColor(.5, .5, .5, (i%2)/10)
+	_entry.background:SetHeight(16)
+	_entry.background:SetWidth(500)
+	_entry.background:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+
+	_entry:SetHeight(40)
 	_entry:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
 	_entry:SetColor(1,1,1)
 	_entry:SetText(" ")

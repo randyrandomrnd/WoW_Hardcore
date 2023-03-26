@@ -338,8 +338,8 @@ local function Constructor()
 
 	--Container Support
 	local content = CreateFrame("Frame", nil, frame)
-	content:SetPoint("TOPLEFT", 17, -33)
-	content:SetPoint("BOTTOMRIGHT", -4, 6)
+	content:SetPoint("TOPLEFT", 3, -33)
+	content:SetPoint("BOTTOMRIGHT", 15, 6)
 
 	local widget = {
 		localstatus = {},
