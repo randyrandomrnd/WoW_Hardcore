@@ -397,6 +397,10 @@ local function createEntry(checksum)
   death_ping_lru_cache_tbl[checksum]["player_data"]["date"] = date()
   setEntry(death_ping_lru_cache_tbl[checksum]["player_data"], row_entry[20])
   death_ping_lru_cache_tbl[checksum]["committed"] = 1
+  if hardcore_settings["death_log_entries"] == nil then
+    hardcore_settings["death_log_entries"] = {}
+  end
+  table.insert(hardcore_settings["death_log_entries"], death_ping_lru_cache_tbl[checksum]["player_data"])
 
   -- Save in-guilds for next part of migration TODO
   if death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] then return end
