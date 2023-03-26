@@ -405,7 +405,7 @@ local function createEntry(checksum)
   table.insert(hardcore_settings["death_log_entries"], death_ping_lru_cache_tbl[checksum]["player_data"])
 
   -- Cap list size, otherwise loading time will increase
-  if hardcore_settings["death_log_entries"] and #hardcore_settings["death_log_entries"] > 500 then -- TODO parameterize
+  if hardcore_settings["death_log_entries"] and #hardcore_settings["death_log_entries"] > 100 then -- TODO parameterize
     table.remove(hardcore_settings["death_log_entries"],1)
   end
 
