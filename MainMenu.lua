@@ -1113,7 +1113,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		end
 
 		-- Make sure we have at least 10 lines, or Ace moves our dungeons down a line
-		num_lines = 12 - num_lines
+		num_lines = 10 - num_lines
 		for i = 1, num_lines do
 			name_str = name_str .. "\n"
 			id_str = id_str .. "\n"
@@ -1192,7 +1192,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	row_header:AddChild(date_label)
 	-- Level row header
 	local level_label = AceGUI:Create("Label")
-	level_label:SetWidth(50)
+	level_label:SetWidth(40)
 	level_label:SetText("|c00FFFF00Lvl|r")
 	level_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	row_header:AddChild(level_label)
@@ -1236,7 +1236,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 
 	-- Level column
 	level_data = AceGUI:Create("Label")
-	level_data:SetWidth(50)
+	level_data:SetWidth(40)
 	level_data:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	data_rows:AddChild(level_data)
 
@@ -1271,7 +1271,9 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	-- Status label at the bottom
 	local status_label = AceGUI:Create("Label")
 	status_label:SetWidth(350)
-	status_label:SetText("|c00FFFF00You've run " .. #_hardcore_character.dt.runs .. " dungeons.|r")
+	status_label:SetText("|c00FFFF00You've run " 
+				.. #_hardcore_character.dt.runs .. " dungeons. (" 
+				.. GetAddOnMetadata("Hardcore", "Version") .. ", " .. UnitName("player") .. ", " .. UnitLevel("player") .. ")|r")
 	status_label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	tabcontainer:AddChild(status_label)
 
