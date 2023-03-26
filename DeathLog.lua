@@ -398,6 +398,17 @@ local function createEntry(checksum)
   setEntry(death_ping_lru_cache_tbl[checksum]["player_data"], row_entry[20])
   death_ping_lru_cache_tbl[checksum]["committed"] = 1
 
+  -- Record to hardcore_settings
+  if hardcore_settings["death_log_entries"] == nil then
+    hardcore_settings["death_log_entries"] = {}
+  end
+  table.insert(hardcore_settings["death_log_entries"], death_ping_lru_cache_tbl[checksum]["player_data"])
+
+  -- Cap list size, otherwise loading time will increase
+  if hardcore_settings["death_log_entries"] and #hardcore_settings["death_log_entries"] > 100 then -- TODO parameterize
+    table.remove(hardcore_settings["death_log_entries"],1)
+  end
+
   -- Save in-guilds for next part of migration TODO
   if death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] then return end
   if hardcore_settings.alert_subset ~= nil and hardcore_settings.alert_subset == "greenwall_guilds_only" and death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then
