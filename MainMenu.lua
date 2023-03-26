@@ -642,6 +642,17 @@ local function DrawVerifyTab(container, _hardcore_character)
 		}, ATTRIBUTE_SEPARATOR)
 	end
 
+	local version = GetAddOnMetadata("Hardcore", "Version")
+	local _, class, _, race, _, name = GetPlayerInfoByGUID(UnitGUID("player"))
+	local realm = GetRealmName()
+	local level = UnitLevel("player")
+	local party_mode = _hardcore_character.party_mode
+	local team_1, team_2 = "", ""
+	if _hardcore_character.team ~= nil then		
+		team_1 = _hardcore_character.team[1] or "None"
+		team_2 = _hardcore_character.team[2] or "None"
+	end
+
 	local scroll_container = AceGUI:Create("SimpleGroup")
 	scroll_container:SetFullWidth(true)
 	scroll_container:SetFullHeight(true)
@@ -664,19 +675,31 @@ local function DrawVerifyTab(container, _hardcore_character)
 
 	local first_menu_description_title = AceGUI:Create("Label")
 	first_menu_description_title:SetWidth(500)
-	first_menu_description_title:SetText("Verify Your Character")
+	first_menu_description_title:SetText("Verify Your Character - " .. version)
 	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
 	scroll_frame:AddChild(first_menu_description_title)
+
+	local character_and_level_label = AceGUI:Create("Label")
+	character_and_level_label:SetWidth(_menu_width)
+	character_and_level_label:SetText(
+			"\n\n" .. name 
+		.. " (lvl " .. level .. " " .. race .. " " .. class .. ") on " .. realm
+		.. "\n [" .. party_mode .. ", " 
+		.. team_1 .. ", " .. team_2 .. "]\n\n"
+	)
+
+	character_and_level_label:SetFont("Fonts\\FRIZQT__.TTF", 14, "")
+	scroll_frame:AddChild(character_and_level_label)
 
 
 	local extra_lines = ""
 	if UnitLevel("player") < max_level then
-		local general_rules_description = AceGUI:Create("Label")
-		general_rules_description:SetWidth(_menu_width)
-		general_rules_description:SetText("\n\nYou must be max level for your chosen expansion (60 or 80) to get a verification string your character.")
-		general_rules_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-		scroll_frame:AddChild(general_rules_description)
-		extra_lines = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+		-- local general_rules_description = AceGUI:Create("Label")
+		-- general_rules_description:SetWidth(_menu_width)
+		-- general_rules_description:SetText("\n\nYou must be max level for your chosen expansion (60 or 80) to get a verification string your character.")
+		-- general_rules_description:SetFont("Fonts\\FRIZQT__.TTF", 14, "")
+		-- scroll_frame:AddChild(general_rules_description)
+		extra_lines = "\n\n\n"
 	else
 		local general_rules_description = AceGUI:Create("Label")
 		general_rules_description:SetWidth(_menu_width)
@@ -693,19 +716,23 @@ local function DrawVerifyTab(container, _hardcore_character)
 		first_menu_description:SetLabel("")
 		first_menu_description:SetText(GenerateVerificationString())
 		scroll_frame:AddChild(first_menu_description)
+
+		local copy_tip_label = AceGUI:Create("Label")
+		local text = extra_lines .. "\n\n\n\n\n\n\n\n\n\n\n\n\nSelect All (Ctrl-A), Copy (Ctrl-C), and Paste (Ctrl-V)"
+
+		copy_tip_label:SetText(text)
+		copy_tip_label:SetWidth(700)
+		copy_tip_label:SetFontObject(GameFontHighlightSmall)
+		scroll_frame:AddChild(copy_tip_label)
 	end
 
-	local copy_tip_label = AceGUI:Create("Label")
+	local character_status_label = AceGUI:Create("Label")
 	local statusString1, statusString2 = Hardcore:GenerateVerificationStatusStrings()
-	local text = extra_lines .. "\n\n\n\n\n\n\n\n\n\n\n\n\nSelect All (Ctrl-A), Copy (Ctrl-C), and Paste (Ctrl-V)"
-		.. "\n\n\n"
-		.. statusString1
-		.. "\n"
-		.. statusString2
-	copy_tip_label:SetText(text)
-	copy_tip_label:SetWidth(700)
-	copy_tip_label:SetFontObject(GameFontHighlightSmall)
-	scroll_frame:AddChild(copy_tip_label)
+	local text = statusString1 .. "\n" .. statusString2
+	character_status_label:SetText(text)
+	character_status_label:SetWidth(700)
+	character_status_label:SetFontObject(GameFontHighlightMedium)
+	scroll_frame:AddChild(character_status_label)
 end
 
 local function DrawDKTab(container, dk_button_function)
@@ -1133,6 +1160,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 		played_data:SetText(played_str)
 		boss_data:SetText(boss_str)
 	end
+
+	local version = GetAddOnMetadata("Hardcore", "Version")
 
 	-- Add the banner
 	local first_menu_description_title = AceGUI:Create("Label")
