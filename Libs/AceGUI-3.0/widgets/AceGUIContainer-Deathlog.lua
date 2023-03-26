@@ -137,6 +137,20 @@ local methods = {
 		self.frame:Hide()
 	end,
 
+	["Minimize"] = function(self)
+		self.frame:Hide()
+		is_minimized = true
+	end,
+
+	["IsMinimized"] = function(self)
+	  return is_minimized
+	end,
+
+	["Maximize"] = function(self)
+		self.frame:Show()
+		is_minimized = false
+	end,
+
 	["Show"] = function(self)
 		self.frame:Show()
 	end,
@@ -219,26 +233,6 @@ local function Constructor()
 	closebutton:SetText(CLOSE)
 	closebutton:Hide()
 
-	local icon_texture2 = frame:CreateTexture(nil, "OVERLAY")
-	icon_texture2:SetPoint("TOPLEFT", -15,15)
-	icon_texture2:SetDrawLayer("OVERLAY",2)
-	icon_texture2:SetHeight(40)
-	icon_texture2:SetWidth(40)
-	icon_texture2:SetTexture("Interface\\PVPFrame\\PVP-Separation-Circle-Cooldown-overlay")
-
-	local icon_texture3 = frame:CreateTexture(nil, "ARTWORK")
-	icon_texture3:SetPoint("TOPLEFT", -8,8)
-	icon_texture3:SetDrawLayer("ARTWORK",2)
-	icon_texture3:SetHeight(25)
-	icon_texture3:SetWidth(25)
-	icon_texture3:SetTexture("Interface\\AddOns\\Hardcore\\Media\\wowhc-emblem-white-red.blp")
-
-	local icon_texture = frame:CreateTexture(nil, "OVERLAY")
-	icon_texture:SetPoint("TOPLEFT", -15,15)
-	icon_texture3:SetDrawLayer("OVERLAY",2)
-	icon_texture:SetHeight(50)
-	icon_texture:SetWidth(50)
-	icon_texture:SetTexture("Interface\\COMMON\\BlueMenuRing")
 
 	local statusbg = CreateFrame("Button", nil, frame, "BackdropTemplate")
 	statusbg:SetPoint("BOTTOMLEFT", 15, 15)
