@@ -408,6 +408,16 @@ local function startXGuildDeathMsgRelay()
 end
 
 function FailureFunction(achievement_name)
+	local max_level = 60
+	if
+		(Hardcore_Character.game_version ~= "")
+		and (Hardcore_Character.game_version ~= "Era")
+		and (Hardcore_Character.game_version ~= "SoM")
+	then
+		max_level = 80
+	end
+	if UnitLevel("player") == max_level then return end
+
 	for i, v in ipairs(Hardcore_Character.achievements) do
 		if v == achievement_name then
 			table.remove(Hardcore_Character.achievements, i)
