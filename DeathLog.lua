@@ -81,6 +81,13 @@ death_tomb_frame_tex:SetHeight(25)
 death_tomb_frame_tex:SetWidth(25)
 death_tomb_frame_tex:Hide()
 
+local death_tomb_frame_tex_glow = death_tomb_frame:CreateTexture(nil, 'OVERLAY')
+death_tomb_frame_tex_glow:SetTexture("Interface\\Glues/Models/UI_HUMAN/GenericGlow64")
+death_tomb_frame_tex_glow:SetDrawLayer("OVERLAY", 3)
+death_tomb_frame_tex_glow:SetHeight(55)
+death_tomb_frame_tex_glow:SetWidth(55)
+death_tomb_frame_tex_glow:Hide()
+
 local function encodeMessage(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos)
   if name == nil then return end
   -- if guild == nil then return end -- TODO 
@@ -203,6 +210,9 @@ local row_entry = {}
    local mWidth, mHeight = WorldMapFrame:GetCanvas():GetSize()
    death_tomb_frame_tex:SetPoint('CENTER', WorldMapButton, 'TOPLEFT', mWidth*death_tomb_frame.coordinates[1], -mHeight*death_tomb_frame.coordinates[2])
    death_tomb_frame_tex:Show()
+
+   death_tomb_frame_tex_glow:SetPoint('CENTER', WorldMapButton, 'TOPLEFT', mWidth*death_tomb_frame.coordinates[1], -mHeight*death_tomb_frame.coordinates[2])
+   death_tomb_frame_tex_glow:Show()
    death_tomb_frame:Show()
   end
   
