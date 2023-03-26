@@ -497,6 +497,7 @@ end
 
 -- Receive a guild message. Need to send ack
 function deathlogReceiveGuildMessage(sender, data)
+  if data == nil then return end
   local decoded_player_data = decodeMessage(data)
   if sender ~= decoded_player_data["name"] then return end
   if decoded_player_data["source_id"] == nil then return end
@@ -550,6 +551,7 @@ local function deathlogReceiveChannelMessageChecksum(sender, checksum)
 end
 
 local function deathlogReceiveChannelMessage(sender, data)
+  if data == nil then return end
   local decoded_player_data = decodeMessage(data)
   if sender ~= decoded_player_data["name"] then return end
   if decoded_player_data["source_id"] == nil then return end
