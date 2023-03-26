@@ -311,6 +311,8 @@ local function DrawGeneralTab(container)
 	scroll_frame:AddChild(changelog_title)
 
 	---
+	CreateHeadingLabel("11.20", scroll_frame)
+	CreateDescriptionLabel("- Add class colors to faction-wide death alerts\n- Added minimize function to death log\n- Fix bug where death marker stays on map after viewing death location from death log\n- Updated messages regarding dataloss and mod pinging\n- Dungeon tracker; re-introduced dungeon kills per mod id\n- Added diagnostic information to verify tab\n- Record death log entries for statistics (capped at 100 for now)\n- Bug fixes related to travelling between continents with death log frame\n- Block failing starting achievements when max level", scroll_frame)
 
 	CreateHeadingLabel("11.19", scroll_frame)
 	CreateDescriptionLabel("- Fixed minimum level alerts for faction-wide death alerts\n - Fixed issue where death alerts channel always takes the first channel spot\n - Fixed conflict with other addons where system messages wouldn't show up\n - Players can now see death locations by right clicking on death log entry and choosing the see death location item\n - Level filtering in LFG GW mode fixed", scroll_frame)
