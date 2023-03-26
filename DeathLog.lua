@@ -41,6 +41,18 @@ local function PlayerData(name, guild, source_id, race_id, class_id, level, inst
   }
 end
 
+local WorldMapButton = WorldMapFrame:GetCanvas()
+local death_tomb_frame = CreateFrame('frame', nil, WorldMapButton)
+death_tomb_frame:SetAllPoints()
+death_tomb_frame:SetFrameLevel(15000)
+
+local death_tomb_frame_tex = death_tomb_frame:CreateTexture(nil, 'OVERLAY')
+death_tomb_frame_tex:SetTexture("Interface\\TARGETINGFRAME\\UI-TargetingFrame-Skull")
+death_tomb_frame_tex:SetDrawLayer("OVERLAY", 4)
+death_tomb_frame_tex:SetHeight(25)
+death_tomb_frame_tex:SetWidth(25)
+death_tomb_frame_tex:Hide()
+
 local function encodeMessage(name, guild, source_id, race_id, class_id, level, instance_id, map_id, map_pos)
   if name == nil then return end
   -- if guild == nil then return end -- TODO 
@@ -101,6 +113,9 @@ local subtitle_data = {
   {"Name", 70, function(_entry) return _entry.player_data["name"] or "" end},
   {"Class", 60, function(_entry)
     local class_str, _, _ = GetClassInfo(_entry.player_data["class_id"])
+    if RAID_CLASS_COLORS[class_str:upper()] then
+	return "|c" .. RAID_CLASS_COLORS[class_str:upper()].colorStr .. class_str .. "|r"
+    end
     return class_str or ""
   end},
   {"Race", 60, function(_entry)
@@ -129,7 +144,7 @@ function deathlogApplySettings(_settings)
       death_log_frame.frame:Hide()
     end
 
-    if hardcore_settings["death_log_pos"] then
+    if death_log_frame.frame and hardcore_settings["death_log_pos"] then
       death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", hardcore_settings["death_log_pos"]['x'], hardcore_settings["death_log_pos"]['y'])
     else
       death_log_frame.frame:SetPoint("CENTER", UIParent, "CENTER", 670, -200)
@@ -142,13 +157,26 @@ local row_entry = {}
  function WPDropDownDemo_Menu(frame, level, menuList)
   local info = UIDropDownMenu_CreateInfo()
 
+   if death_tomb_frame.map_id and death_tomb_frame.coordinates then
+   end
+
   local function openWorldMap()
+   if not (death_tomb_frame.map_id and death_tomb_frame.coordinates) then return end
+   if C_Map.GetMapInfo(death_tomb_frame["map_id"]) == nil then return end
+   if tonumber(death_tomb_frame.coordinates[1]) == nil or tonumber(death_tomb_frame.coordinates[2]) == nil then return end
+
    WorldMapFrame:SetShown(not WorldMapFrame:IsShown())
+   WorldMapFrame:SetMapID(death_tomb_frame.map_id)
+   WorldMapFrame:GetCanvas()
+   local mWidth, mHeight = WorldMapFrame:GetCanvas():GetSize()
+   death_tomb_frame_tex:SetPoint('CENTER', WorldMapButton, 'TOPLEFT', mWidth*death_tomb_frame.coordinates[1], -mHeight*death_tomb_frame.coordinates[2])
+   death_tomb_frame_tex:Show()
+   death_tomb_frame:Show()
   end
   
  
   if level == 1 then
-   info.text, info.hasArrow, info.func, info.disabled = "Show death location (WIP)", false, openWorldMap, true
+   info.text, info.hasArrow, info.func, info.disabled = "Show death location (WIP)", false, openWorldMap, false
    UIDropDownMenu_AddButton(info)
    info.text, info.hasArrow, info.func, info.disabled = "Block user", false, openWorldMap, true
    UIDropDownMenu_AddButton(info)
@@ -177,12 +205,11 @@ for i=1,20 do
 	  _entry.font_strings[v[1]]:SetTextColor(1,1,1)
 	  _entry.font_strings[v[1]]:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
 	end
-	-- _entry:SetFullWidth(true)
+
 	_entry:SetHeight(60)
 	_entry:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	_entry:SetColor(1,1,1)
 	_entry:SetText(" ")
-	-- _entry:SetWordWrap(false)
 
 	function _entry:deselect()
 	    for _,v in pairs(_entry.font_strings) do
@@ -214,6 +241,11 @@ for i=1,20 do
 		   -- Bind an initializer function to the dropdown; see previous sections for initializer function examples.
 		   UIDropDownMenu_Initialize(dropDown, WPDropDownDemo_Menu, "MENU")
 		   ToggleDropDownMenu(1, nil, dropDown, "cursor", 3, -3)
+		   if _entry["player_data"]["map_id"] and _entry["player_data"]["map_pos"] then
+		     death_tomb_frame.map_id = _entry["player_data"]["map_id"] 
+		     local x, y = strsplit(",", _entry["player_data"]["map_pos"],2)
+		     death_tomb_frame.coordinates = {x,y}
+		   end
 		end
 	end)
 
@@ -288,9 +320,22 @@ local function alertIfValid(_player_data)
   local race_info = C_CreatureInfo.GetRaceInfo(_player_data["race_id"])
   local race_str = race_info.raceName
   local class_str, _, _ = GetClassInfo(_player_data["class_id"])
+  if RAID_CLASS_COLORS[class_str:upper()] then
+      class_str = "|c" .. RAID_CLASS_COLORS[class_str:upper()].colorStr .. class_str .. "|r"
+  end
+
   local level_str = tostring(_player_data["level"])
-  local map_info = C_Map.GetMapInfo(_player_data["map_id"])
+  local level_num = tonumber(_player_data["level"])
+  local min_level = tonumber(hardcore_settings.minimum_show_death_alert_lvl) or 0
+  if level_num < tonumber(min_level) then
+	  return
+  end
+
+  local map_info = nil
   local map_name = "?"
+  if _player_data["map_id"] then
+   map_info = C_Map.GetMapInfo(_player_data["map_id"])
+  end
   if map_info then
     map_name = map_info.name
   end
@@ -320,6 +365,12 @@ local function createEntry(checksum)
     return
   end
   if hardcore_settings.alert_subset ~= nil and hardcore_settings.alert_subset == "faction_wide" then
+    alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
+    return
+  end
+
+  -- Override if players are in greenwall
+  if death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then
     alertIfValid(death_ping_lru_cache_tbl[checksum]["player_data"])
     return
   end
