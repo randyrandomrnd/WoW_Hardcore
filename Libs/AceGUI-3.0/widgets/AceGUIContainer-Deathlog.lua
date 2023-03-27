@@ -34,7 +34,6 @@ local function Frame_OnMouseDown(frame)
 end
 
 local function Title_OnMouseDown(frame)
-	frame:GetParent():StartMoving()
 	AceGUI:ClearFocus()
 end
 

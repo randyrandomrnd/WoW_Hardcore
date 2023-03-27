@@ -3936,6 +3936,16 @@ local options = {
 					end,
 					order = 3,
 				},
+				reset_death_log_pos = {
+					type = "execute",
+					name = "Reset death log pos.",
+					desc = "Reset the death log pos.",
+					func = function(info, value)
+						hardcore_settings["death_log_pos"] = {['x'] = 0, ['y'] = 0}
+						deathlogApplySettings(Hardcore_Settings)
+					end,
+					order = 5,
+				},
 			},
 		},
 		alert_pos_group = {
