@@ -177,8 +177,10 @@ function deathlogApplySettings(_settings)
 
     if hardcore_settings["death_log_show"] == nil or hardcore_settings["death_log_show"] == true then
       death_log_frame.frame:Show()
+      death_log_icon_frame:Show()
     else
       death_log_frame.frame:Hide()
+      death_log_icon_frame:Hide()
     end
 
     death_log_icon_frame:ClearAllPoints()
@@ -186,7 +188,7 @@ function deathlogApplySettings(_settings)
     if death_log_frame.frame and hardcore_settings["death_log_pos"] then
       death_log_icon_frame:SetPoint("CENTER", UIParent, "CENTER", hardcore_settings["death_log_pos"]['x'], hardcore_settings["death_log_pos"]['y'])
     else
-      death_log_icon_frame:SetPoint("CENTER", UIParent, "CENTER", 670, -200)
+      death_log_icon_frame:SetPoint("CENTER", UIParent, "CENTER", 470, -100)
     end
     death_log_frame.frame:SetPoint("TOPLEFT", death_log_icon_frame, "TOPLEFT", 10, -10)
     death_log_frame.frame:SetFrameStrata("BACKGROUND")
@@ -719,6 +721,7 @@ end)
 
   local function hide()
    death_log_frame.frame:Hide()
+   death_log_icon_frame:Hide()
    hardcore_settings["death_log_show"] = false
   end
 
