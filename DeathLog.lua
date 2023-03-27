@@ -143,6 +143,9 @@ end
 local death_log_cache = {}
 
 local death_log_frame = AceGUI:Create("Deathlog")
+
+death_log_frame.frame:SetMovable(false)
+death_log_frame.frame:EnableMouse(false)
 death_log_frame:SetTitle("Hardcore Death Log")
 local subtitle_data = {
   {"Name", 70, function(_entry) return _entry.player_data["name"] or "" end},
@@ -638,8 +641,7 @@ function deathlogJoinChannel()
 	end
 end
 
--- Note: We can only send at most 1 message per click, otherwise we get a taint
-WorldFrame:HookScript("OnMouseDown", function(self, button)
+local function sendNextInQueue()
 	if #broadcast_death_ping_queue > 0 then 
 		local channel_num = GetChannelName(death_alerts_channel)
 		if channel_num == 0 then
@@ -676,7 +678,17 @@ WorldFrame:HookScript("OnMouseDown", function(self, button)
 		table.remove(last_words_queue, 1)
 		return
 	end
+end
+
+-- Note: We can only send at most 1 message per click, otherwise we get a taint
+WorldFrame:HookScript("OnMouseDown", function(self, button)
+  sendNextInQueue()
 end)
+
+-- This binds any key press to send, including hitting enter to type or esc to exit game
+local f  = Test or CreateFrame("Frame", "Test", UIParent)
+f:SetScript("OnKeyDown", sendNextInQueue)
+f:SetPropagateKeyboardInput(true)
 
 death_log_icon_frame:RegisterForDrag("LeftButton")
 death_log_icon_frame:SetScript("OnDragStart", function(self, button)
