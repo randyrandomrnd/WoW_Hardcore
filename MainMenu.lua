@@ -1196,7 +1196,7 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	-- Add the scrolling part of the frame
 	local scroll_frame = AceGUI:Create("ScrollFrame")
 	scroll_frame:SetLayout("Flow") -- We want the headers and columns side by side
-	scroll_frame:SetFullWidth(true)
+	scroll_frame:SetWidth(825)
 	scroll_frame:SetFullHeight(true)
 	scroll_container:AddChild(scroll_frame)
 
