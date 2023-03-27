@@ -1042,7 +1042,7 @@ function DungeonTrackerGetBossKillDataForRun( run )
 			main_boss_time = run.bosses[ main_boss_id ] - run.start
 		end
 	end
-	
+
 	-- Count the number of killed bosses
 	for i,v in pairs( run.bosses ) do
 		num_bosses = num_bosses + 1
@@ -1059,7 +1059,7 @@ end
 local function DungeonTrackerCheckVersions()
 
 	if next(Hardcore_Character.dt.current) and Hardcore_Character.dt.current.party ~= nil then
-		
+
 		local party = { string.split(",", Hardcore_Character.dt.current.party ) }
 
 		if #party > 1 then
@@ -1145,6 +1145,92 @@ local function DungeonTrackerUpgradeLogVersion3()
 	Hardcore_Character.dt.legacy_runs_imported = nil
 
 end
+
+-- DungeonTrackerMergeRuns
+--
+-- Merges a second run into the first, returning also the merged run (=run1)
+
+local function DungeonTrackerMergeRuns( run1, run2 )
+
+	-- Special handling if one of the runs is a legacy run -- then we just return the other one, because there is
+	-- nothing interesting in the legacy run records anyway. We don't even want to see the quest_id
+	if run1.date == "(legacy)" then
+		run1 = run2
+		return run1
+	elseif run2.date == "(legacy)" then
+		return run1
+	end
+
+	-- Overwrite the first run with all the new data
+	-- The name, instanceID and mapID should not have to be changed (and we wouldn't know how to choose anyway)
+
+	-- Find out the earliest start and latest last_seen
+	-- If the first one started earlier, then the data and level should also be the lower one
+	if run1.start > run2.start then
+		run1.start = run2.start
+		run1.date = run2.date
+		run1.level = run2.level
+	end
+	if run1.last_seen < run2.last_seen then
+		run1.last_seen = run2.last_seen
+	end
+	run1.time_inside = run1.time_inside + run2.time_inside
+
+	-- Merge the kills
+	if run1.num_kills == nil then
+		run1.num_kills = 0
+	end
+	if run2.num_kills == nil then
+		run2.num_kills = 0
+	end
+	run1.num_kills = run1.num_kills + run2.num_kills
+	if run1.kills ~= nil or run2.kills ~= nil then
+		if run1.kills == nil then
+			run1.kills = {}
+		end
+		if run2.kills ~= nil then
+			for i, v in pairs( run2.kills ) do
+				if run1.kills[i] == nil then
+					run1.kills[i] = 0
+				end
+				run1.kills[i] = run1.kills[i] + run2.kills[i]
+			end
+		end
+	end
+
+	-- Merge the boss kills, if any
+	if run1.bosses ~= nil or run2.bosses ~= nil then
+		if run1.bosses == nil then
+			run1.bosses = {}
+		end
+		if run2.bosses ~= nil then
+			for i, v in pairs( run2.bosses ) do
+				if run1.bosses[ i ] ~= nil then
+					Hardcore:Debug( "Boss " .. i .. " killed in both runs")
+					run1.num_kills = run1.num_kills - 1			-- It's gotta add up!
+				else
+					run1.bosses[ i ] = run2.bosses[ i ]
+				end
+			end
+		end
+	end
+
+	-- Merge the party members
+	if run1.party == nil or run1.party == "" then
+		run1.party = UnitName("player")
+	end
+	if run2.party ~= nil and run2.party ~= "" then
+		local party2 = { string.split(",", run2.party ) }
+		for i, v in ipairs( party2 ) do
+			if string.find( run1.party, v ) == nil then
+				run1.party = run1.party .. "," .. v
+			end
+		end
+	end
+
+	return run1
+end
+
 
 
 -- DungeonTracker
@@ -1379,7 +1465,7 @@ end
 -- /hc AppealDungeonCode <hash> <cmd> <"dungeon name"> <"date">
 --
 -- /hc AppealDungeonCode <hash> delete <"dungeon name"> ["date"]
--- /hc AppealDungeonCode <hash> merge  <"dungeon name"> <"date"> <"dungeon name"> <"date">
+-- /hc AppealDungeonCode <hash> merge  <"dungeon name"> <"date1"> <"date2">
 --
 -- This function uses a proprietory cryptographic hash (yes, I know I shouldn't)
 -- different from djb2() in Hardcore.lua, because that one doesn't work for long strings
@@ -1412,9 +1498,9 @@ end
 -- Called from Hardcore.lua when user types /hc AppealDungeonCode
 
 function DungeonTrackerHandleAppealCode(args)
-	local usage = "Usage: /hc AppealDungeonCode <code> <cmd> <args>\nwhere <cmd> = delete or reset"
+	local usage = "Usage: /hc AppealDungeonCode <code> <cmd> <args>\nwhere <cmd> = reset, delete or merge"
 	local usage1 = '/hc AppealDungeonCode <code> delete "dungeon name" "date"'
-	--local usage2 = "/hc AppealDungeonCode <code> merge  <\"dungeon name\"> <\"date\"> <\"dungeon name\"> <\"date\">"
+	local usage2 = "/hc AppealDungeonCode <code> merge  <\"dungeon name\"> <\"date1\"> <\"date2\">"
 	local code = nil
 	local cmd = nil
 	local quoted_args = {}
@@ -1451,11 +1537,10 @@ function DungeonTrackerHandleAppealCode(args)
 	end
 
 	-- Retrieve arguments in quotes, chuck away the code and command and space between
-	for arg in args:gmatch('[^"]+') do
+	-- for arg in args:gmatch('[^"]*') do
+	for arg in args:gmatch('"(.-)"') do
 		table.insert(quoted_args, arg)
 	end
-	table.remove(quoted_args, 1) -- Remove the code and command
-	table.remove(quoted_args, 2) -- Remove the empty space
 
 	if cmd == "delete" then
 		if #quoted_args < 2 then
@@ -1467,33 +1552,23 @@ function DungeonTrackerHandleAppealCode(args)
 			local run_found = false
 			local index = 0
 			for i, v in ipairs(Hardcore_Character.dt.runs) do
-				if
-					Hardcore_Character.dt.runs[i].name == quoted_args[1]
-					and Hardcore_Character.dt.runs[i].date == quoted_args[2]
-				then
+				if v.name == quoted_args[1]	and v.date == quoted_args[2] then
 					run_found = true
 					index = i
 				end
 			end
 
-			-- If we find multiple matches, we don't do anything
 			if run_found == true then
 				-- Check if the hash code is correct
-				local appeal_code =
-					GetDungeonAppealCode(Hardcore_Character.dt.runs[index].name, Hardcore_Character.dt.runs[index].date)
-
+				local appeal_code =	GetDungeonAppealCode(Hardcore_Character.dt.runs[index].name, Hardcore_Character.dt.runs[index].date)
 				if tonumber(code) ~= tonumber(appeal_code) then
 					Hardcore:Print("Incorrect code. Double check with a moderator.")
 					return
 				end
 
 				-- Delete the run
-				Hardcore:Print(
-					"Removed dungeon run "
-						.. Hardcore_Character.dt.runs[index].name
-						.. " of "
-						.. Hardcore_Character.dt.runs[index].date
-				)
+				Hardcore:Print( "Removed dungeon run " 	.. Hardcore_Character.dt.runs[index].name .. " of "
+						.. Hardcore_Character.dt.runs[index].date )
 				table.remove(Hardcore_Character.dt.runs, index)
 				DungeonTrackerUpdateInfractions()
 				return
@@ -1507,8 +1582,51 @@ function DungeonTrackerHandleAppealCode(args)
 			end
 		end
 	elseif cmd == "merge" then
-		Hardcore:Print("Merge command not yet implemented!")
-		return
+		if #quoted_args < 3 then
+			Hardcore:Print("Wrong syntax: merge cmd should be followed by dungeon name and two date strings (all in quotes)")
+			Hardcore:Print(usage2)
+			return
+		else
+			-- Look for the run with that dungeon and date
+			local run1_found = false
+			local run2_found = false
+			local index1
+			local index2
+			for i, v in ipairs(Hardcore_Character.dt.runs) do
+				if v.name == quoted_args[1]	and v.date == quoted_args[2] then
+					run1_found = true
+					index1 = i
+				end
+				if v.name == quoted_args[1]	and v.date == quoted_args[3] then
+					run2_found = true
+					index2 = i
+				end
+			end
+
+			if run1_found == true then
+				if run2_found == true then
+					-- Check if the hash code is correct
+					local appeal_code =	GetDungeonAppealCode(quoted_args[1], quoted_args[2] .. quoted_args[3] )
+					if tonumber(code) ~= tonumber(appeal_code) then
+						Hardcore:Print("Incorrect code. Double check with a moderator.")
+						return
+					end
+
+					-- Merge the runs
+					Hardcore:Print( "Merged dungeon runs in " .. Hardcore_Character.dt.runs[index1].name .. " of "
+							.. Hardcore_Character.dt.runs[index1].date .. " and " .. Hardcore_Character.dt.runs[index2].date )
+					DungeonTrackerMergeRuns( Hardcore_Character.dt.runs[index1], Hardcore_Character.dt.runs[index2])
+					table.remove(Hardcore_Character.dt.runs, index2)
+					DungeonTrackerUpdateInfractions()
+				else
+					Hardcore:Print("Second run not found!")
+					return
+				end
+			else
+				Hardcore:Print("First run not found!")
+				return
+			end
+		end
 	else
 		Hardcore:Print("Unknown command: " .. cmd)
 		Hardcore:Print(usage)
