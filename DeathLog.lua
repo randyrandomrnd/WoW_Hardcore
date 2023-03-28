@@ -9,6 +9,7 @@ local COMM_COMMANDS = {
 }
 local COMM_COMMAND_DELIM = "$"
 local COMM_FIELD_DELIM = "~"
+local HC_REQUIRED_ACKS = 3
 
 local death_alerts_channel = "hcdeathalertschannel"
 local death_alerts_channel_pw = "hcdeathalertschannelpw"
@@ -67,6 +68,16 @@ local function PlayerData(name, guild, source_id, race_id, class_id, level, inst
     ["date"] = date,
     ["last_words"] = last_words,
   }
+end
+
+local function isValidEntry(_player_data)
+  if _player_data == nil then return false end
+  if _player_data["source_id"] == nil then return false end
+  if _player_data["race_id"] == nil or tonumber(_player_data["race_id"]) == nil or C_CreatureInfo.GetRaceInfo(_player_data["race_id"]) == nil then return false end
+  if _player_data["class_id"] == nil or tonumber(_player_data["class_id"]) == nil or GetClassInfo(_player_data["class_id"]) == nil then return false end
+  if _player_data["level"] == nil or _player_data["level"] < 0 or _player_data["level"] > 80 then return false end
+  if _player_data["instance_id"] == nil and _player_data["map_id"] == nil then return false end
+  return true
 end
 
 local WorldMapButton = WorldMapFrame:GetCanvas()
@@ -375,7 +386,7 @@ local function alertIfValid(_player_data)
   local race_info = C_CreatureInfo.GetRaceInfo(_player_data["race_id"])
   local race_str = race_info.raceName
   local class_str, _, _ = GetClassInfo(_player_data["class_id"])
-  if RAID_CLASS_COLORS[class_str:upper()] then
+  if class_str and RAID_CLASS_COLORS[class_str:upper()] then
       class_str = "|c" .. RAID_CLASS_COLORS[class_str:upper()].colorStr .. class_str .. "|r"
   end
 
@@ -395,7 +406,7 @@ local function alertIfValid(_player_data)
     map_name = map_info.name
   end
 
-  local msg = _player_data["name"] .. " the " .. race_str .. " "  .. class_str .. " has died at level " .. level_str .. " in " .. map_name
+  local msg = _player_data["name"] .. " the " .. (race_str or "") .. " "  .. (class_str or "") .. " has died at level " .. level_str .. " in " .. map_name
   Hardcore:TriggerDeathAlert(msg)
 end
 
@@ -444,10 +455,18 @@ end
 
 local function shouldCreateEntry(checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then return false end
-  if hardcore_settings.death_log_types == nil or hardcore_settings.death_log_types == "faction_wide" then return true end
+  if hardcore_settings.death_log_types == nil or hardcore_settings.death_log_types == "faction_wide" and isValidEntry(death_ping_lru_cache_tbl[checksum]["player_data"]) then
+    if death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > HC_REQUIRED_ACKS then
+      return true
+    else
+      if debug then
+	print("not enough peers for " .. checksum .. ": " .. (death_ping_lru_cache_tbl[checksum]["peer_report"] or "0"))
+      end
+    end
+  end
   if hardcore_settings.death_log_types ~= nil and hardcore_settings.death_log_types == "greenwall_guilds_only" and death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then return true end
   if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
-  if death_ping_lru_cache_tbl[checksum]["self_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > 0 then return true end
+
   return false
 end
 
@@ -527,11 +546,7 @@ function deathlogReceiveGuildMessage(sender, data)
   if data == nil then return end
   local decoded_player_data = decodeMessage(data)
   if sender ~= decoded_player_data["name"] then return end
-  if decoded_player_data["source_id"] == nil then return end
-  if decoded_player_data["race_id"] == nil then return end
-  if decoded_player_data["class_id"] == nil then return end
-  if decoded_player_data["level"] == nil or decoded_player_data["level"] < 0 or decoded_player_data["level"] > 80 then return end
-  if decoded_player_data["instance_id"] == nil and decoded_player_data["map_id"] == nil then return end
+  if isValidEntry(decoded_player_data) == false then return end
 
   local valid = false
   for i = 1, GetNumGuildMembers() do
@@ -569,23 +584,30 @@ local function deathlogReceiveChannelMessageChecksum(sender, checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then
     death_ping_lru_cache_tbl[checksum] = {}
   end
+  if death_ping_lru_cache_tbl[checksum]["committed"] then return end
+
+  if death_ping_lru_cache_tbl[checksum]["peers"] == nil then
+    death_ping_lru_cache_tbl[checksum]["peers"] = {}
+  end
+
+  if death_ping_lru_cache_tbl[checksum]["peers"][sender] then return end
+  death_ping_lru_cache_tbl[checksum]["peers"][sender] = 1
 
   if death_ping_lru_cache_tbl[checksum]["peer_report"] == nil then
     death_ping_lru_cache_tbl[checksum]["peer_report"] = 0
   end
 
   death_ping_lru_cache_tbl[checksum]["peer_report"] = death_ping_lru_cache_tbl[checksum]["peer_report"] + 1
+  if shouldCreateEntry(checksum) then
+    createEntry(checksum)
+  end
 end
 
 local function deathlogReceiveChannelMessage(sender, data)
   if data == nil then return end
   local decoded_player_data = decodeMessage(data)
   if sender ~= decoded_player_data["name"] then return end
-  if decoded_player_data["source_id"] == nil then return end
-  if decoded_player_data["race_id"] == nil then return end
-  if decoded_player_data["class_id"] == nil then return end
-  if decoded_player_data["level"] == nil or decoded_player_data["level"] < 0 or decoded_player_data["level"] > 80 then return end
-  if decoded_player_data["instance_id"] == nil and decoded_player_data["map_id"] == nil then return end
+  if isValidEntry(decoded_player_data) == false then return end
 
   local checksum = fletcher16(decoded_player_data)
 
@@ -599,12 +621,20 @@ local function deathlogReceiveChannelMessage(sender, data)
 
   if death_ping_lru_cache_tbl[checksum]["committed"] then return end
 
-  for i = 1, GetNumGuildMembers() do
-	  local name, _, _, level, class_str, _, _, _, _, _, class = GetGuildRosterInfo(i)
-	  if name == sender and level == decoded_player_data["level"] then
-	    death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] = 1
-	    break
-	  end
+  local guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+  if decoded_player_data['guild'] == guildName then
+    local name_long = sender .. "-" .. GetNormalizedRealmName()
+    for i = 1, GetNumGuildMembers() do
+	    local name, _, _, level, class_str, _, _, _, _, _, class = GetGuildRosterInfo(i)
+	    if name_long == name and level == decoded_player_data["level"] then
+	      death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] = 1
+	      local delay = math.random(0,10)
+	      C_Timer.After(delay, function()
+		table.insert(broadcast_death_ping_queue, checksum) -- Must be added to queue to be broadcasted to network
+	      end)
+	      break
+	    end
+    end
   end
 
   death_ping_lru_cache_tbl[checksum]["self_report"] = 1
