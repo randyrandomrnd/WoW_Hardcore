@@ -1935,6 +1935,63 @@ local function DrawOfficerToolsTab(container)
 
 end
 
+local function DrawDeathStatisticsTab(container, _hardcore_settings)
+	local scroll_container = AceGUI:Create("SimpleGroup")
+	scroll_container:SetFullWidth(true)
+	scroll_container:SetFullHeight(true)
+	scroll_container:SetLayout("Fill")
+	tabcontainer:AddChild(scroll_container)
+
+	local scroll_frame = AceGUI:Create("ScrollFrame")
+	scroll_frame:SetLayout("Flow")
+	scroll_container:AddChild(scroll_frame)
+
+	local first_menu_description_title = AceGUI:Create("Label")
+	first_menu_description_title:SetWidth(500)
+	first_menu_description_title:SetText("Death Statistics")
+	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
+	-- first_menu_description_title:SetPoint("TOP", 2,5)
+	scroll_frame:AddChild(first_menu_description_title)
+
+	local first_menu_description = AceGUI:Create("Label")
+	first_menu_description:SetWidth(_menu_width)
+	first_menu_description:SetText("Statistics for deaths that you have witnessed.")
+	first_menu_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	scroll_frame:AddChild(first_menu_description)
+
+	local function getDefaultStats()
+	    return {["sum"] = 0, ["num"] = 0}
+	end
+	local stats = {}
+	stats["avg_level"] = getDefaultStats()
+	stats["avg_level_class"] = {}
+
+	for i,v in pairs(_hardcore_settings["death_log_entries"]) do
+	  if v["level"] then
+	    stats["avg_level"]["sum"] = stats["avg_level"]["sum"] + v["level"]
+	    stats["avg_level"]["num"] = stats["avg_level"]["num"] + 1
+	    if v["class_id"] then
+	      if stats["avg_level_class"][v["class_id"]] == nil then
+		stats["avg_level_class"][v["class_id"]] = getDefaultStats()
+	      end
+	      stats["avg_level_class"][v["class_id"]]["sum"] = stats["avg_level_class"][v["class_id"]]["sum"] + v["level"]
+	      stats["avg_level_class"][v["class_id"]]["num"] = stats["avg_level_class"][v["class_id"]]["num"] + 1
+	    end
+	  end
+	end
+
+	local average_death_level = AceGUI:Create("Label")
+	average_death_level:SetWidth(_menu_width)
+	local msg = "Average level death: " .. string.format("%.1f", stats["avg_level"]["sum"]/stats["avg_level"]["num"])
+	for k,v in pairs(stats["avg_level_class"]) do
+	  local class_str, _, _ = GetClassInfo(k)
+	  msg = msg .. "\nAverage level death for " .. class_str .. ": " .. string.format("%.1f", v["sum"]/v["num"])
+	end
+	average_death_level:SetText(msg)
+	average_death_level:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	scroll_frame:AddChild(average_death_level)
+end
+
 function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_function)
 	hardcore_modern_menu = AceGUI:Create("HardcoreFrameModernMenu")
 	hardcore_modern_menu:SetCallback("OnClose", function(widget)
@@ -1972,6 +2029,7 @@ function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_functio
 		{ value = "DungeonsTab", text = "Dungeons" },
 		{ value = "AccountabilityTab", text = "Accountability" },
 		{ value = "AchievementsTab", text = "Achievements" },
+		{ value = "DeathStatisticsTab", text = "Death Statistics" },
 	}
 	if hc_guild_rank_index and hc_guild_rank_index < 2 then -- 0 is GM, 1 is generally officer
 	  table.insert(tab_table, { value = "OfficerToolsTab", text = "Officer Tools" })
@@ -2016,6 +2074,8 @@ function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_functio
 			scroll_container:AddChild(scroll_frame)
 		elseif group == "AchievementsTab" then
 			achievement_tab_handler:DrawAchievementTab(tabcontainer, _hardcore_character, false)
+		elseif group == "DeathStatisticsTab" then
+			DrawDeathStatisticsTab(tabcontainer, _hardcore_settings)
 		elseif group == "OfficerToolsTab" then
 			DrawOfficerToolsTab(container)
 		end
