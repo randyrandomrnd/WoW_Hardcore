@@ -95,7 +95,7 @@ local dt_db = {
 	},
 	{ 70, 1137, "Uldaman", "D", 5, 1, { 51, 44 }, 
 				{ 2240, 1139, 2204 },											-- 2278 removed (inside completion)
-				{{"Archaedas",2748}, {"Revelosh",6910}, {"Baelog",6906}, {"Ironaya",7228}, {"Obsidian Sentinel",7023}, {"Ancient Stone Keeper",7206}, {"Galgann Firehammer",7291}, {"Grimlok",4854}}
+				{{"Archaedas",2748}, {"Revelosh",6910}, {"Ironaya",7228}, {"Obsidian Sentinel",7023}, {"Ancient Stone Keeper",7206}, {"Galgann Firehammer",7291}, {"Grimlok",4854}}
 	},
 	{ 209, 1176, "Zul'Farrak", "D", 5, 1, { 54, 50 }, 
 				{ 3042, 2865, 2846, 2768, 2770, 3527, 2991, 2936 },
@@ -1046,6 +1046,11 @@ function DungeonTrackerGetBossKillDataForRun( run )
 	-- Count the number of killed bosses
 	for i,v in pairs( run.bosses ) do
 		num_bosses = num_bosses + 1
+	end
+	
+	-- Fix for when a boss is removed from the boss list after the run is completed -- don't wanna see "8/7 bosses killed"
+	if num_bosses > max_bosses then
+		num_bosses = max_bosses
 	end
 
 	-- Now return the number of bosses and the main boss time
