@@ -630,6 +630,7 @@ local function deathlogReceiveChannelMessage(sender, data)
 	      death_ping_lru_cache_tbl[checksum]["player_data"]["in_guild"] = 1
 	      local delay = math.random(0,10)
 	      C_Timer.After(delay, function()
+		if death_ping_lru_cache_tbl[checksum] and death_ping_lru_cache_tbl[checksum]["committed"] then return end
 		table.insert(broadcast_death_ping_queue, checksum) -- Must be added to queue to be broadcasted to network
 	      end)
 	      break
