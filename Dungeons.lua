@@ -41,14 +41,14 @@ local dt_db = {
 				{ 5728, 5761, 5723, 5724, 5725 }, 			-- "Searching for the lost satchel" replaced by "Returning the Lost satchel" because the former can be finished inside
 				{{"Bazzalan",11519}, {"Taramagan the Hungerer",11520}, {"Oggleflint",11517}, {"Jergosh the Invoker",11518}}
 	},
-	{ 36, 1581, "The Deadmines", "D", 5, 1, { 26, 24 }, 
-				{ 2040, 166, 373 }, 					-- Underground Assault, The Defias Brotherhood, The Unsent Letter
-				{{"Edwin VanCleef",639}, {"Rhahk'Zor",644}, {"Sneed's Shredder",642}, {"Gilnid",1763}, {"Mr. Smite",646}, {"Captain Greenskin",647}, {"Cookie",645}}
-	},
 	{ 43, 718, "Wailing Caverns", "D", 5, 1, { 24, 24 }, 
 				{ 914, 1487, 3366 },			-- Leaders of the Fang, Deviate Eradication, The Glowing Shard
 				{{"Mutanus",3654}, {"Kresh",3653}, {"Lady Anacondra",3671}, {"Lord Cobrahn",3669}, {"Lord Pythas",3670}, {"Skum",3674}, {"Lord Serpentis",3673}, {"Verdan the Everliving",5775}}
 	}, 
+	{ 36, 1581, "The Deadmines", "D", 5, 1, { 26, 24 }, 
+				{ 2040, 166, 373 }, 					-- Underground Assault, The Defias Brotherhood, The Unsent Letter
+				{{"Edwin VanCleef",639}, {"Rhahk'Zor",644}, {"Sneed's Shredder",642}, {"Gilnid",1763}, {"Mr. Smite",646}, {"Captain Greenskin",647}, {"Cookie",645}}
+	},
 	{ 33, 209, "Shadowfang Keep", "D", 5, 1, { 30, 25 }, 
 				{ 1013, 1014 }, -- The Book of Ur, Arugal Must Die // Deathstalkers in Shadowfang removed (inside completion)
 				{{"Archmage Arugal",4275}, {"Rethilgore",3914}, {"Razorclaw the Butcher",3886}, {"Baron Silverlaine",3887}, {"Commander Springvale",4278}, {"Odo the Blindwatcher",4279}, {"Fenrus the Devourer",4274}, {"Wolf Master Nandos",3927}}
@@ -66,7 +66,7 @@ local dt_db = {
 				{{"Charlga Razorflank",4421}, {"Roogug",6168}, {"Aggem Thorncurse",4424}, {"Death Speaker Jargba",4428}, {"Overlord Ramtusk",4420}, {"Agathelos the Raging",4422}}
 	},
 	{ 90, 721, "Gnomeregan", "D", 5, 1, { 38, 32 }, 
-				{ 2904, 2928, 2924, 2930, 2929, 2841 },		-- 2945, 2951 removed (inside completion)
+				{ 2904, 2924, 2930, 2929, 2841 },		-- 2945, 2951 removed (inside completion), 2929 removed (outside quest)
 				{{"Mekgineer Thermaplugg",7800}, {"Grubbis ",7361}, {"Viscous Fallout",7079}, {"Electrocutioner 6000",6235}, {"Crowd Pummeler 9-60",6229}}
 	},
 	{ 129, 722, "Razorfen Downs", "D", 5, 1, { 46, 41 }, 
