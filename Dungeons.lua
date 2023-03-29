@@ -769,19 +769,13 @@ function DungeonTrackerReceivePulse(data, sender)
 
 		-- We only update the pulse time if the instanceIDs from pending and party member aren't known, or when they are the same
 		if v.iid == nil or iid == 0 or v.iid == iid then
-			local run_name
-			-- If we receive a pulse from "Scarlet Monastery" (without wing), then we have no choice but
-			-- to store that pulse in all idle SM runs (the inside party member might be standing on the
-			-- doorstep of a partly cleared wing, and see no door mobs).
-			-- So then we don't care about the wing of the pending run, and just update them all
-			if dungeon_name == "Scarlet Monastery" then
-				run_name = string.sub(v.name, 1, 17) -- This also cuts "The Temple of Atal'Hakkar" to "The Temple of Ata", but that's okay
-			else
-				run_name = v.name
-			end
+			local run_name_SM
+			-- If we receive a pulse from "Scarlet Monastery" (with or without wing), then we store that 
+			-- pulse in all idle SM runs because they all share a single instance ID that is still alive
+			run_name_SM = string.sub(dungeon_name, 1, 17)
 
 			-- If this is the run from which the ping originated, and the ping time is later than we already have, store it
-			if run_name == dungeon_name then
+			if v.name == dungeon_name or run_name_SM == "Scarlet Monastery" then
 				if ping_time > v.last_seen then
 					v.last_seen = ping_time
 				end
@@ -828,10 +822,15 @@ local function DungeonTrackerSendPulse(now)
 		CTL:SendAddonMessage("NORMAL", COMM_NAME, comm_msg, "PARTY")
 		Hardcore:Debug("Sending dungeon group pulse: " .. string.gsub( comm_msg, COMM_FIELD_DELIM, "/" ))
 
+		-- Make sure we get our own ping if we are soloing the dungeon -- this can keep other SM wings alive
+		if Hardcore_Character.dt.current.party == UnitName("player") then
+			DungeonTrackerReceivePulse(data, Hardcore_Character.dt.current.party .. "-SelfPing")
+		end
+
 		-- For debug purposes, set this to true to simulate a send
 		if false then
 			DungeonTrackerReceivePulse("John|0.11.15|1234324|Ragefire Chasm|189|1111", "John-TestServer")
-			DungeonTrackerReceivePulse("Peter|0.11.13|1244334|Ragefire Chasm|189|1111", "Peter-TestServer")
+			DungeonTrackerReceivePulse("Peter|0.11.13|1244334|Scarlet Monastery|189|1111", "Peter-TestServer")
 			DungeonTrackerReceivePulse("Jack|0.11.16|1244334|Ragefire Chasm|189|1111", "Jack-TestServer")
 		end
 	end
