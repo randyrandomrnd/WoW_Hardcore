@@ -413,7 +413,6 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 	end
 end
 
-
 local function DungeonTrackerIsRepeatedRun(run1, run2)
 	-- If one of the runs is for an unknown SM wing, we don't count this as repeated
 	if run1.name == "Scarlet Monastery" or run2.name == "Scarlet Monastery" then
@@ -586,6 +585,12 @@ local function DungeonTrackerLogRun(run)
 		return
 	end
 
+	-- We don't log this run if it's relatively short, there is an instance ID (checked above), but no kills
+	if run.num_kills ~= nil and run.num_kills == 0 and run.time_inside < (5*DT_INSIDE_MAX_TIME) then
+		Hardcore:Debug("Not logging short run without kills in " .. run.name)
+		return
+	end
+
 	-- Warn if this is a repeated run and log
 	for i, v in ipairs(Hardcore_Character.dt.runs) do
 		if DungeonTrackerIsRepeatedRun(v, run) then
@@ -715,6 +720,32 @@ local function DungeonTrackerCheckChanged(name)
 	return name
 end
 
+-- DungeonTrackerAddToParty( run, name )
+--
+-- Adds the name to the party, if it's not already there
+
+local function DungeonTrackerAddToParty( run, name )
+
+	-- Easy if there is no party yet
+	if run.party == nil or run.party == "" then
+		run.party = name
+		return
+	end
+
+	-- If there is at least one name already, let's make sure the new name is not there already
+	-- Can't use string.find, because that will bork if you have "Leet" and "Leethc"
+	local found = false
+	local names = { string.split(",", run.party ) }
+	for i, v in ipairs( names ) do
+		if v == name then
+			return					-- Already there, done!
+		end
+	end
+	run.party = run.party .. "," .. name
+
+end
+
+
 -- DungeonTrackerReceivePulse( data, sender )
 --
 -- Receives a group pulse, storing the time in the message and the sender in the associated pending run
@@ -781,9 +812,7 @@ function DungeonTrackerReceivePulse(data, sender)
 				end
 
 				-- Add the ping sender to the party members, if not already there
-				if string.find(v.party, short_name) == nil then
-					v.party = v.party .. "," .. short_name
-				end
+				DungeonTrackerAddToParty(v, short_name)
 			end
 		end
 	end
@@ -915,7 +944,7 @@ local function DungeonTrackerLogKill( mob_type_id )
 			Hardcore_Character.dt.current.kills[ mob_type_id ] = Hardcore_Character.dt.current.kills[ mob_type_id ] + 1
 		end
 	end
-	
+
 	-- Add it to the sum total of NPCs we've killed
 	if Hardcore_Character.dt.current.num_kills == nil then
 		Hardcore_Character.dt.current.num_kills = 0
@@ -1226,15 +1255,68 @@ local function DungeonTrackerMergeRuns( run1, run2 )
 	if run2.party ~= nil and run2.party ~= "" then
 		local party2 = { string.split(",", run2.party ) }
 		for i, v in ipairs( party2 ) do
-			if string.find( run1.party, v ) == nil then
-				run1.party = run1.party .. "," .. v
-			end
+			DungeonTrackerAddToParty( run1, v )
 		end
 	end
 
 	return run1
 end
 
+
+--  DungeonTrackerFindMergeableRuns()
+--
+-- Goes through the list of logged runs and gets rid of any runs that somehow were not
+-- seen as one run, but should have been (i.e. same name and same instance ID and
+-- not too far away dates)
+
+local function DungeonTrackerFindMergeableRuns()
+
+	local something_removed = false
+
+	-- If there are no runs, or 1 run, there is nothing to merge
+	if Hardcore_Character.dt.runs == nil or #Hardcore_Character.dt.runs < 2 then
+		return false
+	end
+
+	-- Compare each with each, but check the second one backwards so it can be safely deleted
+	for i = 1, #Hardcore_Character.dt.runs - 1 do
+		if Hardcore_Character.dt.runs[i] ~= nil
+			and Hardcore_Character.dt.runs[i].name ~= nil
+			and Hardcore_Character.dt.runs[i].iid ~= nil
+			and Hardcore_Character.dt.runs[i].start ~= nil
+		then
+			for j = #Hardcore_Character.dt.runs, i+1, -1 do
+				if Hardcore_Character.dt.runs[j] ~= nil
+					and Hardcore_Character.dt.runs[j].name ~= nil
+					and Hardcore_Character.dt.runs[j].iid ~= nil
+					and Hardcore_Character.dt.runs[j].start ~= nil
+				then
+					local time_diff = Hardcore_Character.dt.runs[i].start - Hardcore_Character.dt.runs[j].start
+					if time_diff < 0 then
+						time_diff = -time_diff
+					end
+					if Hardcore_Character.dt.runs[i].name == Hardcore_Character.dt.runs[j].name
+						and Hardcore_Character.dt.runs[i].iid == Hardcore_Character.dt.runs[j].iid
+						and time_diff < (12*3600)
+					then
+						Hardcore:Debug( "Merging dungeon runs with same instance ID in " .. Hardcore_Character.dt.runs[i].name .. " of "
+								.. Hardcore_Character.dt.runs[i].date .. " and " .. Hardcore_Character.dt.runs[j].date )
+						DungeonTrackerMergeRuns(Hardcore_Character.dt.runs[i], Hardcore_Character.dt.runs[j] )
+						table.remove( Hardcore_Character.dt.runs, j)
+						something_removed = true
+					end
+				end
+			end
+		end
+	end
+
+	-- Update the statistics if we did something
+	if something_removed then
+		DungeonTrackerUpdateInfractions()
+	end
+
+	return something_removed
+end
 
 
 -- DungeonTracker
@@ -1273,11 +1355,12 @@ local function DungeonTracker()
 
 	-- Sometimes, runs don't get logged correctly, like when they are pending and the addon is updated to a version
 	-- with a different format or when runs are deleted through appeal commands. In those cases, runs might disappear
-	-- entirely, while they should be there. We check for any missing runs exactly once per session. 
+	-- entirely, while they should be there. We check for any missing or mergeable runs exactly once per session.
 	if dt_checked_for_missing_runs == false then
 		dt_checked_for_missing_runs = true
 		C_Timer.After(5, function()
 			DungeonTrackerFindMissingRunsFromQuests()
+			DungeonTrackerFindMergeableRuns()
 		end)
 	end
 
@@ -1332,6 +1415,8 @@ local function DungeonTracker()
 			Hardcore_Character.dt.pending[i].log_now = nil			-- clean up
 			DungeonTrackerLogRun(Hardcore_Character.dt.pending[i])
 			table.remove(Hardcore_Character.dt.pending, i)
+			-- Just in case, we check if any of the logged runs is mergeable
+			DungeonTrackerFindMergeableRuns()
 		end
 	end
 
@@ -1617,7 +1702,7 @@ function DungeonTrackerHandleAppealCode(args)
 					end
 
 					-- Merge the runs
-					Hardcore:Print( "Merged dungeon runs in " .. Hardcore_Character.dt.runs[index1].name .. " of "
+					Hardcore:Print( "Merging dungeon runs in " .. Hardcore_Character.dt.runs[index1].name .. " of "
 							.. Hardcore_Character.dt.runs[index1].date .. " and " .. Hardcore_Character.dt.runs[index2].date )
 					DungeonTrackerMergeRuns( Hardcore_Character.dt.runs[index1], Hardcore_Character.dt.runs[index2])
 					table.remove(Hardcore_Character.dt.runs, index2)
