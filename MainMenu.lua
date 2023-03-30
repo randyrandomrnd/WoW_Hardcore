@@ -1184,7 +1184,8 @@ local function DrawDungeonsTab(container, _hardcore_character)
 			.. "Note that the indicated idle time is not a reliable indicator for the uniqueness of the dungeon ID! "
 			.. "A run marked in|c0000FF00 green|c00FFFFFF is the one you are currently on. "
 			.. "The ID column shows the instance ID or the quest ID for legacy runs. "
-			.. "The Kills column shows total kills, boss kills, max boss kills and end boss kill time.\n\n"
+			.. "The Kills column shows total kills, boss kills, max boss kills and end boss kill time. "
+			.. "The instance ID is found by melee or spell interaction with an NPC, but a kill triggers your one HC run!\n\n"
 	)
 	first_menu_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	tabcontainer:AddChild(first_menu_description)
