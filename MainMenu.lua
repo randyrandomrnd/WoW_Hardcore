@@ -1175,19 +1175,20 @@ local function DrawDungeonsTab(container, _hardcore_character)
 	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
 	tabcontainer:AddChild(first_menu_description_title)
 
-	local first_menu_description_title = AceGUI:Create("Label")
-	first_menu_description_title:SetFullWidth(true)
-	first_menu_description_title:SetText(
+	local first_menu_description = AceGUI:Create("Label")
+	first_menu_description:SetFullWidth(true)
+	first_menu_description:SetText(
 			   "Dungeons marked with (legacy) are old dungeon runs derived from completed quests. "
 			.. "A run marked in white is finalised and the dungeon may not be entered again. "
 			.. "A run marked in|c00FFFF00 yellow|c00FFFFFF is pending, and will be finalised after a time of inactivity. "
 			.. "Note that the indicated idle time is not a reliable indicator for the uniqueness of the dungeon ID! "
 			.. "A run marked in|c0000FF00 green|c00FFFFFF is the one you are currently on. "
 			.. "The ID column shows the instance ID or the quest ID for legacy runs. "
-			.. "The Kills column shows total kills, boss kills, max boss kills and end boss kill time.\n\n"
+			.. "The Kills column shows total kills, boss kills, max boss kills and end boss kill time. "
+			.. "The instance ID is found by melee, range or spell interaction with an NPC, but a kill triggers your one HC run!\n\n"
 	)
-	first_menu_description_title:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	tabcontainer:AddChild(first_menu_description_title)
+	first_menu_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+	tabcontainer:AddChild(first_menu_description)
 
 	-- Start making the interface, start with a big frame to hold them all
 	local scroll_container = AceGUI:Create("SimpleGroup")
