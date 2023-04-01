@@ -24,6 +24,8 @@ local dt_checked_for_missing_runs = false		-- Did we check for missing runs in t
 
 local dt_party_member_addon_version = {}
 
+local dt_player_level = 0
+
 -- dt_db ( = dungeon tracker database )
 --
 -- Contains all the info for the dungeons:
@@ -1195,10 +1197,18 @@ local function DungeonTracker()
 		end)
 	end
 
-	-- Quick check to see if there is no work to be done (i.e. we are outside and there are no pending or current runs)
-	-- We also store the group composition for later (only works outside the instance)
+	-- If we are outside....
 	if instanceType == "none" then
+		-- .. store the group composition for later (only works outside the instance)
 		Hardcore_Character.dt.group_members = GetHomePartyInfo()
+		
+		-- Bug fix for the UnitLevel bug (returning a value off by one, probably due to instance still initialising?)
+		local player_level = UnitLevel("player")
+		if  player_level > dt_player_level then
+			dt_player_level = player_level
+		end
+		
+		-- Return if there is nothing more to be done (i.e. we are outside and there are no pending or current runs)
 		if (not next(Hardcore_Character.dt.current)) and (not next(Hardcore_Character.dt.pending)) then
 			return
 		end
@@ -1317,7 +1327,7 @@ local function DungeonTracker()
 		DUNGEON_RUN.start = now
 		DUNGEON_RUN.last_seen = now
 		DUNGEON_RUN.idle = 0
-		DUNGEON_RUN.level = UnitLevel("player")
+		DUNGEON_RUN.level = max( dt_player_level, UnitLevel("player") )
 		DUNGEON_RUN.num_kills = 0
 		local group_composition = UnitName("player")
 		if Hardcore_Character.dt.group_members ~= nil then
