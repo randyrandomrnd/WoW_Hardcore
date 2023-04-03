@@ -955,6 +955,55 @@ local function DungeonTrackerLogKill( mob_type_id )
 
 end
 
+-- TargetChangedEventHandler
+--
+-- Handler for PLAYER_TARGET_CHANGED event, fired when player's target changes
+-- This is used inside dungeons to get the instance ID without actually attacking
+-- anything
+
+local function TargetChangedEventHandler( self, event )
+
+	-- Bail out right away if we don't have an active run (shouldn't happen, but could)
+	if not next( Hardcore_Character.dt.current ) then
+		return
+	end
+	
+	-- Get our data once, so it can't change halfway this function, either.
+	local target_guid = UnitGUID("target")
+	local target_name = UnitName("target")
+
+	-- Bail out if the target was unset
+	if target_guid == nil or target_name == nil then
+		return
+	end
+	
+	-- Split the GUID
+	local target_type, _, server, map_id, instance_id, target_type_id = string.split("-", target_guid)
+	if target_type ~= "Creature" then
+		return
+	end
+	map_id = tonumber( map_id )
+	instance_id = tonumber( instance_id )
+	target_type_id = tonumber( target_type_id )
+	
+	-- Do some checks, to eliminate unexpected results
+	if map_id ~= Hardcore_Character.dt.current.id then
+		Hardcore:Debug( "Warning: Got a target change to an NPC " .. target_name .. " (" .. target_type_id .. ") in wrong dungeon map " .. map_id .. " -- ignoring" )
+		return
+	end
+
+	-- Store the instanceID (the dynamic one)
+	-- To be thread-safe and fast, the reconnecting happens in the main timer routine
+	if Hardcore_Character.dt.current.iid == nil then
+		Hardcore:Debug( "Found instanceID " .. instance_id .. " from target " .. target_guid )
+	end
+	Hardcore_Character.dt.current.iid = instance_id
+		
+	-- Pass this mob to the SM wing identifier. This will update dt.current.name if possible. 
+	DungeonTrackerIdentifyScarletMonasteryWing( map_id, target_type_id )
+end
+
+
 -- CombatLogEventHandler
 --
 -- Handler for combat events inside the dungeon
@@ -1404,6 +1453,7 @@ local function DungeonTracker()
 			-- We don't need the combat log anymore
 			if combat_log_frame ~= nil then
 				combat_log_frame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+				combat_log_frame:UnregisterEvent("PLAYER_TARGET_CHANGED")
 				combat_log_frame.dtcl_script_registered = nil			-- trigger re-registering later
 			end				
 		end
@@ -1441,7 +1491,9 @@ local function DungeonTracker()
 	end
 	if combat_log_frame.dtcl_script_registered == nil then
 		combat_log_frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+		combat_log_frame:RegisterEvent("PLAYER_TARGET_CHANGED")
 		combat_log_frame:SetScript("OnEvent", CombatLogEventHandler )
+		combat_log_frame:SetScript("OnEvent", TargetChangedEventHandler )
 		combat_log_frame.dtcl_script_registered = true
 	end
 
