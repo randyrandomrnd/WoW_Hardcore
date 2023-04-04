@@ -56,13 +56,13 @@ local unactive_element = "fire"
 
 local function updateClickBlocker()
       if unactive_element == "fire" then
-	for k,_ in pairs(ach_action_slots["fire"]) do
+	for k,_ in pairs(ach_action_slots["frost"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Hide()
 	  end
 	end
 
-	for k,_ in pairs(ach_action_slots["frost"]) do
+	for k,_ in pairs(ach_action_slots["fire"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Show()
 	  end
@@ -96,7 +96,6 @@ local function switchElement(spell_id)
       frame_textures["frost"]:Hide()
     else
       unactive_element = "fire"
-
       frame_textures["fire"]:Hide()
       frame_textures["frost"]:Show()
     end
