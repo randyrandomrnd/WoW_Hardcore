@@ -955,19 +955,24 @@ local function DungeonTrackerLogKill( mob_type_id )
 
 end
 
--- TargetChangedEventHandler
+-- DungeonTrackerPlayerTargetChangedEventHandler
 --
 -- Handler for PLAYER_TARGET_CHANGED event, fired when player's target changes
 -- This is used inside dungeons to get the instance ID without actually attacking
 -- anything
 
-local function TargetChangedEventHandler( self, event )
+local function DungeonTrackerPlayerTargetChangedEventHandler( self, event )
+
+	-- Make sure we only respond to the combat_log event
+	if event ~= "PLAYER_TARGET_CHANGED" then
+		return
+	end
 
 	-- Bail out right away if we don't have an active run (shouldn't happen, but could)
 	if not next( Hardcore_Character.dt.current ) then
 		return
 	end
-	
+
 	-- Get our data once, so it can't change halfway this function, either.
 	local target_guid = UnitGUID("target")
 	local target_name = UnitName("target")
@@ -976,7 +981,9 @@ local function TargetChangedEventHandler( self, event )
 	if target_guid == nil or target_name == nil then
 		return
 	end
-	
+
+	Hardcore:Debug("Changed to " .. target_name .. ", GUID=" .. target_guid )
+
 	-- Split the GUID
 	local target_type, _, server, map_id, instance_id, target_type_id = string.split("-", target_guid)
 	if target_type ~= "Creature" then
@@ -985,7 +992,7 @@ local function TargetChangedEventHandler( self, event )
 	map_id = tonumber( map_id )
 	instance_id = tonumber( instance_id )
 	target_type_id = tonumber( target_type_id )
-	
+
 	-- Do some checks, to eliminate unexpected results
 	if map_id ~= Hardcore_Character.dt.current.id then
 		Hardcore:Debug( "Warning: Got a target change to an NPC " .. target_name .. " (" .. target_type_id .. ") in wrong dungeon map " .. map_id .. " -- ignoring" )
@@ -998,19 +1005,24 @@ local function TargetChangedEventHandler( self, event )
 		Hardcore:Debug( "Found instanceID " .. instance_id .. " from target " .. target_guid )
 	end
 	Hardcore_Character.dt.current.iid = instance_id
-		
+
 	-- Pass this mob to the SM wing identifier. This will update dt.current.name if possible. 
 	DungeonTrackerIdentifyScarletMonasteryWing( map_id, target_type_id )
 end
 
 
--- CombatLogEventHandler
+-- DungeonTrackerCombatLogEventHandler
 --
 -- Handler for combat events inside the dungeon
 -- Retrieves the mapID (fixed for each dungeon), instanceID (dynamic) and NPCID (fixed) from combat events
 -- and updates the dungeon log accordingly. 
 
-local function CombatLogEventHandler( self, event )
+local function DungeonTrackerCombatLogEventHandler( self, event )
+
+	-- Make sure we only respond to the combat_log event
+	if event ~= "COMBAT_LOG_EVENT_UNFILTERED" then
+		return
+	end
 
 	-- Bail out right away if we don't have an active run (shouldn't happen, but could)
 	if not next( Hardcore_Character.dt.current ) then
@@ -1043,23 +1055,18 @@ local function CombatLogEventHandler( self, event )
 			mob_name = dst_name
 		end
 	end
-	
+
 	-- Return immediately if no NPC guid was found
 	if mob_guid == nil then
-		return		
+		return
 	end
 
-	--print( mob_guid )
-	
 	-- Split the GUID
 	local mob_type, _, server, map_id, instance_id, mob_type_id = string.split("-", mob_guid)
 	map_id = tonumber( map_id )
 	instance_id = tonumber( instance_id )
 	mob_type_id = tonumber( mob_type_id )
-	
-	-- Get the spawn time data from the GUID
-	--local mob_spawn_index = bit.rshift( bit.band(tonumber(string.sub(mob_guid[7], 1, 5), 16), 0xFFF8), 3 )
-	
+
 	-- Do some checks, to eliminate unexpected results
 	if map_id ~= Hardcore_Character.dt.current.id then
 		Hardcore:Debug( "Error: Got a combat log message witn an NPC " .. mob_name .. " (" .. mob_type_id .. ") in wrong dungeon map " .. map_id .. " -- bailing out!" )
@@ -1082,6 +1089,21 @@ local function CombatLogEventHandler( self, event )
 	end
 	
 end
+
+-- DungeonTrackerEventHandler( self, event )
+--
+-- Main switch board for event handlers for COMBAT_LOG_EVENT_UNFILTERED and PLAYER_TARGET_CHANGED
+
+local function DungeonTrackerEventHandler( self, event )
+
+	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+		return DungeonTrackerCombatLogEventHandler( self, event )
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		return DungeonTrackerPlayerTargetChangedEventHandler( self, event )
+	end
+	return
+end
+
 
 -- DungeonTrackerGetBossKillDataForRun( run )
 --
@@ -1492,8 +1514,7 @@ local function DungeonTracker()
 	if combat_log_frame.dtcl_script_registered == nil then
 		combat_log_frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 		combat_log_frame:RegisterEvent("PLAYER_TARGET_CHANGED")
-		combat_log_frame:SetScript("OnEvent", CombatLogEventHandler )
-		combat_log_frame:SetScript("OnEvent", TargetChangedEventHandler )
+		combat_log_frame:SetScript("OnEvent", DungeonTrackerEventHandler )
 		combat_log_frame.dtcl_script_registered = true
 	end
 
