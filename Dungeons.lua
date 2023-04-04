@@ -442,6 +442,29 @@ local function DungeonTrackerIsRepeatedRun(run1, run2)
 	return false
 end
 
+-- DungeonTrackerAnyRunNamesRepeated()
+--
+-- Efficiency function for checking all logged runs to each other.
+-- For N runs, N(N-1)/2 checks are necessary if you want to compare all to all.
+-- This function simply checks if any of the names occurs more than once; this is Order(N).
+
+local function DungeonTrackerAnyRunNamesRepeated()
+
+	if Hardcore_Character.dt.runs == nil then
+		return false
+	end
+	local names_table = {}
+	for i, v in ipairs(Hardcore_Character.dt.runs) do
+		if v.name ~= nil and v.name ~= "" then
+			if names_table[ v.name ] ~= nil then
+				return true
+			end
+			names_table[ v.name ] = 1
+		end
+	end
+	return false
+end
+
 -- DungeonTrackerUpdateInfractions()
 --
 -- Updates the dt.overleveled_runs and dt.repeated_runs variables
@@ -1348,6 +1371,11 @@ local function DungeonTrackerFindMergeableRuns()
 
 	-- If there are no runs, or 1 run, there is nothing to merge
 	if Hardcore_Character.dt.runs == nil or #Hardcore_Character.dt.runs < 2 then
+		return false
+	end
+	
+	-- Quick O(N) efficiency check -- if none of the dungeon names occur more than once, we can skip this
+	if DungeonTrackerAnyRunNamesRepeated() == false then
 		return false
 	end
 
