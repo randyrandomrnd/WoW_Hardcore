@@ -456,6 +456,7 @@ end
 
 local function shouldCreateEntry(checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then return false end
+  if death_ping_lru_cache_tbl[checksum]["player_data"] == nil then return false end
   if hardcore_settings.death_log_types == nil or hardcore_settings.death_log_types == "faction_wide" and isValidEntry(death_ping_lru_cache_tbl[checksum]["player_data"]) then
     if death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > HC_REQUIRED_ACKS then
       return true

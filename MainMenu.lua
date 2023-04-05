@@ -1943,7 +1943,7 @@ local function DrawDeathStatisticsTab(container, _hardcore_settings)
 	tabcontainer:AddChild(scroll_container)
 
 	local scroll_frame = AceGUI:Create("ScrollFrame")
-	scroll_frame:SetLayout("Flow")
+	scroll_frame:SetLayout("List")
 	scroll_container:AddChild(scroll_frame)
 
 	local first_menu_description_title = AceGUI:Create("Label")
@@ -1952,12 +1952,65 @@ local function DrawDeathStatisticsTab(container, _hardcore_settings)
 	first_menu_description_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
 	-- first_menu_description_title:SetPoint("TOP", 2,5)
 	scroll_frame:AddChild(first_menu_description_title)
+	if _hardcore_settings["death_log_entries"] == nil then return end
 
 	local first_menu_description = AceGUI:Create("Label")
 	first_menu_description:SetWidth(_menu_width)
-	first_menu_description:SetText("Statistics for deaths that you have witnessed.")
+	first_menu_description:SetText("Statistics for deaths that you have witnessed. You have witnessed " .. #_hardcore_settings["death_log_entries"] .. " deaths.\n\n\n")
 	first_menu_description:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 	scroll_frame:AddChild(first_menu_description)
+
+	local death_map_button_container = AceGUI:Create("SimpleGroup")
+	local death_map_button = AceGUI:Create("Button")
+	death_map_button:SetText("Show deaths in my zone")
+	death_map_button:SetWidth(200)
+
+	death_map_button:SetCallback("OnClick", function()
+	  local WorldMapButton = WorldMapFrame:GetCanvas()
+	  local death_tomb_frame = CreateFrame('frame', nil, WorldMapButton)
+	  death_tomb_frame:SetAllPoints()
+	  death_tomb_frame:SetFrameLevel(15000)
+	  death_tomb_frame.entry_textures = {}
+
+
+	  for k,v in ipairs(_hardcore_settings["death_log_entries"]) do
+	    if v["map_id"] and v["map_pos"] then
+		  local death_tomb_frame_tex = death_tomb_frame:CreateTexture(nil, 'OVERLAY')
+		  death_tomb_frame_tex:SetTexture("Interface\\TARGETINGFRAME\\UI-TargetingFrame-Skull")
+		  death_tomb_frame_tex:SetDrawLayer("OVERLAY", 4)
+		  death_tomb_frame_tex:SetHeight(25)
+		  death_tomb_frame_tex:SetWidth(25)
+		  death_tomb_frame_tex:Hide()
+
+		  death_tomb_frame_tex.map_id = v["map_id"]
+		  local x, y = strsplit(",", v["map_pos"],2)
+		  death_tomb_frame_tex.coordinates = {x,y}
+		  table.insert(death_tomb_frame.entry_textures, death_tomb_frame_tex)
+	    end
+	  end
+	  WorldMapFrame:SetShown(not WorldMapFrame:IsShown())
+	  local map_id = WorldMapFrame:GetMapID()
+	  local mWidth, mHeight = WorldMapFrame:GetCanvas():GetSize()
+	  for k,v in ipairs(death_tomb_frame.entry_textures) do
+	    if v.map_id == map_id then
+	      v:SetPoint('CENTER', WorldMapButton, 'TOPLEFT', mWidth*v.coordinates[1], -mHeight*v.coordinates[2])
+	      v:Show()
+	    end
+	  end
+
+	  WorldMapFrame:HookScript("OnHide", function()
+	    if death_tomb_frame == nil then return end
+	    if death_tomb_frame.entry_textures == nil then return end
+	    for k,v in ipairs(death_tomb_frame.entry_textures) do
+		v:Hide()
+		v = nil
+	    end
+	    death_tomb_frame = nil
+	  end)
+
+	end)
+	scroll_frame:AddChild(death_map_button)
+
 
 	local function getDefaultStats()
 	    return {["sum"] = 0, ["num"] = 0}
@@ -1966,6 +2019,8 @@ local function DrawDeathStatisticsTab(container, _hardcore_settings)
 	stats["avg_level"] = getDefaultStats()
 	stats["avg_level_class"] = {}
 
+	local detected_classes = {
+	}
 	for i,v in pairs(_hardcore_settings["death_log_entries"]) do
 	  if v["level"] then
 	    stats["avg_level"]["sum"] = stats["avg_level"]["sum"] + v["level"]
@@ -1974,22 +2029,100 @@ local function DrawDeathStatisticsTab(container, _hardcore_settings)
 	      if stats["avg_level_class"][v["class_id"]] == nil then
 		stats["avg_level_class"][v["class_id"]] = getDefaultStats()
 	      end
+	      detected_classes[v["class_id"]] = 1
 	      stats["avg_level_class"][v["class_id"]]["sum"] = stats["avg_level_class"][v["class_id"]]["sum"] + v["level"]
 	      stats["avg_level_class"][v["class_id"]]["num"] = stats["avg_level_class"][v["class_id"]]["num"] + 1
 	    end
 	  end
 	end
 
-	local average_death_level = AceGUI:Create("Label")
-	average_death_level:SetWidth(_menu_width)
-	local msg = "Average level death: " .. string.format("%.1f", stats["avg_level"]["sum"]/stats["avg_level"]["num"])
-	for k,v in pairs(stats["avg_level_class"]) do
+	local class_stats_container = AceGUI:Create("InlineGroup")
+	class_stats_container:SetLayout("List")
+	scroll_frame:AddChild(class_stats_container)
+
+	local subtitles = {
+	  {"Class", 0},
+	  {"# Recorded", 90},
+	  {"%", 180},
+	  {"Avg. Death Lvl.", 275},
+	}
+
+	local class_types = {
+	}
+
+	local entry_data = {}
+	for k,_ in pairs(detected_classes) do 
+	  class_types[k] = 1
+	  stats["avg_level_class"][k]["avg"] = stats["avg_level_class"][k]["sum"]/stats["avg_level_class"][k]["num"]
 	  local class_str, _, _ = GetClassInfo(k)
-	  msg = msg .. "\nAverage level death for " .. class_str .. ": " .. string.format("%.1f", v["sum"]/v["num"])
+	  entry_data[k] = {}
+	  entry_data[k]["Class"] = class_str
+	  entry_data[k]["# Recorded"] = stats["avg_level_class"][k]["num"] 
+	  entry_data[k]["%"] = string.format("%.1f", stats["avg_level_class"][k]["num"] / stats["avg_level"]["num"] * 100.0) .. "%"
+	  entry_data[k]["Avg. Death Lvl."] = string.format("%.1f", stats["avg_level_class"][k]["avg"])  
 	end
-	average_death_level:SetText(msg)
-	average_death_level:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-	scroll_frame:AddChild(average_death_level)
+
+	class_types["All"] = 1
+	stats['avg_level']['avg'] = stats["avg_level"]["sum"]/stats["avg_level"]["num"]
+
+	entry_data["All"] = {}
+	entry_data["All"]["Class"] = "All"
+	entry_data["All"]["# Recorded"] = stats["avg_level"]["num"]
+	entry_data["All"]["%"] = "100%"
+	entry_data["All"]["Avg. Death Lvl."] = string.format("%.1f", stats["avg_level"]["avg"]) 
+
+	local header = AceGUI:Create("Label")
+	header:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	header:SetText(" ")
+	class_stats_container:SetWidth(400)
+	header.font_strings = {}
+	for _, v in ipairs(subtitles) do
+	  header.font_strings[v[1]] = header.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	  header.font_strings[v[1]]:SetPoint("LEFT", header.frame, "LEFT", v[2], 0)
+	  header.font_strings[v[1]]:SetText(v[1])
+	end
+	class_stats_container:AddChild(header)
+
+	local entries = {}
+	for k,_ in pairs(class_types) do
+	  local entry = AceGUI:Create("Label")
+	  table.insert(entries, entry)
+	  entry:SetText(" ")
+	  entry.font_strings = {}
+	  for _, v in ipairs(subtitles) do
+	    entry.font_strings[v[1]] = entry.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	    entry:SetFont("Fonts\\FRIZQT__.TTF", 16, "")
+	    entry.font_strings[v[1]]:SetPoint("LEFT", entry.frame, "LEFT", v[2], 0)
+	    entry.font_strings[v[1]]:SetTextColor(1,1,1)
+	    entry.font_strings[v[1]]:SetText(entry_data[k][v[1]])
+	  end
+	  class_stats_container:AddChild(entry)
+	end
+
+	scroll_frame.frame:HookScript("OnHide", function()
+	  death_tomb_frame = nil
+	  if header ~= nil then
+	    for k,_ in pairs(header.font_strings) do 
+	      header.font_strings[k]:Hide()
+	      header.font_strings[k] = nil
+	    end
+	    header = nil 
+	  end
+
+	  if entries ~= nil then
+	    for _,v in ipairs(entries) do
+	      for k,_ in pairs(v.font_strings) do 
+		v.font_strings[k]:Hide()
+		v.font_strings[k] = nil
+	      end
+	      v = nil 
+	    end
+	    entries = nil
+	  end
+	end)
+
+
+
 end
 
 function ShowMainMenu(_hardcore_character, _hardcore_settings, dk_button_function)
