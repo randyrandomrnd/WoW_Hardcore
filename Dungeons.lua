@@ -472,6 +472,7 @@ end
 local function DungeonTrackerWarnInfraction()
 
 	local message
+	local chat_color = "\124cffFF0000"
 
 	-- We only warn if there is still chance to get out in time
 	local time_left = DT_INSIDE_MAX_TIME - Hardcore_Character.dt.current.time_inside
@@ -514,14 +515,10 @@ local function DungeonTrackerWarnInfraction()
 	local max_level = DungeonTrackerGetDungeonMaxLevel(Hardcore_Character.dt.current.name)
 	if Hardcore_Character.dt.current.level > max_level then
 		Hardcore_Character.dt.current.last_warn = Hardcore_Character.dt.current.time_inside
-		message = "\124cffFF0000You are overleveled for "
-			.. Hardcore_Character.dt.current.name
-			.. ", max level = "
-			.. max_level
-			.. " -- leave the dungeon within "
-			.. time_left
-			.. " seconds!"
-		Hardcore:Print(message)
+		message = "You are overleveled for " .. Hardcore_Character.dt.current.name .. ", max level = ".. max_level
+			.. ". Leave dungeon now!"
+		Hardcore:Print(chat_color .. message)
+		Hardcore:ShowRedAlertFrame( message )
 	end
 
 	-- See if this dungeon was already in the list of completed runs, and warn every so many seconds if that is so
@@ -534,16 +531,10 @@ local function DungeonTrackerWarnInfraction()
 				instance_info1 = " (ID:" .. Hardcore_Character.dt.current.iid .. ")"
 				instance_info2 = " (ID:" .. v.iid .. ")"
 			end
-			message = "\124cffFF0000You entered " 
-				.. v.name
-				.. instance_info1
-				.. " already at date "
-				.. v.date
-				.. instance_info2
-				.. " -- leave the dungeon within "
-				.. time_left
-				.. " seconds!"
-			Hardcore:Print(message)
+			message = "You entered " .. v.name .. instance_info1 .. " already on " .. v.date .. instance_info2	
+					.. ". Leave dungeon now!"
+			Hardcore:Print( chat_color .. message)
+			Hardcore:ShowRedAlertFrame( message )
 			break -- No need to warn about 3rd and higher entries
 		end
 	end
@@ -558,14 +549,10 @@ local function DungeonTrackerWarnInfraction()
 		if v.iid ~= nil and Hardcore_Character.dt.current.iid ~= nil then
 			if DungeonTrackerIsRepeatedRun(v, Hardcore_Character.dt.current) then
 				Hardcore_Character.dt.current.last_warn = Hardcore_Character.dt.current.time_inside
-				message = "\124cffFF0000You entered another instance ID of "
-					.. v.name
-					.. " already at date "
-					.. v.date
-					.. " -- leave the dungeon within "
-					.. time_left
-					.. " seconds!"
-				Hardcore:Print(message)
+				message = "Your idle run of " .. v.name .. " of date ".. v.date .. " has another instance ID"
+					.. ". Leave dungeon now!"
+				Hardcore:Print( chat_color .. message )
+				Hardcore:ShowRedAlertFrame( message )
 				break -- No need to warn about 3rd and higher entries
 			end
 		end
@@ -851,7 +838,7 @@ local function DungeonTrackerSendPulse(now)
 			.. iid
 		local comm_msg = DT_PULSE_COMMAND .. COMM_COMMAND_DELIM .. data
 		CTL:SendAddonMessage("NORMAL", COMM_NAME, comm_msg, "PARTY")
-		Hardcore:Debug("Sending dungeon group pulse: " .. string.gsub( comm_msg, COMM_FIELD_DELIM, "/" ))
+		-- Hardcore:Debug("Sending dungeon group pulse: " .. string.gsub( comm_msg, COMM_FIELD_DELIM, "/" ))
 
 		-- Make sure we get our own ping if we are soloing the dungeon -- this can keep other SM wings alive
 		if Hardcore_Character.dt.current.party == UnitName("player") then
@@ -982,7 +969,7 @@ local function DungeonTrackerPlayerTargetChangedEventHandler( self, event )
 		return
 	end
 
-	Hardcore:Debug("Changed to " .. target_name .. ", GUID=" .. target_guid )
+	-- Hardcore:Debug("Changed to " .. target_name .. ", GUID=" .. target_guid )
 
 	-- Split the GUID
 	local target_type, _, server, map_id, instance_id, target_type_id = string.split("-", target_guid)
