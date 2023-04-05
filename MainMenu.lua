@@ -310,7 +310,9 @@ local function DrawGeneralTab(container)
 	changelog_title:SetFont("Interface\\Addons\\Hardcore\\Media\\BreatheFire.ttf", 20, "")
 	scroll_frame:AddChild(changelog_title)
 
-	---
+	CreateHeadingLabel("11.22b2", scroll_frame)
+	CreateDescriptionLabel("- Added elemental balance achievement for mage. Complete the Hardcore challenge without at any point casting two elemental damage spells of the same element (fire or ice) in a row. Arcane spells that deal damage are not allowed to be cast.\n- Added Shadow and Flame achievement for warlock. Complete the Hardcore challenge without at any point casting two shadow or two flame spells in a row during combat.", scroll_frame)
+
 	CreateHeadingLabel("11.22b", scroll_frame)
 	CreateDescriptionLabel("- Added elemental balance achievement for mage. Complete the Hardcore challenge without at any point casting two elemental damage spells of the same element (fire or ice) in a row. Arcane spells that deal damage are not allowed to be cast.", scroll_frame)
 
