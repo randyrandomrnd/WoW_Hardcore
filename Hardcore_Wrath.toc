@@ -36,6 +36,7 @@ Achievements/Cyromancer.lua
 Achievements/DruidOfTheClaw.lua
 Achievements/Ephemeral.lua
 Achievements/FireAndFrost.lua
+Achievements/ShadowAndFlame.lua
 Achievements/Felfire.lua
 Achievements/Grounded.lua
 Achievements/Hammertime.lua

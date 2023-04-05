@@ -29,6 +29,7 @@ Achievements/Trio.lua
 #Begin achievement modules
 Achievements/Arcanist.lua
 Achievements/FireAndFrost.lua
+Achievements/ShadowAndFlame.lua
 Achievements/AnimalFriend.lua
 Achievements/Berserker.lua
 Achievements/Bloodbath.lua
