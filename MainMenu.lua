@@ -311,7 +311,7 @@ local function DrawGeneralTab(container)
 	scroll_frame:AddChild(changelog_title)
 
 	CreateHeadingLabel("11.22", scroll_frame)
-	CreateDescriptionLabel("- Added elemental balance achievement for mage. Complete the Hardcore challenge without at any point casting two elemental damage spells of the same element (fire or ice) in a row. Arcane spells that deal damage are not allowed to be cast.\n- Added Shadow and Flame achievement for warlock. Complete the Hardcore challenge without at any point casting two shadow or two flame spells in a row during combat.\n- Fixes for death log when greenwall only is enabled and for grief protection.", scroll_frame)
+	CreateDescriptionLabel("- Added elemental balance achievement for mage. Complete the Hardcore challenge without at any point casting two elemental damage spells of the same element (fire or ice) in a row. Arcane spells that deal damage are not allowed to be cast.\n- Added Shadow and Flame achievement for warlock. Complete the Hardcore challenge without at any point casting two shadow or two flame spells in a row during combat.\n- Fixes for death log when greenwall only is enabled and for grief protection.\n- Improvements for dungeon tracker and new warning for entering dungeon when you shouldn't.", scroll_frame)
 
 	CreateHeadingLabel("11.21", scroll_frame)
 	CreateDescriptionLabel("- Faction-wide death alerts now require the sender to be in a guild\n- Update to dungeon tracking\n- Make death alerts sending more robust; about half of all deaths were previously broadcasted\n- Added option to reset death log position in interface options\n- Fix bug where death log icon wouldn't get hidden when it was specified in interface options", scroll_frame)
