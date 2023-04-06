@@ -944,7 +944,9 @@ end
 -- DungeonTrackerStoreInstanceID
 --
 -- Stores the instance ID, but only switches to it from another IID when there is more
--- evidence for that new instance ID than for the old
+-- evidence for that new instance ID than for the old. This is to work around a bug where
+-- someone zones out of an instance, but gets a combat log message from the surrounding
+-- zone in the <1s before the combatlog callback is unregistered.
 
 local function DungeonTrackerStoreInstanceID( instance_id, event )
 
@@ -970,7 +972,15 @@ local function DungeonTrackerStoreInstanceID( instance_id, event )
 		Hardcore_Character.dt.current.iid = instance_id
 		instance_id_changed = true
 	elseif Hardcore_Character.dt.current.iid ~= instance_id then
-		-- We already have a different instance ID, only swith to the new one if we saw it more often than the new one
+		-- We already have a different instance ID
+
+		-- Catch exceptional case where an addon update was done during a dungeon run, and the
+		-- .iid_count is not set for the current IID. We then start at 1
+		if Hardcore_Character.dt.current.iid_count[Hardcore_Character.dt.current.iid] == nil then
+			Hardcore_Character.dt.current.iid_count[Hardcore_Character.dt.current.iid] = 1
+		end
+
+		-- Only swith to the new one if we saw it more often than the old one
 		if Hardcore_Character.dt.current.iid_count[instance_id] > Hardcore_Character.dt.current.iid_count[Hardcore_Character.dt.current.iid] then
 			Hardcore_Character.dt.current.iid = instance_id
 			instance_id_changed = true
