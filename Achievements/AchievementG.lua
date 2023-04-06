@@ -55,6 +55,7 @@ _G.a_id = {
 	DuoMade = 50,
 	TrioMade = 51,
 	ElementalBalance = 52,
+	ShadowAndFlame = 53,
 }
 _G.id_a = {}
 for k, v in pairs(_G.a_id) do
