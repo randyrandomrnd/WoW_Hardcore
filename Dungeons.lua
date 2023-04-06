@@ -515,8 +515,7 @@ local function DungeonTrackerWarnInfraction()
 	local max_level = DungeonTrackerGetDungeonMaxLevel(Hardcore_Character.dt.current.name)
 	if Hardcore_Character.dt.current.level > max_level then
 		Hardcore_Character.dt.current.last_warn = Hardcore_Character.dt.current.time_inside
-		message = "You are overleveled for " .. Hardcore_Character.dt.current.name .. ", max level = ".. max_level
-			.. ". Leave dungeon now!"
+		message = "You are overleveled for " .. Hardcore_Character.dt.current.name .. ". Leave dungeon now!"
 		Hardcore:Print(chat_color .. message)
 		Hardcore:ShowRedAlertFrame( message )
 	end
@@ -942,6 +941,49 @@ local function DungeonTrackerLogKill( mob_type_id )
 
 end
 
+-- DungeonTrackerStoreInstanceID
+--
+-- Stores the instance ID, but only switches to it from another IID when there is more
+-- evidence for that new instance ID than for the old
+
+local function DungeonTrackerStoreInstanceID( instance_id, event )
+
+	local instance_id_changed = false
+
+	-- Store the source of the instance ID for debugging purposes
+	if Hardcore_Character.dt.current.iid_src == nil then
+		Hardcore_Character.dt.current.iid_src = {}
+	end
+	Hardcore_Character.dt.current.iid_src[instance_id] = event
+
+	-- Count the number of times we saw this instance ID
+	if Hardcore_Character.dt.current.iid_count == nil then
+		Hardcore_Character.dt.current.iid_count = {}
+	end
+	if Hardcore_Character.dt.current.iid_count[instance_id] == nil then
+		Hardcore_Character.dt.current.iid_count[instance_id] = 0
+	end
+	Hardcore_Character.dt.current.iid_count[instance_id] = Hardcore_Character.dt.current.iid_count[instance_id] + 1
+
+	-- If there is no instance ID yet, we store it
+	if Hardcore_Character.dt.current.iid == nil then
+		Hardcore_Character.dt.current.iid = instance_id
+		instance_id_changed = true
+	elseif Hardcore_Character.dt.current.iid ~= instance_id then
+		-- We already have a different instance ID, only swith to the new one if we saw it more often than the new one
+		if Hardcore_Character.dt.current.iid_count[instance_id] > Hardcore_Character.dt.current.iid_count[Hardcore_Character.dt.current.iid] then
+			Hardcore_Character.dt.current.iid = instance_id
+			instance_id_changed = true
+		end
+	end
+
+	-- Show a debug message if the stored IID changed
+	if instance_id_changed == true then
+		Hardcore:Debug( "Found instanceID " .. instance_id .. " from " .. event )
+	end
+end
+
+
 -- DungeonTrackerPlayerTargetChangedEventHandler
 --
 -- Handler for PLAYER_TARGET_CHANGED event, fired when player's target changes
@@ -988,10 +1030,7 @@ local function DungeonTrackerPlayerTargetChangedEventHandler( self, event )
 
 	-- Store the instanceID (the dynamic one)
 	-- To be thread-safe and fast, the reconnecting happens in the main timer routine
-	if Hardcore_Character.dt.current.iid == nil then
-		Hardcore:Debug( "Found instanceID " .. instance_id .. " from target " .. target_guid )
-	end
-	Hardcore_Character.dt.current.iid = instance_id
+	DungeonTrackerStoreInstanceID( instance_id, event )
 
 	-- Pass this mob to the SM wing identifier. This will update dt.current.name if possible. 
 	DungeonTrackerIdentifyScarletMonasteryWing( map_id, target_type_id )
@@ -1062,11 +1101,8 @@ local function DungeonTrackerCombatLogEventHandler( self, event )
 
 	-- Store the instanceID (the dynamic one)
 	-- To be thread-safe and fast, the reconnecting happens in the main timer routine
-	if Hardcore_Character.dt.current.iid == nil then
-		Hardcore:Debug( "Found instanceID " .. instance_id .. " from " .. subevent .. " " .. mob_guid )
-	end
-	Hardcore_Character.dt.current.iid = instance_id
-		
+	DungeonTrackerStoreInstanceID( instance_id, subevent )
+
 	-- Pass this mob to the SM wing identifier. This will update dt.current.name if possible. 
 	DungeonTrackerIdentifyScarletMonasteryWing( map_id, mob_type_id )
 
@@ -1074,7 +1110,7 @@ local function DungeonTrackerCombatLogEventHandler( self, event )
 	if subevent == "UNIT_DIED" then
 		DungeonTrackerLogKill( mob_type_id )
 	end
-	
+
 end
 
 -- DungeonTrackerEventHandler( self, event )
