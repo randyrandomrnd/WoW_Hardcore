@@ -23,6 +23,7 @@ local combat_log_frame = nil
 local dt_checked_for_missing_runs = false		-- Did we check for missing runs in this session already?
 
 local dt_party_member_addon_version = {}
+local dt_party_member_verif_status = {}
 
 local dt_player_level = 0
 
@@ -746,14 +747,14 @@ function DungeonTrackerReceivePulse(data, sender)
 	local dungeon_name
 	local dungeon_id
 	local iid
+	local status
 
-	short_name, version, ping_time, dungeon_name, dungeon_id, iid = string.split(COMM_FIELD_DELIM, data)
+	short_name, version, ping_time, dungeon_name, dungeon_id, iid, status = string.split(COMM_FIELD_DELIM, data)
 	-- Handle malformed pulse that breaks the script
-	if dungeon_id == nil then
+	if short_name == nil or version == nil or ping_time == nil or dungeon_name == nil or dungeon_id == nil then
 		return
-	else
-		dungeon_id = tonumber(dungeon_id)
 	end
+	dungeon_id = tonumber(dungeon_id)
 	-- Old version of the pulse does not have instance ID, so set it to 0
 	if iid == nil then
 		iid = 0
@@ -761,6 +762,10 @@ function DungeonTrackerReceivePulse(data, sender)
 		iid = tonumber(iid)
 	end	
 	ping_time = tonumber(ping_time)
+	-- Versions <= 0.11.22 do not have status
+	if status == nil then
+		status = "?"
+	end
 
 	Hardcore:Debug(
 		"Received dungeon group pulse from "
@@ -768,15 +773,20 @@ function DungeonTrackerReceivePulse(data, sender)
 			.. ", data = "
 			.. short_name
 			.. ", "
+			.. version
+			.. ", "
 			.. ping_time
 			.. ", "
 			.. dungeon_name
 			.. ", "
 			.. iid
+			.. ", "
+			.. status
 	)
 
-	-- Save the addon version for this player
+	-- Save the addon version and verification status for this player
 	dt_party_member_addon_version[ short_name ] = version
+	dt_party_member_verif_status[ short_name ] = status
 
 	-- Check for errors, dt might not be set right now (if it just got reset for some weird reason)
 	if (Hardcore_Character.dt == nil) or (not next(Hardcore_Character.dt)) or (not next(Hardcore_Character.dt.pending)) then
@@ -811,11 +821,28 @@ end
 -- Sends a group pulse, if the time out is expired
 
 local function DungeonTrackerSendPulse(now)
+
+	local my_verif_status = "?"
+
 	-- Don't send too many pulses, one every 30 seconds is enough
 	if (Hardcore_Character.dt.sent_pulse ~= nil) and (now - Hardcore_Character.dt.sent_pulse < DT_GROUP_PULSE) then
 		return
 	end
 	Hardcore_Character.dt.sent_pulse = now
+	
+	-- Generate PASS/FAIL information
+	local verdict, _ = Hardcore:GenerateVerificationStatusStrings()
+	if verdict ~= nil then
+		-- Strip off any coloring or other extra junk except for the words "PASS" and "FAIL"
+		local x, y = string.find( verdict, "PASS" )
+		if x ~= nil then
+			my_verif_status = "PASS"
+		end
+		x, y = string.find( verdict, "FAIL" )
+		if x ~= nil then
+			my_verif_status = "FAIL"
+		end		
+	end
 
 	-- Send my own info to the party (=name + server time + dungeon)
 	if CTL then
@@ -835,6 +862,8 @@ local function DungeonTrackerSendPulse(now)
 			.. Hardcore_Character.dt.current.id
 			.. COMM_FIELD_DELIM
 			.. iid
+			.. COMM_FIELD_DELIM
+			.. my_verif_status
 		local comm_msg = DT_PULSE_COMMAND .. COMM_COMMAND_DELIM .. data
 		CTL:SendAddonMessage("NORMAL", COMM_NAME, comm_msg, "PARTY")
 		-- Hardcore:Debug("Sending dungeon group pulse: " .. string.gsub( comm_msg, COMM_FIELD_DELIM, "/" ))
@@ -846,9 +875,9 @@ local function DungeonTrackerSendPulse(now)
 
 		-- For debug purposes, set this to true to simulate a send
 		if false then
-			DungeonTrackerReceivePulse("John|0.11.15|1234324|Ragefire Chasm|189|1111", "John-TestServer")
-			DungeonTrackerReceivePulse("Peter|0.11.13|1244334|Scarlet Monastery|189|1111", "Peter-TestServer")
-			DungeonTrackerReceivePulse("Jack|0.11.16|1244334|Ragefire Chasm|189|1111", "Jack-TestServer")
+			DungeonTrackerReceivePulse("John|0.11.15|1234324|Ragefire Chasm|189|1111|PASS", "John-TestServer")
+			DungeonTrackerReceivePulse("Peter|0.11.13|1244334|Scarlet Monastery|189|1111|FAIL", "Peter-TestServer")
+			DungeonTrackerReceivePulse("Jack|0.11.16|1244334|Ragefire Chasm|189|1113|PASS", "Jack-TestServer")
 		end
 	end
 end
@@ -1193,7 +1222,7 @@ function DungeonTrackerGetBossKillDataForRun( run )
 end
 
 -- DungeonTrackerCheckVersions()
--- Prints a list of detected addon versions for the group members
+-- Prints a list of detected addon versions and verification status for the group members
 
 local function DungeonTrackerCheckVersions()
 
@@ -1202,7 +1231,7 @@ local function DungeonTrackerCheckVersions()
 		local party = { string.split(",", Hardcore_Character.dt.current.party ) }
 
 		if #party > 1 then
-			local message = "Addon version check: "
+			local message = "Addon version / verification status check: "
 			for i,v in ipairs( party ) do
 				if v == UnitName("player") then
 					message = message .. v .. ":" .. GetAddOnMetadata("Hardcore", "Version")
@@ -1212,6 +1241,11 @@ local function DungeonTrackerCheckVersions()
 						message = message .. dt_party_member_addon_version[ v ]
 					else
 						message = message .. "?"
+					end
+					if dt_party_member_verif_status[ v ] ~= nil then
+						message = message .. "[" .. dt_party_member_verif_status[ v ] .. "]"
+					else
+						message = message .. "[?]"
 					end
 				end
 				if i < #party then
