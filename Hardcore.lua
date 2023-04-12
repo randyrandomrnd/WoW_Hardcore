@@ -1485,11 +1485,6 @@ function Hardcore:UPDATE_MOUSEOVER_UNIT()
 	RequestHCDataIfValid("mouseover")
 end
 
--- Function to do the unitscan trick of seeing nearby NPC for dungeon tracking -- pass to dungeons module
---function Hardcore:ADDON_ACTION_FORBIDDEN(arg1)
---	DungeonTrackerHandleActionForbidden(arg1)
---end
-
 function Hardcore:UNIT_TARGET()
 	RequestHCDataIfValid("target")
 end
@@ -2717,6 +2712,11 @@ function Hardcore:ShowAlertFrame(styleConfig, message)
 	C_Timer.After(delay, function()
 		frame:Hide()
 	end)
+end
+
+-- Exported version of ShowAlertFrame with HC_red style (used in DungeonTracker, ALERT_STYLES is local)
+function Hardcore:ShowRedAlertFrame(message)
+	Hardcore:ShowAlertFrame(ALERT_STYLES.hc_red, message )
 end
 
 function Hardcore:ShowPassiveAchievementFrame(icon_path, message, delay)

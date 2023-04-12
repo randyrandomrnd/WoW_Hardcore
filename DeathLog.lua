@@ -10,6 +10,7 @@ local COMM_COMMANDS = {
 local COMM_COMMAND_DELIM = "$"
 local COMM_FIELD_DELIM = "~"
 local HC_REQUIRED_ACKS = 3
+local HC_DEATH_LOG_MAX = 1000
 
 local death_alerts_channel = "hcdeathalertschannel"
 local death_alerts_channel_pw = "hcdeathalertschannelpw"
@@ -431,7 +432,7 @@ local function createEntry(checksum)
   table.insert(hardcore_settings["death_log_entries"], death_ping_lru_cache_tbl[checksum]["player_data"])
 
   -- Cap list size, otherwise loading time will increase
-  if hardcore_settings["death_log_entries"] and #hardcore_settings["death_log_entries"] > 100 then -- TODO parameterize
+  if hardcore_settings["death_log_entries"] and #hardcore_settings["death_log_entries"] > HC_DEATH_LOG_MAX then -- TODO parameterize
     table.remove(hardcore_settings["death_log_entries"],1)
   end
 
@@ -455,6 +456,7 @@ end
 
 local function shouldCreateEntry(checksum)
   if death_ping_lru_cache_tbl[checksum] == nil then return false end
+  if death_ping_lru_cache_tbl[checksum]["player_data"] == nil then return false end
   if hardcore_settings.death_log_types == nil or hardcore_settings.death_log_types == "faction_wide" and isValidEntry(death_ping_lru_cache_tbl[checksum]["player_data"]) then
     if death_ping_lru_cache_tbl[checksum]["peer_report"] and death_ping_lru_cache_tbl[checksum]["peer_report"] > HC_REQUIRED_ACKS then
       return true
@@ -464,7 +466,7 @@ local function shouldCreateEntry(checksum)
       end
     end
   end
-  if hardcore_settings.death_log_types ~= nil and hardcore_settings.death_log_types == "greenwall_guilds_only" and death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then return true end
+  if hardcore_settings.death_log_types ~= nil and hardcore_settings.death_log_types == "greenwall_guilds_only" and death_ping_lru_cache_tbl[checksum]["player_data"] and death_ping_lru_cache_tbl[checksum]["player_data"]["guild"] and hc_peer_guilds[death_ping_lru_cache_tbl[checksum]["player_data"]["guild"]] then return true end
   if death_ping_lru_cache_tbl[checksum]["in_guild"] then return true end
 
   return false
@@ -517,6 +519,7 @@ end
 
 -- Receive a guild message. Need to send ack
 function deathlogReceiveLastWords(sender, data)
+  if data == nil then return end
   local values = {}
   for w in data:gmatch("(.-)~") do table.insert(values, w) end
   local checksum = values[1]
@@ -792,6 +795,8 @@ death_log_handler:RegisterEvent("CHAT_MSG_CHANNEL")
 local function handleEvent(self, event, ...)
   local arg = { ... }
   if event == "CHAT_MSG_CHANNEL" then
+    local _, channel_name = string.split(" ", arg[4])
+    if channel_name ~= death_alerts_channel then return end
     local command, msg = string.split(COMM_COMMAND_DELIM, arg[1])
     if command == COMM_COMMANDS["BROADCAST_DEATH_PING_CHECKSUM"] then
       local player_name_short, _ = string.split("-", arg[2])

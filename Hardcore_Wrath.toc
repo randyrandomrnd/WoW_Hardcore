@@ -1,10 +1,10 @@
 ## Interface: 30401
-## Title: Hardcore 0.11.22b + Greenwall 1.11.5+classic
+## Title: Hardcore 0.11.22 + Greenwall 1.11.5+classic
 ## Notes: Supports Classic Hardcore
 ## Author: The Classic Hardcore team, Molikar (Sean Kennedy), Mark Rogaski <stigg@aie-guild.org> as GreenWall author 
 ## X-License: All Rights Reserved
 ## X-Category: Leveling,Guild
-## Version: 0.11.22b
+## Version: 0.11.22
 
 
 ## DefaultState: enabled
@@ -36,6 +36,7 @@ Achievements/Cyromancer.lua
 Achievements/DruidOfTheClaw.lua
 Achievements/Ephemeral.lua
 Achievements/FireAndFrost.lua
+Achievements/ShadowAndFlame.lua
 Achievements/Felfire.lua
 Achievements/Grounded.lua
 Achievements/Hammertime.lua

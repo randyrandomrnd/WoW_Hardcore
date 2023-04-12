@@ -1,74 +1,75 @@
 local _G = _G
 local _achievement = CreateFrame("Frame")
-_G.achievements.ElementalBalance = _achievement
+_G.achievements.ShadowAndFlame = _achievement
 
-_achievement.name = "ElementalBalance"
-_achievement.title = "Elemental Balance"
-_achievement.class = "Mage"
+_achievement.name = "ShadowAndFlame"
+_achievement.title = "Shadow and Flame"
+_achievement.class = "Warlock"
 _achievement.pts = 10
-_achievement.icon_path = "Interface\\Addons\\Hardcore\\Media\\icon_fireandfrost.blp"
+_achievement.icon_path = "Interface\\Addons\\Hardcore\\Media\\icon_shadow_and_flame.blp"
 _achievement.bl_text = "Starting Achievement"
 _achievement.description =
-	"Complete the Hardcore challenge without at any point casting two elemental damage spells of the same element (fire or ice) in a row. Arcane spells that deal damage are not allowed to be cast."
+	"Complete the Hardcore challenge without at any point casting two shadow or two flame spells in a row during combat."
 
-local fire_and_frost_frame = nil
+local shadow_and_flame_frame = nil
 local frame_textures = {}
 
 local action_bar_frames = {}
 
 
-local frost_spells = {
+local flame_spells = {
+  [348] = 1,
+  [11684] = 1,
+  [17924] = 1,
+  [5740] = 1,
+  [6353] = 1,
+  [11678] = 1,
+  [1949] = 1,
+  [25309] = 1,
+  [1254] = 1,
+  [11683] = 1,
+  [5676] = 1,
+  [13699] = 1,
+  [13701] = 1,
+  [11677] = 1,
+  [707] = 1,
+  [6219] = 1,
+  [11668] = 1,
+  [17919] = 1,
+  [13700] = 1,
+  [2941] = 1,
+  [17921] = 1,
+  [11665] = 1,
+  [17920] = 1,
+  [17922] = 1,
+  [1094] = 1,
+  [11667] = 1,
 }
 
-local fire_spells = {
-}
-
-local arcane_spells = {
-  [5143] = 1,
-  [5144] = 1,
-  [5145] = 1,
-  [8416] = 1,
-  [8417] = 1,
-  [10211] = 1,
-  [10212] = 1,
-  [25345] = 1,
-  [1449] = 1,
-  [8437] = 1,
-  [8438] = 1,
-  [8439] = 1,
-  [10201] = 1,
-  [10202] = 1,
+local shadow_spells = {
 }
 
 local ach_keybinds = {
-  ["fire"] = {},
-  ["frost"] = {},
-  ["arcane"] = {},
+  ["shadow"] = {},
+  ["flame"] = {},
 }
 
 local ach_action_slots = {
-  ["fire"] = {},
-  ["frost"] = {},
-  ["arcane"] = {},
+  ["shadow"] = {},
+  ["flame"] = {},
 }
 
 local unactive_element = nil
 
 local function updateClickBlocker()
-      for k,_ in pairs(ach_action_slots["arcane"]) do
-	if action_bar_frames[k] then
-	  action_bar_frames[k]:Show()
-	end
-      end
-
       if unactive_element == nil then 
-	for k,_ in pairs(ach_action_slots["frost"]) do
+	for k,_ in pairs(ach_action_slots["flame"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Hide()
 	  end
 	end
 
-	for k,_ in pairs(ach_action_slots["fire"]) do
+	for k,_ in pairs(ach_action_slots["shadow"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Hide()
 	  end
@@ -76,26 +77,26 @@ local function updateClickBlocker()
 	return 
       end
 
-      if unactive_element == "fire" then
-	for k,_ in pairs(ach_action_slots["frost"]) do
+      if unactive_element == "shadow" then
+	for k,_ in pairs(ach_action_slots["flame"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Hide()
 	  end
 	end
 
-	for k,_ in pairs(ach_action_slots["fire"]) do
+	for k,_ in pairs(ach_action_slots["shadow"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Show()
 	  end
 	end
       else
-	for k,_ in pairs(ach_action_slots["fire"]) do
+	for k,_ in pairs(ach_action_slots["shadow"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Hide()
 	  end
 	end
 
-	for k,_ in pairs(ach_action_slots["frost"]) do
+	for k,_ in pairs(ach_action_slots["flame"]) do
 	  if action_bar_frames[k] then
 	    action_bar_frames[k]:Show()
 	  end
@@ -104,16 +105,16 @@ local function updateClickBlocker()
 end
 
 local function switchElement(spell_id)
-  if fire_spells[spell_id] then
-    unactive_element = "fire"
-    frame_textures["fire"]:Hide()
-    frame_textures["frostfire"]:Hide()
-    frame_textures["frost"]:Show()
-  elseif frost_spells[spell_id] then
-    unactive_element = "frost"
-    frame_textures["fire"]:Show()
-    frame_textures["frostfire"]:Hide()
-    frame_textures["frost"]:Hide()
+  if shadow_spells[spell_id] then
+    unactive_element = "shadow"
+    frame_textures["shadow"]:Hide()
+    frame_textures["flameshadow"]:Hide()
+    frame_textures["flame"]:Show()
+  elseif flame_spells[spell_id] then
+    unactive_element = "flame"
+    frame_textures["shadow"]:Show()
+    frame_textures["flameshadow"]:Hide()
+    frame_textures["flame"]:Hide()
   end
   updateClickBlocker()
 end
@@ -138,58 +139,50 @@ local function suppressKey(self, key)
      return
    end
 
-   if ach_keybinds["arcane"][key] then 
-     self:SetPropagateKeyboardInput(false)
-      if not UIErrorsFrame:TryFlashingExistingMessage(LE_GAME_ERR_SYSTEM, "You cannot cast an arcane spell which deals damage.") then
-	      UIErrorsFrame:AddMessage("You cannot cast an arcane spell which deals damage.", 1.0, 0.0, 0, 1.0, LE_GAME_ERR_SYSTEM);
-      end
-     return
-   end
-
   self:SetPropagateKeyboardInput(true)
 end
 local f2 = nil 
 -- Registers
 function _achievement:Register(fail_function_executor)
 
-	fire_and_frost_frame = CreateFrame("frame")
-	fire_and_frost_frame:SetPoint("CENTER", UIParent, "CENTER", 0, -120)
-	fire_and_frost_frame:SetSize(40,40)
-	fire_and_frost_frame:SetMovable(true)
-	fire_and_frost_frame:EnableMouse(true)
-	fire_and_frost_frame:Show()
-	fire_and_frost_frame:RegisterForDrag("LeftButton")
+	shadow_and_flame_frame = CreateFrame("frame")
+	shadow_and_flame_frame:SetPoint("CENTER", UIParent, "CENTER", 0, -120)
+	shadow_and_flame_frame:SetSize(40,40)
+	shadow_and_flame_frame:SetMovable(true)
+	shadow_and_flame_frame:EnableMouse(true)
+	shadow_and_flame_frame:Show()
+	shadow_and_flame_frame:RegisterForDrag("LeftButton")
 
-	fire_and_frost_frame:SetScript("OnDragStart", function(self, button)
+	shadow_and_flame_frame:SetScript("OnDragStart", function(self, button)
 		self:StartMoving()
 	end)
-	fire_and_frost_frame:SetScript("OnDragStop", function(self)
+	shadow_and_flame_frame:SetScript("OnDragStop", function(self)
 		self:StopMovingOrSizing()
 	end)
 
-	frame_textures["fire"] = fire_and_frost_frame:CreateTexture(nil, "OVERLAY")
-	frame_textures["fire"]:SetPoint("CENTER", fire_and_frost_frame, "CENTER", -5,4)
-	frame_textures["fire"]:SetDrawLayer("OVERLAY",2)
-	frame_textures["fire"]:SetHeight(40)
-	frame_textures["fire"]:SetWidth(40)
-	frame_textures["fire"]:SetTexture("Interface\\Addons\\Hardcore\\Media\\icon_fireball.blp")
-	frame_textures["fire"]:Hide()
+	frame_textures["shadow"] = shadow_and_flame_frame:CreateTexture(nil, "OVERLAY")
+	frame_textures["shadow"]:SetPoint("CENTER", shadow_and_flame_frame, "CENTER", -5,4)
+	frame_textures["shadow"]:SetDrawLayer("OVERLAY",2)
+	frame_textures["shadow"]:SetHeight(40)
+	frame_textures["shadow"]:SetWidth(40)
+	frame_textures["shadow"]:SetTexture("Interface\\Addons\\Hardcore\\Media\\icon_shadow_ele.blp")
+	frame_textures["shadow"]:Hide()
 
-	frame_textures["frost"] = fire_and_frost_frame:CreateTexture(nil, "OVERLAY")
-	frame_textures["frost"]:SetPoint("CENTER", fire_and_frost_frame, "CENTER", -5,4)
-	frame_textures["frost"]:SetDrawLayer("OVERLAY",2)
-	frame_textures["frost"]:SetHeight(40)
-	frame_textures["frost"]:SetWidth(40)
-	frame_textures["frost"]:SetTexture("Interface\\Addons\\Hardcore\\Media\\icon_frost.blp")
-	frame_textures["frost"]:Hide()
+	frame_textures["flame"] = shadow_and_flame_frame:CreateTexture(nil, "OVERLAY")
+	frame_textures["flame"]:SetPoint("CENTER", shadow_and_flame_frame, "CENTER", -5,4)
+	frame_textures["flame"]:SetDrawLayer("OVERLAY",2)
+	frame_textures["flame"]:SetHeight(40)
+	frame_textures["flame"]:SetWidth(40)
+	frame_textures["flame"]:SetTexture("Interface\\Addons\\Hardcore\\Media\\icon_flame_ele.blp")
+	frame_textures["flame"]:Hide()
 
-	frame_textures["frostfire"] = fire_and_frost_frame:CreateTexture(nil, "OVERLAY")
-	frame_textures["frostfire"]:SetPoint("CENTER", fire_and_frost_frame, "CENTER", -5,4)
-	frame_textures["frostfire"]:SetDrawLayer("OVERLAY",2)
-	frame_textures["frostfire"]:SetHeight(40)
-	frame_textures["frostfire"]:SetWidth(40)
-	frame_textures["frostfire"]:SetTexture("Interface\\Addons\\Hardcore\\Media\\icon_fireandfrost.blp")
-	frame_textures["frostfire"]:Show()
+	frame_textures["flameshadow"] = shadow_and_flame_frame:CreateTexture(nil, "OVERLAY")
+	frame_textures["flameshadow"]:SetPoint("CENTER", shadow_and_flame_frame, "CENTER", -5,4)
+	frame_textures["flameshadow"]:SetDrawLayer("OVERLAY",2)
+	frame_textures["flameshadow"]:SetHeight(40)
+	frame_textures["flameshadow"]:SetWidth(40)
+	frame_textures["flameshadow"]:SetTexture("Interface\\Addons\\Hardcore\\Media\\icon_shadow_and_flame.blp")
+	frame_textures["flameshadow"]:Show()
 
 	for i=1,72 do
 	  local button_name = nil 
@@ -248,19 +241,16 @@ function _achievement:Unregister()
 end
 
 function _achievement:GatherSpellList()
-	frost_spells = {}
-	fire_spells = {}
+	shadow_spells = {}
 
 	ach_keybinds = {
-	  ["fire"] = {},
-	  ["frost"] = {},
-	  ["arcane"] = {},
+	  ["shadow"] = {},
+	  ["flame"] = {},
 	}
 
 	ach_action_slots = {
-	  ["fire"] = {},
-	  ["frost"] = {},
-	  ["arcane"] = {},
+	  ["shadow"] = {},
+	  ["flame"] = {},
 	}
 
 	local function insertActionSlot(v, element)
@@ -289,50 +279,32 @@ function _achievement:GatherSpellList()
 	end
 
 
-	for i = 1, 4 do
+	for i = 2, 4 do
 		local name, texture, offset, numSlots, isGuild, offspecID = GetSpellTabInfo(i)
-		if name == "Fire" then 
-			for j = offset + 1, offset + numSlots do
-				local _,_,_,_,_,_,id = GetSpellInfo(j, "")
-				fire_spells[id] = 1
-				local action_slots = C_ActionBar.FindSpellActionButtons(id)
-				if action_slots then
-				  for _,v in ipairs(action_slots) do
-				    insertActionSlot(v, "fire")
-				  end
-				end
+		for j = offset + 1, offset + numSlots do
+			local _,_,_,_,_,_,id = GetSpellInfo(j, "")
+			if flame_spells[id] == nil then
+			  shadow_spells[id] = 1
+			  local action_slots = C_ActionBar.FindSpellActionButtons(id)
+			  if action_slots then
+			    for _,v in ipairs(action_slots) do
+			      insertActionSlot(v, "shadow")
+			    end
+			  end
+			else
+			  local action_slots = C_ActionBar.FindSpellActionButtons(id)
+			  if action_slots then
+			    for _,v in ipairs(action_slots) do
+			      insertActionSlot(v, "flame")
+			    end
+			  end
 			end
-		end
-
-		if name == "Frost" then 
-			for j = offset + 1, offset + numSlots do
-				local _,_,_,_,_,_,id = GetSpellInfo(j, "")
-				frost_spells[id] = 1
-				local action_slots = C_ActionBar.FindSpellActionButtons(id)
-				if action_slots then
-				  for _,v in ipairs(action_slots) do
-				    insertActionSlot(v, "frost")
-				  end
-				end
-			end
-		end
-	end
-
-
-	-- Arcane missiles and arcane explosion
-	for id,_ in pairs(arcane_spells) do
-		local action_slots = C_ActionBar.FindSpellActionButtons(id)
-		if action_slots then
-		  for _,v in ipairs(action_slots) do
-		    if GetBindingKey("ACTIONBUTTON"..v) then ach_keybinds["arcane"][GetBindingKey("ACTIONBUTTON"..v)] = 1 end
-		    ach_action_slots["arcane"]["ActionButton"..v] = 1
-		  end
 		end
 	end
 end
 
-local casting_timer = nil
 local combat_check_timer = nil
+local casting_timer = nil
 
 -- Register Definitions
 _achievement:SetScript("OnEvent", function(self, event, ...)
@@ -347,12 +319,13 @@ _achievement:SetScript("OnEvent", function(self, event, ...)
 	  combat_check_timer = C_Timer.NewTimer(3, function()
 	    if UnitAffectingCombat("player") ~= true then
 	      unactive_element = nil
-	      frame_textures["fire"]:Hide()
-	      frame_textures["frostfire"]:Show()
-	      frame_textures["frost"]:Hide()
+	      frame_textures["shadow"]:Hide()
+	      frame_textures["flameshadow"]:Show()
+	      frame_textures["flame"]:Hide()
 	      updateClickBlocker()
 	    end
 	  end)
+
 	elseif event == "UNIT_SPELLCAST_START" then
 	  if arg[1] ~= "player" then return end
 	  local name, rank, icon, castTime, minRange, maxRange, spellID, originalIcon = GetSpellInfo(arg[3])
@@ -363,13 +336,14 @@ _achievement:SetScript("OnEvent", function(self, event, ...)
 	      casting_timer = nil
 	    end)
 	  end
+
 	  if combat_check_timer then combat_check_timer:Cancel() end
 	  combat_check_timer = C_Timer.NewTimer(3, function()
 	    if UnitAffectingCombat("player") ~= true then
 	      unactive_element = nil
-	      frame_textures["fire"]:Hide()
-	      frame_textures["frostfire"]:Show()
-	      frame_textures["frost"]:Hide()
+	      frame_textures["shadow"]:Hide()
+	      frame_textures["flameshadow"]:Show()
+	      frame_textures["flame"]:Hide()
 	      updateClickBlocker()
 	    end
 	  end)
@@ -382,28 +356,22 @@ _achievement:SetScript("OnEvent", function(self, event, ...)
 	  end
 	  if casting_timer then casting_timer:Cancel() end
 	  unactive_element = nil
-	  frame_textures["fire"]:Hide()
-	  frame_textures["frostfire"]:Show()
-	  frame_textures["frost"]:Hide()
+	  frame_textures["shadow"]:Hide()
+	  frame_textures["flameshadow"]:Show()
+	  frame_textures["flame"]:Hide()
 	  updateClickBlocker()
 	elseif event == "PLAYER_REGEN_DISABLED" then
 	  for _,v in pairs(action_bar_frames) do
 	    v:EnableMouse(true)
 	  end
 	elseif event == "ACTIONBAR_UPDATE_COOLDOWN" then
-	  for k,_ in pairs(ach_action_slots["fire"]) do
+	  for k,_ in pairs(ach_action_slots["shadow"]) do
 	    if action_bar_frames[k] then
 	      action_bar_frames[k]:Hide()
 	    end
 	  end
 
-	  for k,_ in pairs(ach_action_slots["frost"]) do
-	    if action_bar_frames[k] then
-	      action_bar_frames[k]:Hide()
-	    end
-	  end
-
-	  for k,_ in pairs(ach_action_slots["arcane"]) do
+	  for k,_ in pairs(ach_action_slots["flame"]) do
 	    if action_bar_frames[k] then
 	      action_bar_frames[k]:Hide()
 	    end
