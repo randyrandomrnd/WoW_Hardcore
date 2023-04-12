@@ -381,8 +381,6 @@ local function DungeonTrackerFindMissingRunsFromQuests()
 		return
 	end
 
-	Hardcore:Debug("Looking for missing runs...")
-
 	-- Go through the list and log a run for each dungeon for which one or more quests are flagged as completed
 	for i, v in pairs(dt_db) do
 		local dungeon_done = false
@@ -1457,7 +1455,7 @@ local function DungeonTrackerFindMergeableRuns()
 	if Hardcore_Character.dt.runs == nil or #Hardcore_Character.dt.runs < 2 then
 		return false
 	end
-	
+
 	-- Quick O(N) efficiency check -- if none of the dungeon names occur more than once, we can skip this
 	if DungeonTrackerAnyRunNamesRepeated() == false then
 		return false
@@ -1544,6 +1542,7 @@ local function DungeonTracker()
 	if dt_checked_for_missing_runs == false then
 		dt_checked_for_missing_runs = true
 		C_Timer.After(5, function()
+			Hardcore:Debug("Looking for missing and mergeable runs...")
 			DungeonTrackerFindMissingRunsFromQuests()
 			DungeonTrackerFindMergeableRuns()
 		end)
