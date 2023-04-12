@@ -735,6 +735,30 @@ local function DungeonTrackerAddToParty( run, name )
 end
 
 
+-- DungeonTrackerGetCleanVerificationStatus()
+--
+-- Gives a cleaned-up version of the colorized status string
+
+local function DungeonTrackerGetCleanVerificationStatus()
+
+	local my_verif_status = "?"
+	local verdict, _ = Hardcore:GenerateVerificationStatusStrings()
+	if verdict ~= nil then
+		-- Strip off any coloring or other extra junk except for the words "PASS" and "FAIL"
+		local x, y = string.find( verdict, "PASS" )
+		if x ~= nil then
+			my_verif_status = "PASS"
+		end
+		x, y = string.find( verdict, "FAIL" )
+		if x ~= nil then
+			my_verif_status = "FAIL"
+		end		
+	end
+
+	return my_verif_status
+end
+
+
 -- DungeonTrackerReceivePulse( data, sender )
 --
 -- Receives a group pulse, storing the time in the message and the sender in the associated pending run
@@ -822,27 +846,16 @@ end
 
 local function DungeonTrackerSendPulse(now)
 
-	local my_verif_status = "?"
+	local my_verif_status
 
 	-- Don't send too many pulses, one every 30 seconds is enough
 	if (Hardcore_Character.dt.sent_pulse ~= nil) and (now - Hardcore_Character.dt.sent_pulse < DT_GROUP_PULSE) then
 		return
 	end
 	Hardcore_Character.dt.sent_pulse = now
-	
+
 	-- Generate PASS/FAIL information
-	local verdict, _ = Hardcore:GenerateVerificationStatusStrings()
-	if verdict ~= nil then
-		-- Strip off any coloring or other extra junk except for the words "PASS" and "FAIL"
-		local x, y = string.find( verdict, "PASS" )
-		if x ~= nil then
-			my_verif_status = "PASS"
-		end
-		x, y = string.find( verdict, "FAIL" )
-		if x ~= nil then
-			my_verif_status = "FAIL"
-		end		
-	end
+	my_verif_status = DungeonTrackerGetCleanVerificationStatus()
 
 	-- Send my own info to the party (=name + server time + dungeon)
 	if CTL then
@@ -873,11 +886,14 @@ local function DungeonTrackerSendPulse(now)
 			DungeonTrackerReceivePulse(data, Hardcore_Character.dt.current.party .. "-SelfPing")
 		end
 
-		-- For debug purposes, set this to true to simulate a send
+		-- For debug purposes, set this to true to simulate a send from group members
 		if false then
-			DungeonTrackerReceivePulse("John|0.11.15|1234324|Ragefire Chasm|189|1111|PASS", "John-TestServer")
-			DungeonTrackerReceivePulse("Peter|0.11.13|1244334|Scarlet Monastery|189|1111|FAIL", "Peter-TestServer")
-			DungeonTrackerReceivePulse("Jack|0.11.16|1244334|Ragefire Chasm|189|1113|PASS", "Jack-TestServer")
+			DungeonTrackerReceivePulse(data, UnitName("player") .. "-SelfPing")
+			DungeonTrackerReceivePulse("John|0.11.13|1234324|Ragefire Chasm|189", "John-TestServer")
+			DungeonTrackerReceivePulse("Jack|0.11.16|1244334|Ragefire Chasm|189|1113", "Jack-TestServer")
+			DungeonTrackerReceivePulse("Peter|0.11.23|1244334|Scarlet Monastery|189|1111|FAIL", "Peter-TestServer")
+			DungeonTrackerReceivePulse("Jane|0.11.23|1234324|Ragefire Chasm|189|1111|PASS", "Jane-TestServer")
+			Hardcore_Character.dt.current.party = UnitName("player") .. ",John,Jack,Peter,Jane"
 		end
 	end
 end
@@ -1234,7 +1250,8 @@ local function DungeonTrackerCheckVersions()
 			local message = "Addon version / verification status check: "
 			for i,v in ipairs( party ) do
 				if v == UnitName("player") then
-					message = message .. v .. ":" .. GetAddOnMetadata("Hardcore", "Version")
+					local my_status = DungeonTrackerGetCleanVerificationStatus()
+					message = message .. v .. ":" .. GetAddOnMetadata("Hardcore", "Version") .. " [" .. my_status .. "]"
 				else
 					message = message .. v .. ":"
 					if dt_party_member_addon_version[ v ] ~= nil then
@@ -1243,9 +1260,9 @@ local function DungeonTrackerCheckVersions()
 						message = message .. "?"
 					end
 					if dt_party_member_verif_status[ v ] ~= nil then
-						message = message .. "[" .. dt_party_member_verif_status[ v ] .. "]"
+						message = message .. " [" .. dt_party_member_verif_status[ v ] .. "]"
 					else
-						message = message .. "[?]"
+						message = message .. " [?]"
 					end
 				end
 				if i < #party then
