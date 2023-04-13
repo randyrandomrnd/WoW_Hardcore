@@ -1441,6 +1441,61 @@ local function DungeonTrackerMergeRuns( run1, run2 )
 end
 
 
+
+-- DungeonTrackerClearOutsideQuestLegacyRuns()
+--
+-- Finds legacy quests that might have been caused by one of the erroneous dungeon
+-- quests in 
+
+local function DungeonTrackerClearOutsideQuestLegacyRuns()
+
+	local tracked_runs = {}
+	local legacy_runs_removed = 0
+
+	-- We do this only once, ever
+	if Hardcore_Character.dt.outside_quests_fixed ~= nil then
+		return
+	end
+	Hardcore_Character.dt.outside_quests_fixed = true
+
+	-- Get a quick hash of all the runs that are not legacy
+	if Hardcore_Character.dt.runs ~= nil then
+		for i, v in ipairs( Hardcore_Character.dt.runs ) do
+			if v.id ~= nil and v.date ~= "(legacy)" then
+				tracked_runs[ v.id ] = 1
+			end
+		end
+	end
+	if Hardcore_Character.dt.pending ~= nil then
+		for i, v in ipairs( Hardcore_Character.dt.pending ) do
+			if v.id ~= nil and v.date ~= "(legacy)" then
+				tracked_runs[ v.id ] = 1
+			end
+		end
+	end
+
+	-- Check which of the outside quests was actually done.
+	-- This is a table of outside quests (and their map id) that have been removed since 7 Feb 2023
+	local outside_quests = { {2928, 90}, { 214, 36} , {1360, 70}, {1275, 48}, { 2922, 90}, {17,70} }
+	for i, v in ipairs( outside_quests ) do
+		if C_QuestLog.IsQuestFlaggedCompleted( v[1] ) then
+			if tracked_runs[ v[2] ] ~= nil then
+				-- Okay, we can delete legacy quests with this number (there can be only one!)
+				for j, w in ipairs( Hardcore_Character.dt.runs ) do
+					if w.date == "(legacy)" and w.id == v[2] then
+						table.remove(Hardcore_Character.dt.runs, j)
+						legacy_runs_removed = legacy_runs_removed + 1
+						break
+					end
+				end
+			end
+		end
+	end
+
+	Hardcore:Debug( "Removed " .. legacy_runs_removed .. " legacy runs possibly linked to outside quests")
+end
+
+
 --  DungeonTrackerFindMergeableRuns()
 --
 -- Goes through the list of logged runs and gets rid of any runs that somehow were not
@@ -1542,7 +1597,8 @@ local function DungeonTracker()
 	if dt_checked_for_missing_runs == false then
 		dt_checked_for_missing_runs = true
 		C_Timer.After(5, function()
-			Hardcore:Debug("Looking for missing and mergeable runs...")
+			Hardcore:Debug("Looking for erroneous, missing and mergeable runs...")
+			DungeonTrackerClearOutsideQuestLegacyRuns()
 			DungeonTrackerFindMissingRunsFromQuests()
 			DungeonTrackerFindMergeableRuns()
 		end)
