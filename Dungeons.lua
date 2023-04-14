@@ -4,7 +4,8 @@
 
 -- Definitions
 local DT_WARN_INTERVAL = 10 					-- Warn every 10 seconds about repeated run (while in dungeon)
-local DT_INSIDE_MAX_TIME = 60 					-- Maximum time inside a dungeon without it being logged (61 looks nicer than 60 in-game)
+local DT_INSIDE_MAX_TIME = 60 					-- Maximum time inside a dungeon without it being logged
+local DT_INSIDE_MAX_TIME_NO_KILLS = 450			-- Maximum time inside a dungeon without it being logged if there are no kills
 local DT_OUTSIDE_MAX_REAL_TIME = 1800 			-- If seen outside, how many seconds since last seen inside before finalization (1800 = 30m)
 local DT_OUTSIDE_MAX_RUN_TIME = 21600 			-- If seen outside, how many seconds since start of run before finalization (21600 = 6 hrs)
 local DT_TIME_STEP = 1 							-- Dungeon code called every 1 second
@@ -596,7 +597,7 @@ local function DungeonTrackerLogRun(run)
 	end
 
 	-- We don't log this run if it's relatively short, there is an instance ID (checked above), but no kills
-	if run.num_kills ~= nil and run.num_kills == 0 and run.time_inside < (5*DT_INSIDE_MAX_TIME) then
+	if run.num_kills ~= nil and run.num_kills == 0 and run.time_inside < (DT_INSIDE_MAX_TIME_NO_KILLS) then
 		Hardcore:Debug("Not logging short run without kills in " .. run.name)
 		return
 	end
@@ -1495,6 +1496,23 @@ local function DungeonTrackerClearOutsideQuestLegacyRuns()
 	Hardcore:Debug( "Removed " .. legacy_runs_removed .. " legacy runs possibly linked to outside quests")
 end
 
+-- DungeonTrackerClearShortNoKillRuns()
+--
+-- Finds short runs with 0 kills logged and removes them
+
+local function DungeonTrackerClearShortNoKillRuns()
+
+	for i = #Hardcore_Character.dt.runs, 1, -1 do
+		local v = Hardcore_Character.dt.runs[i]
+		if v.num_kills ~= nil and v.num_kills == 0 and v.time_inside < DT_INSIDE_MAX_TIME_NO_KILLS then
+			table.remove( Hardcore_Character.dt.runs, i )
+			Hardcore:Debug( "Removed run with 0 kills in " .. v.name )
+		end
+	end
+
+end
+
+
 
 --  DungeonTrackerFindMergeableRuns()
 --
@@ -1599,6 +1617,7 @@ local function DungeonTracker()
 		C_Timer.After(5, function()
 			Hardcore:Debug("Looking for erroneous, missing and mergeable runs...")
 			DungeonTrackerClearOutsideQuestLegacyRuns()
+			DungeonTrackerClearShortNoKillRuns()
 			DungeonTrackerFindMissingRunsFromQuests()
 			DungeonTrackerFindMergeableRuns()
 		end)
