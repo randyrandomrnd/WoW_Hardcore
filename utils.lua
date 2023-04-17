@@ -170,3 +170,80 @@ function Hardcore_FilterUnique(tbl)
 
 	return res
 end
+
+
+--- Base64 encoding decoding functions START
+
+local dict64 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz?!"
+local rdict64 = nil
+
+local function Hardcore_Base64EncodeError( zero_padding_len )
+  local pad_to = 1
+  local rv = ""
+  if zero_padding_len ~= nil then
+    pad_to = tonumber( zero_padding_len )
+  end
+  for j=1,pad_to do
+    rv = rv .. "$"
+  end
+  return rv
+end  
+
+-- EncodePosIntegerBase64( val, zero_padding_len )
+--
+-- Encodes a positive value (integer or a string representing a positive integer) into base64 with 0-9,A-Z,a-z,? and ! as characters
+-- zero_padding_len can be used to force a specific output string length
+-- Negative values and values that do not fit in zero_padding_len characters are represented with 1 or more "$" signs
+
+function Hardcore_EncodePosIntegerBase64( val, zero_padding_len )
+  local rv = ""
+  local i
+  val = tonumber(val)
+  if( val == 0 ) then return "0" end
+  if( val < 0 ) then return Hardcore_Base64EncodeError( zero_padding_len ) end  
+  while val > 0 do
+    i = val % 64
+    rv = dict64:sub(i+1,i+1) .. rv
+    val = tonumber( math.floor( val / 64 ) )
+  end
+  if zero_padding_len ~= nil then
+    pad_to = tonumber( zero_padding_len )
+    while rv:len() < pad_to do
+      rv = "0" .. rv
+    end
+    if rv:len() > pad_to then
+      return Hardcore_Base64EncodeError( zero_padding_len )  
+    end
+  end  
+  return rv
+end
+
+-- Hardcore_DecodePosIntegerBase64( str )
+--
+-- Decodes a base64 string made with Hardcore_EncodePosIntegerBase64()
+-- Error strings with "$" are all decoded as -1
+
+function Hardcore_DecodePosIntegerBase64( str )
+  -- Initialize the reverse hash if not already done
+  if rdict64 == nil then
+    rdict64 = {}
+    for i=1, 64 do
+      rdict64[dict64:sub(i,i)]=i-1
+    end
+  end
+  -- Check for "invalid code (encoding padding failure)"
+  if str == nil or str == "" or str:sub(1,1) == "$" then
+    return -1
+  end
+  -- Decode
+  local rv = 0
+  for i=1,#str do
+    rv = rv * 64
+    rv = rv + rdict64[str:sub(i,i)]
+  end
+  return rv
+end
+
+--- Base64 encoding decoding functions END
+
+
