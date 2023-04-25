@@ -1,6 +1,6 @@
 # Hardcore (EZ Edition)
 
-World of Warcraft addon for the Hardcore community
+![Logo](https://github.com/randyrandomrnd/WoW_Hardcore/blob/master/logo.png?raw=true)
 
 Modified EZ Edition addon that basically allows you to break most hardcore rules, while still getting the achievement, and becoming verified by the mods. This is not a recommended way to play hardcore, but it's a way to play hardcore without having to worry about the ruleset.
 
